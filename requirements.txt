@@ -1,0 +1,10 @@
+elasticsearch
+pandas
+openpyxl
+python-dotenv
+langchain
+langchain-google-genai
+google-ai-generativelanguage==0.6.15
+sentence-transformers
+requests
+pydantic

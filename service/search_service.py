@@ -1,0 +1,97 @@
+import os
+from elasticsearch import Elasticsearch
+from typing import Optional, List, Dict, Any
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- CẤU HÌNH ---
+ELASTIC_HOST = "http://localhost:9200"
+INDEX_NAME = "iphone_products"
+
+# --- KHỞI TẠO KẾT NỐI ---
+try:
+    es_client = Elasticsearch(hosts=[ELASTIC_HOST])
+    if not es_client.ping():
+        raise ConnectionError("Không thể kết nối đến Elasticsearch.")
+    print("search_service: Kết nối đến Elasticsearch thành công!")
+except (ValueError, ConnectionError) as e:
+    print(f"Lỗi trong search_service: {e}")
+    es_client = None
+
+def search_iphones(
+    model: Optional[str] = None,
+    mau_sac: Optional[str] = None,
+    dung_luong: Optional[str] = None,
+    tinh_trang_may: Optional[str] = None,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    """
+    Tìm kiếm sản phẩm iPhone trong Elasticsearch dựa trên các tiêu chí lọc.
+
+    Args:
+        model (Optional[str]): Tên model iPhone (ví dụ: "iPhone 15 Pro Max").
+        mau_sac (Optional[str]): Màu sắc của sản phẩm.
+        dung_luong (Optional[str]): Dung lượng lưu trữ (ví dụ: "256GB").
+        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "Mới", "Likenew").
+        min_gia (Optional[float]): Mức giá tối thiểu.
+        max_gia (Optional[float]): Mức giá tối đa.
+
+    Returns:
+        List[Dict[str, Any]]: Danh sách các sản phẩm phù hợp.
+    """
+    if not es_client:
+        return [{"error": "Không thể kết nối đến Elasticsearch."}]
+
+    query = {
+        "bool": {
+            "must": [],
+            "filter": []
+        }
+    }
+
+    # Xây dựng câu lệnh tìm kiếm dựa trên các tham số được cung cấp
+    if model:
+        query["bool"]["must"].append({"match": {"model": model}})
+    
+    # Sử dụng "filter" cho các trường "keyword" để tìm kiếm chính xác và nhanh hơn
+    if mau_sac:
+        query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
+        
+    if dung_luong:
+        query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})
+        
+    if tinh_trang_may:
+        query["bool"]["filter"].append({"term": {"tinh_trang_may": tinh_trang_may}})
+    
+    # Xử lý tìm kiếm theo khoảng giá
+    price_range = {}
+    if min_gia is not None:
+        price_range["gte"] = min_gia
+    if max_gia is not None:
+        price_range["lte"] = max_gia
+    if price_range:
+        query["bool"]["filter"].append({"range": {"gia": price_range}})
+
+    # Chỉ tìm các sản phẩm còn hàng
+    query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
+
+    try:
+        response = es_client.search(
+            index=INDEX_NAME,
+            query=query,
+            size=10
+        )
+        hits = [hit['_source'] for hit in response['hits']['hits']]
+        print(f"Tìm thấy {len(hits)} sản phẩm phù hợp.")
+        return hits
+    except Exception as e:
+        print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
+        return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
+
+if __name__ == '__main__':
+    results = search_iphones(model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+    if results:
+        for product in results:
+            print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")

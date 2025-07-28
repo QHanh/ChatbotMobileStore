@@ -1,0 +1,8 @@
+.env
+*.xlsm
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# VSCode workspace settings
+.vscode/
