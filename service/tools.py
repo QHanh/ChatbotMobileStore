@@ -1,5 +1,5 @@
 from langchain_core.tools import tool
-from langchain.tools import Tool
+from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Union
 from functools import partial
@@ -98,15 +98,18 @@ def create_customer_tools(customer_id: str) -> list:
     """
     index_name = f"product_{customer_id}"
     
+    # Sử dụng partial để tạo một phiên bản của hàm logic tìm kiếm với index_name đã được gán sẵn
     customer_search_func = partial(search_iphones_logic, index_name=index_name)
     
-    search_tool = Tool(
-        name="search_iphones_tool",
+    # Sử dụng StructuredTool để đảm bảo agent hiểu đúng cấu trúc tham số
+    search_tool = StructuredTool.from_function(
         func=customer_search_func,
+        name="search_iphones_tool",
         description=search_iphones_logic.__doc__,
         args_schema=SearchInput
     )
     
+    # Trả về danh sách các tool, bao gồm cả tool tìm kiếm đã được tùy chỉnh
     available_tools = [
         search_tool,
         create_order_tool,
