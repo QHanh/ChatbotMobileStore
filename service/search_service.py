@@ -47,15 +47,14 @@ def search_iphones(
     query = {
         "bool": {
             "must": [],
+            "should": [],
             "filter": []
         }
     }
 
-    # Xây dựng câu lệnh tìm kiếm dựa trên các tham số được cung cấp
     if model:
         query["bool"]["must"].append({"match": {"model": model}})
     
-    # Sử dụng "filter" cho các trường "keyword" để tìm kiếm chính xác và nhanh hơn
     if mau_sac:
         query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
         
@@ -63,9 +62,8 @@ def search_iphones(
         query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})
         
     if tinh_trang_may:
-        query["bool"]["filter"].append({"term": {"tinh_trang_may": tinh_trang_may}})
+        query["bool"]["should"].append({"term": {"tinh_trang_may": tinh_trang_may}})
     
-    # Xử lý tìm kiếm theo khoảng giá
     price_range = {}
     if min_gia is not None:
         price_range["gte"] = min_gia
@@ -74,14 +72,13 @@ def search_iphones(
     if price_range:
         query["bool"]["filter"].append({"range": {"gia": price_range}})
 
-    # Chỉ tìm các sản phẩm còn hàng
     query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
 
     try:
         response = es_client.search(
             index=INDEX_NAME,
             query=query,
-            size=10
+            size=20
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp.")

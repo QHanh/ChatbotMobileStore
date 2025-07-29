@@ -20,6 +20,15 @@ def search_iphones_tool(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại iPhone có trong kho hàng của cửa hàng.
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy, hoặc khoảng giá để lọc kết quả.
     Công cụ sẽ trả về danh sách các sản phẩm phù hợp với thông tin chi tiết.
+    **Nếu khách hàng không nói rõ tình trạng máy, hãy tìm kiếm tất cả các sản phẩm có trong kho.**
+    Lưu ý: Chỉ model là bắt buộc, các thông tin khác không bắt buộc.
+    Ví dụ:
+    - model: "iPhone 7"
+    - màu: "Đen"
+    - dung lượng: "256GB"
+    - tình trạng: "đẹp"
+    - giá từ: 5000000
+    - giá đến: 10000000
     """
     print("--- LangChain Agent đã gọi công cụ tìm kiếm iPhone ---")
     print(f"Tham số: model={model}, màu={mau_sac}, dung lượng={dung_luong}, tình trạng={tinh_trang_may}, giá từ={min_gia}, giá đến={max_gia}")
@@ -54,11 +63,18 @@ def create_order_tool(
     # --- Logic giả lập tạo đơn hàng ---
     # Trong thực tế, bạn sẽ gọi API hoặc lưu vào database ở đây.
     order_id = f"DH_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
-    
+    order_detail = {
+        "order_id": order_id,
+        "ma_san_pham": ma_san_pham,
+        "so_luong": so_luong,
+        "ten_khach_hang": ten_khach_hang,
+        "so_dien_thoai": so_dien_thoai,
+    }
+
     return {
         "status": "success",
         "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-        "order_id": order_id
+        "order_detail": order_detail
     }
 
 @tool
