@@ -11,12 +11,10 @@ import json
 load_dotenv()
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# --- CẤU HÌNH ---
 ELASTIC_HOST = "http://localhost:9200"
 INDEX_NAME = "iphone_products"
 XLSX_FILE_PATH = "iPhone.xlsm"
 
-# --- KẾT NỐI ---
 try:
     es_client = Elasticsearch(hosts=[ELASTIC_HOST])
     if not es_client.ping():
@@ -107,7 +105,6 @@ def process_and_index_data():
     for index, row in df.iterrows():
         print(f"➡️  Đang xử lý dòng {index + 1}/{total_rows}: {row['model']}")
 
-        # Ép toàn bộ NaN → None để đảm bảo JSON hợp lệ
         doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
 
         # --- TẠO VECTOR EMBEDDING CHO TÌM KIẾM NGỮ NGHĨA ---
@@ -121,7 +118,7 @@ def process_and_index_data():
 
         action = {
             "_index": INDEX_NAME,
-            "_id": doc['ma_san_pham'] + "_" + str(doc['ton_kho']),  # tạo ID duy nhất
+            "_id": doc['ma_san_pham'] + "_" + str(doc['ton_kho']),
             "_source": doc
         }
         actions.append(action)

@@ -1,6 +1,7 @@
 from langchain_core.tools import tool
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Union
+from functools import partial
 
 # Import hàm tìm kiếm logic từ search_service
 from .search_service import search_iphones
@@ -9,6 +10,7 @@ from .models.schemas import SearchInput, OrderInput
 # --- ĐỊNH NGHĨA TOOL TÌM KIẾM SẢN PHẨM ---
 @tool("search_iphones_tool", args_schema=SearchInput)
 def search_iphones_tool(
+    index_name: str, # Thêm tham số index_name
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -33,8 +35,8 @@ def search_iphones_tool(
     print("--- LangChain Agent đã gọi công cụ tìm kiếm iPhone ---")
     print(f"Tham số: model={model}, màu={mau_sac}, dung lượng={dung_luong}, tình trạng={tinh_trang_may}, giá từ={min_gia}, giá đến={max_gia}")
     
-    # Gọi hàm logic tìm kiếm từ search_service
     results = search_iphones(
+        index_name=index_name,
         model=model,
         mau_sac=mau_sac,
         dung_luong=dung_luong,
@@ -102,3 +104,20 @@ available_tools = [
     escalate_to_human_tool,
     end_conversation_tool
 ]
+
+def create_customer_tools(customer_id: str) -> list:
+    """
+    Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
+    """
+    index_name = f"product_{customer_id}"
+    
+    customer_search_tool = partial(search_iphones_tool, index_name=index_name)
+    customer_search_tool.__doc__ = search_iphones_tool.__doc__
+    
+    available_tools = [
+        tool(name="search_iphones_tool", args_schema=SearchInput, func=customer_search_tool),
+        create_order_tool,
+        escalate_to_human_tool,
+        end_conversation_tool
+    ]
+    return available_tools

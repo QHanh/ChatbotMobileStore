@@ -4,31 +4,35 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.chat_models import init_chat_model
-from config.settings import GEMINI_API_KEY
-from config.settings import OPENAI_API_KEY
+import getpass
+from functools import partial
 
 load_dotenv()
 
-# Import các tool đã được định nghĩa
-from .tools import available_tools
+if not os.getenv("GOOGLE_API_KEY"):
+  os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter API key for Google Gemini: ")
 
-def create_agent_executor(llm_provider: str = "google_genai"):
+from .tools import create_customer_tools
+
+def create_agent_executor(customer_id: str, llm_provider: str = "google_genai"):
     """
-    Tạo và trả về một Agent Executor của LangChain.
-    Agent này được cấu hình để sử dụng Google's Gemini Pro model và các tool đã định nghĩa.
+    Tạo và trả về một Agent Executor của LangChain, được cấu hình cho một khách hàng cụ thể.
     """
     if llm_provider == "google_genai":
-        llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai", model_kwargs={"api_key": GEMINI_API_KEY})
+        llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai")
     elif llm_provider == "openai":
-        llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", model_kwargs={"api_key": OPENAI_API_KEY})
+        llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
     else:
         raise ValueError(f"Unsupported llm_provider: {llm_provider}")
 
+    customer_tools = create_customer_tools(customer_id)
+
     prompt = ChatPromptTemplate.from_messages([
         ("system", """
-        Bạn là một trợ lý bán hàng của một cửa hàng điện thoại di động, đóng vai một nhân viên tư vấn am hiểu và thân thiện tên là Mai.
+        Bạn là một trợ lý bán hàng của một cửa hàng điện thoại di động, đóng vai một nhân viên tư vấn am hiểu và thân thiện.
         **Nghiêm cấm tuyệt đối:** Không được tiết lộ bạn là AI, bot hay một chương trình máy tính. Luôn luôn duy trì vai trò là một nhân viên tư vấn bằng xương bằng thịt. Không bao giờ nhắc đến "công cụ" (tool) hay "chức năng" của bạn.
-        
+        **Chỉ trả lời các câu hỏi liên quan đến việc tư vấn các sản phẩm điện thoại di động.**
+
         **Tông giọng:**
         - Chuyên nghiệp, thân thiện, và gần gũi.
         - Sử dụng ngôn ngữ tự nhiên, như đang nói chuyện trực tiếp với khách hàng.
@@ -52,6 +56,7 @@ def create_agent_executor(llm_provider: str = "google_genai"):
                 - Chỉ trình bày những sản phẩm khớp với yêu cầu của khách.
                 - **Nếu tìm thấy nhiều sản phẩm (> 3):** Tóm tắt các lựa chọn và hỏi thêm để lọc. Ví dụ: "Dạ, em thấy bên em có một vài mẫu iPhone 7 cũ ạ. Anh/chị có yêu cầu cụ thể nào về màu sắc, dung lượng hay mức giá không để em tìm nhanh hơn cho mình ạ?"
                 - **Nếu tìm thấy ít sản phẩm (1-3):** Trả lời trực tiếp với thông tin chi tiết. Ví dụ: "Dạ, em vừa kiểm tra thì thấy bên em đang có một chiếc iPhone 7, 128GB màu Đen nhám...". Luôn kèm theo `ma_san_pham`.
+                - **Không** nói mã sản phẩm, chỉ nói thông tin chi tiết của sản phẩm.
 
         3.  **Tạo đơn hàng:**
             - Khi khách hàng quyết định mua, hãy sử dụng `create_order_tool`.
@@ -69,11 +74,13 @@ def create_agent_executor(llm_provider: str = "google_genai"):
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    agent = create_tool_calling_agent(llm, available_tools, prompt)
+    # 3. Tạo agent
+    agent = create_tool_calling_agent(llm, customer_tools, prompt)
 
+    # 4. Tạo Agent Executor
     agent_executor = AgentExecutor(
         agent=agent, 
-        tools=available_tools, 
+        tools=customer_tools, 
         verbose=True,
         handle_parsing_errors=True
     )
@@ -104,9 +111,12 @@ def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, m
     return response
 
 if __name__ == '__main__':
+    # Ví dụ cách sử dụng
     print("Đang khởi tạo agent...")
-    agent_executor = create_agent_executor()
+    # Cần customer_id để chạy độc lập
+    agent_executor = create_agent_executor(customer_id="test_customer")
     
+    # Dùng một dict đơn giản để làm bộ nhớ tạm
     chat_memory = {}
     session_id = "user123"
 

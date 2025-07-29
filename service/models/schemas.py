@@ -22,4 +22,5 @@ class OrderInput(BaseModel):
 class ChatbotRequest(BaseModel):
     """Input model for the chatbot."""
     query: str = Field(description="The user's query for the chatbot.")
+    customer_id: str = Field(description="The unique identifier for the store owner.")
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.") 

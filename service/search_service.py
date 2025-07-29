@@ -7,19 +7,28 @@ load_dotenv()
 
 # --- CẤU HÌNH ---
 ELASTIC_HOST = "http://localhost:9200"
-INDEX_NAME = "iphone_products"
 
 # --- KHỞI TẠO KẾT NỐI ---
-try:
-    es_client = Elasticsearch(hosts=[ELASTIC_HOST])
-    if not es_client.ping():
-        raise ConnectionError("Không thể kết nối đến Elasticsearch.")
-    print("search_service: Kết nối đến Elasticsearch thành công!")
-except (ValueError, ConnectionError) as e:
-    print(f"Lỗi trong search_service: {e}")
-    es_client = None
+es_client = None
+
+def get_es_client():
+    """
+    Initializes and returns a single instance of the Elasticsearch client.
+    """
+    global es_client
+    if es_client is None:
+        try:
+            es_client = Elasticsearch(hosts=[ELASTIC_HOST])
+            if not es_client.ping():
+                raise ConnectionError("Không thể kết nối đến Elasticsearch.")
+            print("search_service: Kết nối đến Elasticsearch thành công!")
+        except ConnectionError as e:
+            print(f"Lỗi trong search_service: {e}")
+            es_client = None
+    return es_client
 
 def search_iphones(
+    index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -41,7 +50,8 @@ def search_iphones(
     Returns:
         List[Dict[str, Any]]: Danh sách các sản phẩm phù hợp.
     """
-    if not es_client:
+    es = get_es_client()
+    if not es:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
     query = {
@@ -75,8 +85,8 @@ def search_iphones(
     query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
 
     try:
-        response = es_client.search(
-            index=INDEX_NAME,
+        response = es.search(
+            index=index_name,
             query=query,
             size=20
         )
@@ -88,7 +98,7 @@ def search_iphones(
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
 
 if __name__ == '__main__':
-    results = search_iphones(model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+    results = search_iphones(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
     if results:
         for product in results:
             print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")

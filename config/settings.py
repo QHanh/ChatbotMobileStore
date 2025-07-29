@@ -9,6 +9,7 @@ load_dotenv()
 # API Keys
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+ELASTIC_HOST = "http://localhost:9200"
 
 # FastAPI Config
 APP_CONFIG = {
