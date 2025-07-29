@@ -4,6 +4,7 @@ from elasticsearch.helpers import bulk
 import numpy as np
 import json
 import warnings
+import io
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -45,12 +46,12 @@ def create_product_index(es_client: Elasticsearch, index_name: str):
     es_client.indices.create(index=index_name, mappings=mapping)
     print("✅ Thành công tạo index.")
 
-def process_and_index_product_data(es_client: Elasticsearch, index_name: str, file_stream):
+def process_and_index_product_data(es_client: Elasticsearch, index_name: str, file_content: bytes):
     """
-    Đọc dữ liệu sản phẩm từ file Excel, xử lý và tạo index trong Elasticsearch.
+    Đọc dữ liệu sản phẩm từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
     """
     try:
-        df = pd.read_excel(file_stream, sheet_name='TONGHOP')
+        df = pd.read_excel(io.BytesIO(file_content), sheet_name='TONGHOP')
         df.columns = [
             'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
             'tinh_trang_may', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
@@ -71,10 +72,8 @@ def process_and_index_product_data(es_client: Elasticsearch, index_name: str, fi
 
         df = df.where(pd.notnull(df), None).replace({np.nan: None})
 
-    except FileNotFoundError:
-        raise Exception(f"Error: Could not read the provided file stream.")
     except Exception as e:
-        raise Exception(f"Error reading Excel file: {e}")
+        raise Exception(f"Error reading Excel content: {e}")
 
     actions = []
     total_rows = len(df)
@@ -129,21 +128,19 @@ def create_service_index(es_client: Elasticsearch, index_name: str):
     es_client.indices.create(index=index_name, mappings=mapping)
     print("✅ Thành công tạo index.")
 
-def process_and_index_service_data(es_client: Elasticsearch, index_name: str, file_stream):
+def process_and_index_service_data(es_client: Elasticsearch, index_name: str, file_content: bytes):
     """
-    Đọc dữ liệu dịch vụ từ file Excel, xử lý và tạo index trong Elasticsearch.
+    Đọc dữ liệu dịch vụ từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
     """
     try:
-        df = pd.read_excel(file_stream, sheet_name='DICHVU')
+        df = pd.read_excel(io.BytesIO(file_content), sheet_name='DICHVU')
         df.columns = [
             'ma_dich_vu', 'ten_dich_vu', 'ten_san_pham', 'chi_tiet_dich_vu', 'gia', 'bao_hanh', 'thoi_gian_thuc_hien', 'ghi_chu'
         ]
         df = df.dropna(subset=['ma_dich_vu', 'ten_dich_vu'])
         df['gia'] = pd.to_numeric(df['gia'], errors='coerce').fillna(0).astype(float)
-    except FileNotFoundError:
-        raise Exception(f"Lỗi: Không thể đọc file stream.")
     except Exception as e:
-        raise Exception(f"Lỗi đọc file Excel: {e}")
+        raise Exception(f"Error reading Excel content: {e}")
     
     actions = []
     total_rows = len(df)

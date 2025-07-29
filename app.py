@@ -84,6 +84,66 @@ async def upload_service_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/insert-product/{customer_id}")
+async def insert_product_data(
+    customer_id: str = Path(..., description="Mã khách hàng để thêm sản phẩm."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm mới để thêm vào.")
+):
+    """
+    Thêm (insert/append) dữ liệu sản phẩm mới vào một index đã tồn tại cho khách hàng.
+    Endpoint này sẽ không xóa dữ liệu cũ.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    index_name = f"product_{customer_id}"
+    
+    if not es_client.indices.exists(index=index_name):
+        raise HTTPException(status_code=404, detail=f"Index '{index_name}' không tồn tại. Vui lòng sử dụng endpoint /upload-product để tạo index trước.")
+
+    try:
+        content = await file.read()
+        success, failed = process_and_index_product_data(es_client, index_name, content)
+        
+        return {
+            "message": f"Dữ liệu sản phẩm mới cho khách hàng '{customer_id}' đã được thêm thành công.",
+            "index_name": index_name,
+            "successfully_indexed": success,
+            "failed_to_index": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert-service/{customer_id}")
+async def insert_service_data(
+    customer_id: str = Path(..., description="Mã khách hàng để thêm dịch vụ."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ mới để thêm vào.")
+):
+    """
+    Thêm (insert/append) dữ liệu dịch vụ mới vào một index đã tồn tại cho khách hàng.
+    Endpoint này sẽ không xóa dữ liệu cũ.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    index_name = f"service_{customer_id}"
+
+    if not es_client.indices.exists(index=index_name):
+        raise HTTPException(status_code=404, detail=f"Index '{index_name}' không tồn tại. Vui lòng sử dụng endpoint /upload-service để tạo index trước.")
+
+    try:
+        content = await file.read()
+        success, failed = process_and_index_service_data(es_client, index_name, content)
+        
+        return {
+            "message": f"Dữ liệu dịch vụ mới cho khách hàng '{customer_id}' đã được thêm thành công.",
+            "index_name": index_name,
+            "successfully_indexed": success,
+            "failed_to_index": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/config/persona/{customer_id}")
 async def configure_persona(
     customer_id: str,
