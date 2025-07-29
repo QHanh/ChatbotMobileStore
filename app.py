@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from service.agent_service import create_agent_executor, invoke_agent_with_memory
-from service.models.schemas import ChatbotRequest
+from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig
 from service.data_loader_service import create_customer_index, process_and_index_data
 from elasticsearch import Elasticsearch
 import uvicorn
@@ -13,6 +13,7 @@ app = FastAPI(**APP_CONFIG)
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
 
 chat_memory = {}
+customer_configs = {}
 
 try:
     es_client = Elasticsearch(hosts=[ELASTIC_HOST])
@@ -38,13 +39,10 @@ async def upload_data(
     index_name = f"product_{customer_id}"
     
     try:
-        # Create a new index for the customer
         create_customer_index(es_client, index_name)
         
-        # Read the file into a bytes stream
         file_stream = io.BytesIO(await file.read())
         
-        # Process and index the data
         success, failed = process_and_index_data(es_client, index_name, file_stream)
         
         return {
@@ -55,6 +53,32 @@ async def upload_data(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/config/persona/{customer_id}")
+async def configure_persona(
+    customer_id: str,
+    config: PersonaConfig
+):
+    """
+    Configures the AI's persona (name and role) for a specific customer.
+    """
+    if customer_id not in customer_configs:
+        customer_configs[customer_id] = {}
+    customer_configs[customer_id]["persona"] = config.dict()
+    return {"message": f"Persona for customer '{customer_id}' has been updated."}
+
+@app.post("/config/prompt/{customer_id}")
+async def configure_prompt(
+    customer_id: str,
+    config: PromptConfig
+):
+    """
+    Adds custom instructions to the system prompt for a specific customer.
+    """
+    if customer_id not in customer_configs:
+        customer_configs[customer_id] = {}
+    customer_configs[customer_id]["custom_prompt"] = config.custom_prompt
+    return {"message": f"Custom prompt for customer '{customer_id}' has been updated."}
 
 @app.post("/chat/{threadId}")
 async def chat(
@@ -72,12 +96,14 @@ async def chat(
     try:
         user_input = request.query
         llm_provider = request.llm_provider
-        customer_id = request.customer_id # Get customer_id from the request body
+        customer_id = request.customer_id
 
-        # Create an agent executor tailored to the specific store owner (customer_id)
-        agent_executor = create_agent_executor(customer_id=customer_id, llm_provider=llm_provider)
+        agent_executor = create_agent_executor(
+            customer_id=customer_id,
+            customer_configs=customer_configs,
+            llm_provider=llm_provider
+        )
         
-        # Use the end-user's threadId to manage conversation history
         response = invoke_agent_with_memory(agent_executor, threadId, user_input, chat_memory)
         
         return {"response": response['output']}

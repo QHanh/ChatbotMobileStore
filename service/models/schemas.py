@@ -23,4 +23,13 @@ class ChatbotRequest(BaseModel):
     """Input model for the chatbot."""
     query: str = Field(description="The user's query for the chatbot.")
     customer_id: str = Field(description="The unique identifier for the store owner.")
-    llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.") 
+    llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
+
+class PersonaConfig(BaseModel):
+    """Input model for configuring the AI's persona."""
+    ai_name: str = Field(description="The name of the AI assistant, e.g., 'Mai'.")
+    ai_role: str = Field(description="The role of the AI assistant, e.g., 'nhân viên tư vấn điện thoại'.")
+
+class PromptConfig(BaseModel):
+    """Input model for adding custom system prompt instructions."""
+    custom_prompt: str = Field(description="Additional instructions to be added to the system prompt.") 

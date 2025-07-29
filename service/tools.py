@@ -1,16 +1,15 @@
 from langchain_core.tools import tool
+from langchain.tools import Tool
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Union
 from functools import partial
 
-# Import hàm tìm kiếm logic từ search_service
 from .search_service import search_iphones
 from .models.schemas import SearchInput, OrderInput
 
-# --- ĐỊNH NGHĨA TOOL TÌM KIẾM SẢN PHẨM ---
-@tool("search_iphones_tool", args_schema=SearchInput)
-def search_iphones_tool(
-    index_name: str, # Thêm tham số index_name
+# --- ĐỊNH NGHĨA LOGIC TÌM KIẾM SẢN PHẨM ---
+def search_iphones_logic(
+    index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -21,20 +20,8 @@ def search_iphones_tool(
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại iPhone có trong kho hàng của cửa hàng.
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy, hoặc khoảng giá để lọc kết quả.
-    Công cụ sẽ trả về danh sách các sản phẩm phù hợp với thông tin chi tiết.
-    **Nếu khách hàng không nói rõ tình trạng máy, hãy tìm kiếm tất cả các sản phẩm có trong kho.**
-    Lưu ý: Chỉ model là bắt buộc, các thông tin khác không bắt buộc.
-    Ví dụ:
-    - model: "iPhone 7"
-    - màu: "Đen"
-    - dung lượng: "256GB"
-    - tình trạng: "đẹp"
-    - giá từ: 5000000
-    - giá đến: 10000000
     """
-    print("--- LangChain Agent đã gọi công cụ tìm kiếm iPhone ---")
-    print(f"Tham số: model={model}, màu={mau_sac}, dung lượng={dung_luong}, tình trạng={tinh_trang_may}, giá từ={min_gia}, giá đến={max_gia}")
-    
+    print(f"--- Agent is calling the iPhone search tool for index: {index_name} ---")
     results = search_iphones(
         index_name=index_name,
         model=model,
@@ -97,13 +84,13 @@ def end_conversation_tool() -> str:
     print("--- LangChain Agent đã gọi công cụ kết thúc trò chuyện ---")
     return "Cảm ơn bạn đã quan tâm đến sản phẩm của cửa hàng. Hẹn gặp lại bạn lần sau!"
 
-# Danh sách các tool có sẵn để agent sử dụng
-available_tools = [
-    search_iphones_tool,
-    create_order_tool,
-    escalate_to_human_tool,
-    end_conversation_tool
-]
+# Danh sách các tool có sẵn để agent sử dụng - This list is no longer used
+# available_tools = [
+#     search_iphones_logic,
+#     create_order_tool,
+#     escalate_to_human_tool,
+#     end_conversation_tool
+# ]
 
 def create_customer_tools(customer_id: str) -> list:
     """
@@ -111,11 +98,17 @@ def create_customer_tools(customer_id: str) -> list:
     """
     index_name = f"product_{customer_id}"
     
-    customer_search_tool = partial(search_iphones_tool, index_name=index_name)
-    customer_search_tool.__doc__ = search_iphones_tool.__doc__
+    customer_search_func = partial(search_iphones_logic, index_name=index_name)
+    
+    search_tool = Tool(
+        name="search_iphones_tool",
+        func=customer_search_func,
+        description=search_iphones_logic.__doc__,
+        args_schema=SearchInput
+    )
     
     available_tools = [
-        tool(name="search_iphones_tool", args_schema=SearchInput, func=customer_search_tool),
+        search_tool,
         create_order_tool,
         escalate_to_human_tool,
         end_conversation_tool
