@@ -5,10 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# --- CẤU HÌNH ---
 ELASTIC_HOST = "http://localhost:9200"
 
-# --- KHỞI TẠO KẾT NỐI ---
 es_client = None
 
 def get_es_client():
@@ -27,7 +25,7 @@ def get_es_client():
             es_client = None
     return es_client
 
-def search_iphones(
+def search_products(
     index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -43,7 +41,7 @@ def search_iphones(
         model (Optional[str]): Tên model iPhone (ví dụ: "iPhone 15 Pro Max").
         mau_sac (Optional[str]): Màu sắc của sản phẩm.
         dung_luong (Optional[str]): Dung lượng lưu trữ (ví dụ: "256GB").
-        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "Mới", "Likenew").
+        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "Mới", "Cũ").
         min_gia (Optional[float]): Mức giá tối thiểu.
         max_gia (Optional[float]): Mức giá tối đa.
 
@@ -97,8 +95,56 @@ def search_iphones(
         print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
 
+def search_services(
+    index_name: str,
+    ten_dich_vu: Optional[str] = None,
+    ten_san_pham: Optional[str] = None,
+    chi_tiet_dich_vu: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Tìm kiếm dịch vụ trong Elasticsearch dựa trên các tiêu chí lọc.
+    Args:
+        ten_dich_vu (Optional[str]): Tên dịch vụ (ví dụ: "Thay pin").
+        ten_san_pham (Optional[str]): Tên sản phẩm đi kèm (ví dụ: "iPhone 15 Pro Max").
+        chi_tiet_dich_vu (Optional[str]): Chi tiết dịch vụ (ví dụ: "Pin Lithium").
+    """
+    es = get_es_client()
+    if not es:
+        return [{"error": "Không thể kết nối đến Elasticsearch."}]
+    
+    query = {
+        "bool": {
+            "must": [],
+            "should": [],
+            "filter": []
+        }
+    }
+    
+    if ten_dich_vu: 
+        query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
+    
+    if ten_san_pham:
+        query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
+    
+    if chi_tiet_dich_vu:
+        query["bool"]["should"].append({"match": {"chi_tiet_dich_vu": chi_tiet_dich_vu}})
+    
+    try:
+        response = es.search(
+            index=index_name,
+            query=query,
+            size=20
+        )
+        hits = [hit['_source'] for hit in response['hits']['hits']]
+        print(f"Tìm thấy {len(hits)} dịch vụ phù hợp.")
+        return hits
+    except Exception as e:
+        print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
+        return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
+    
+
 if __name__ == '__main__':
-    results = search_iphones(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+    results = search_products(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
     if results:
         for product in results:
             print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")

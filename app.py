@@ -2,7 +2,7 @@ from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from service.agent_service import create_agent_executor, invoke_agent_with_memory
 from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig
-from service.data_loader_service import create_customer_index, process_and_index_data
+from service.data_loader_service import create_product_index, process_and_index_product_data, create_service_index, process_and_index_service_data
 from elasticsearch import Elasticsearch
 import uvicorn
 import io
@@ -24,29 +24,59 @@ except ConnectionError as e:
     print(f"Elasticsearch connection error: {e}")
     es_client = None
 
-@app.post("/upload/{customer_id}")
-async def upload_data(
-    customer_id: str = Path(..., description="The unique identifier for the customer."),
-    file: UploadFile = File(..., description="The Excel file containing product data.")
+@app.post("/upload-product/{customer_id}")
+async def upload_product_data(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm.")
 ):
     """
-    Uploads an Excel file for a specific customer, creates a dedicated Elasticsearch index,
-    and populates it with the data from the file.
+    Tải lên file Excel cho khách hàng cụ thể, tạo index Elasticsearch riêng biệt,
+    và đưa dữ liệu từ file vào index.
     """
     if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     
     index_name = f"product_{customer_id}"
     
     try:
-        create_customer_index(es_client, index_name)
+        create_product_index(es_client, index_name)
         
         file_stream = io.BytesIO(await file.read())
         
-        success, failed = process_and_index_data(es_client, index_name, file_stream)
+        success, failed = process_and_index_product_data(es_client, index_name, file_stream)
         
         return {
-            "message": f"Data for customer '{customer_id}' has been processed.",
+            "message": f"Dữ liệu sản phẩm cho khách hàng '{customer_id}' đã được xử lý.",
+            "index_name": index_name,
+            "successfully_indexed": success,
+            "failed_to_index": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload-service/{customer_id}")
+async def upload_service_data(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ.")
+):
+    """
+    Tải lên file Excel cho khách hàng cụ thể, tạo index Elasticsearch riêng biệt,
+    và đưa dữ liệu từ file vào index.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    index_name = f"service_{customer_id}"
+    
+    try:
+        create_service_index(es_client, index_name)
+        
+        file_stream = io.BytesIO(await file.read())
+        
+        success, failed = process_and_index_service_data(es_client, index_name, file_stream)
+        
+        return {
+            "message": f"Dữ liệu dịch vụ cho khách hàng '{customer_id}' đã được xử lý.",
             "index_name": index_name,
             "successfully_indexed": success,
             "failed_to_index": failed
@@ -60,12 +90,12 @@ async def configure_persona(
     config: PersonaConfig
 ):
     """
-    Configures the AI's persona (name and role) for a specific customer.
+    Cấu hình vai trò và tên cho chatbot AI cho khách hàng.
     """
     if customer_id not in customer_configs:
         customer_configs[customer_id] = {}
     customer_configs[customer_id]["persona"] = config.dict()
-    return {"message": f"Persona for customer '{customer_id}' has been updated."}
+    return {"message": f"Vai trò và tên cho chatbot AI của khách hàng '{customer_id}' đã được cập nhật."}
 
 @app.post("/config/prompt/{customer_id}")
 async def configure_prompt(
@@ -73,25 +103,25 @@ async def configure_prompt(
     config: PromptConfig
 ):
     """
-    Adds custom instructions to the system prompt for a specific customer.
+    Thêm system prompt tùy chỉnh vào hệ thống prompt cho khách hàng.
     """
     if customer_id not in customer_configs:
         customer_configs[customer_id] = {}
     customer_configs[customer_id]["custom_prompt"] = config.custom_prompt
-    return {"message": f"Custom prompt for customer '{customer_id}' has been updated."}
+    return {"message": f"System prompt tùy chỉnh cho khách hàng '{customer_id}' đã được cập nhật."}
 
 @app.post("/chat/{threadId}")
 async def chat(
     request: ChatbotRequest,
-    threadId: str = Path(..., description="The unique identifier for the chat session with an end-user.")
+    threadId: str = Path(..., description="Mã phiên chat với người dùng.")
 ):
     """
-    Handles a chat request from an end-user.
-    - `threadId` tracks the conversation session.
-    - `customer_id` from the request body determines which store's data to use.
+    Xử lý yêu cầu chat từ người dùng.
+    - `threadId` theo dõi phiên trò chuyện.
+    - `customer_id` xác định dữ liệu cửa hàng nào được sử dụng.
     """
     if not threadId:
-        raise HTTPException(status_code=400, detail="Thread ID is required.")
+        raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
 
     try:
         user_input = request.query

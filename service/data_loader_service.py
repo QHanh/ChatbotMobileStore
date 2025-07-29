@@ -7,13 +7,13 @@ import warnings
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def create_customer_index(es_client: Elasticsearch, index_name: str):
+def create_product_index(es_client: Elasticsearch, index_name: str):
     """
-    Creates a new Elasticsearch index with a specific mapping for customer products.
-    If the index already exists, it's deleted and recreated.
+    Tạo index mới trong Elasticsearch với mapping cho sản phẩm của khách hàng.
+    Nếu index đã tồn tại, nó sẽ bị xóa và tạo lại.
     """
     if es_client.indices.exists(index=index_name):
-        print(f"⚠️ Index '{index_name}' already exists. Deleting old index.")
+        print(f"⚠️ Index '{index_name}' đã tồn tại. Đang xóa index cũ.")
         es_client.indices.delete(index=index_name)
 
     mapping = {
@@ -41,13 +41,13 @@ def create_customer_index(es_client: Elasticsearch, index_name: str):
         }
     }
 
-    print(f"🛠 Creating new index '{index_name}' with mapping...")
+    print(f"🛠 Đang tạo index '{index_name}' với mapping...")
     es_client.indices.create(index=index_name, mappings=mapping)
-    print("✅ Index created successfully.")
+    print("✅ Thành công tạo index.")
 
-def process_and_index_data(es_client: Elasticsearch, index_name: str, file_stream):
+def process_and_index_product_data(es_client: Elasticsearch, index_name: str, file_stream):
     """
-    Reads product data from an Excel file stream, processes it, and indexes it into Elasticsearch.
+    Đọc dữ liệu sản phẩm từ file Excel, xử lý và tạo index trong Elasticsearch.
     """
     try:
         df = pd.read_excel(file_stream, sheet_name='TONGHOP')
@@ -80,7 +80,7 @@ def process_and_index_data(es_client: Elasticsearch, index_name: str, file_strea
     total_rows = len(df)
 
     for index, row in df.iterrows():
-        print(f"➡️ Processing row {index + 1}/{total_rows}: {row['model']}")
+        print(f"➡️ Đang xử lý dòng {index + 1}/{total_rows}: {row['model']}")
         doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
 
         action = {
@@ -90,15 +90,84 @@ def process_and_index_data(es_client: Elasticsearch, index_name: str, file_strea
         }
         actions.append(action)
 
-    print(f"\n🚀 Indexing {len(actions)} products...")
+    print(f"\n🚀 Đang tạo index {len(actions)} sản phẩm...")
     try:
         success, failed = bulk(es_client, actions, raise_on_error=False)
-        print(f"✅ Successfully indexed: {success} products.")
+        print(f"✅ Thành công tạo index: {success} sản phẩm.")
         if failed:
-            print(f"❌ Failed to index: {len(failed)} products.")
+            print(f"❌ Thất bại tạo index: {len(failed)} sản phẩm.")
             for i, fail_info in enumerate(failed[:5]):
                 error = fail_info.get('index', {}).get('error', {})
                 print(f"  - Error {i+1}: {error.get('type', 'unknown')} - {error.get('reason', 'no reason')}")
         return success, len(failed)
     except Exception as e:
-        raise Exception(f"An error occurred during bulk indexing: {e}") 
+        raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")
+    
+def create_service_index(es_client: Elasticsearch, index_name: str):
+    """
+    Tạo index mới trong Elasticsearch với mapping cho dịch vụ của khách hàng.
+    Nếu index đã tồn tại, nó sẽ bị xóa và tạo lại.
+    """
+    if es_client.indices.exists(index=index_name):
+        print(f"⚠️ Index '{index_name}' đã tồn tại. Đang xóa index cũ.")
+        es_client.indices.delete(index=index_name)
+
+    mapping = {
+        "properties": {
+            "ma_dich_vu": {"type": "keyword"},
+            "ten_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "ten_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "chi_tiet_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "gia": {"type": "keyword"},
+            "bao_hanh": {"type": "keyword"},
+            "thoi_gian_thuc_hien": {"type": "keyword"},
+            "ghi_chu": {"type": "text"},
+        }
+    }
+
+    print(f"🛠 Đang tạo index '{index_name}' với mapping...")
+    es_client.indices.create(index=index_name, mappings=mapping)
+    print("✅ Thành công tạo index.")
+
+def process_and_index_service_data(es_client: Elasticsearch, index_name: str, file_stream):
+    """
+    Đọc dữ liệu dịch vụ từ file Excel, xử lý và tạo index trong Elasticsearch.
+    """
+    try:
+        df = pd.read_excel(file_stream, sheet_name='DICHVU')
+        df.columns = [
+            'ma_dich_vu', 'ten_dich_vu', 'ten_san_pham', 'chi_tiet_dich_vu', 'gia', 'bao_hanh', 'thoi_gian_thuc_hien', 'ghi_chu'
+        ]
+        df = df.dropna(subset=['ma_dich_vu', 'ten_dich_vu'])
+        df['gia'] = pd.to_numeric(df['gia'], errors='coerce').fillna(0).astype(float)
+    except FileNotFoundError:
+        raise Exception(f"Lỗi: Không thể đọc file stream.")
+    except Exception as e:
+        raise Exception(f"Lỗi đọc file Excel: {e}")
+    
+    actions = []
+    total_rows = len(df)
+
+    for index, row in df.iterrows():
+        print(f"➡️ Đang xử lý dòng {index + 1}/{total_rows}: {row['ten_dich_vu']}")
+        doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
+
+        action = {
+            "_index": index_name,
+            "_id": doc['ma_dich_vu'],
+            "_source": doc
+        }
+        actions.append(action)
+
+    print(f"\n🚀 Đang tạo index {len(actions)} dịch vụ...")
+    try:
+        success, failed = bulk(es_client, actions, raise_on_error=False)
+        print(f"✅ Thành công tạo index: {success} dịch vụ.")
+        if failed:
+            print(f"❌ Thất bại tạo index: {len(failed)} dịch vụ.")
+            for i, fail_info in enumerate(failed[:5]):
+                error = fail_info.get('index', {}).get('error', {})
+                print(f"  - Error {i+1}: {error.get('type', 'unknown')} - {error.get('reason', 'no reason')}")
+        return success, len(failed)
+    except Exception as e:
+        raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")

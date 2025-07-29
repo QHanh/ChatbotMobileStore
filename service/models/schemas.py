@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional
 
-class SearchInput(BaseModel):
+class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
     # query_text: Optional[str] = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, ví dụ: 'iPhone màu xanh giá rẻ'.")
     model: Optional[str] = Field(description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
@@ -11,10 +11,24 @@ class SearchInput(BaseModel):
     min_gia: Optional[float] = Field(description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(description="Mức giá tối đa.")
 
-class OrderInput(BaseModel):
-    """Input model for the create_order_tool."""
+class SearchServiceInput(BaseModel):
+    """Input model for the search_services_tool."""
+    ten_dich_vu: Optional[str] = Field(description="Tên dịch vụ, ví dụ: 'Thay pin'.")
+    ten_san_pham: Optional[str] = Field(description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
+    chi_tiet_dich_vu: Optional[str] = Field(description="Chi tiết dịch vụ, ví dụ: 'Pin Lithium'.")
+
+class OrderProductInput(BaseModel):
+    """Input model for the create_order_product_tool."""
     ma_san_pham: str = Field(description="Mã sản phẩm khách hàng đặt.")
     so_luong: int = Field(description="Số lượng sản phẩm muốn mua.")
+    ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
+    so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
+    dia_chi: str = Field(description="Địa chỉ người mua.")
+
+class OrderServiceInput(BaseModel):
+    """Input model for the create_order_service_tool."""
+    ma_dich_vu: str = Field(description="Mã dịch vụ khách hàng đặt.")
+    so_luong: int = Field(description="Số lượng dịch vụ muốn mua.")
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
     dia_chi: str = Field(description="Địa chỉ người mua.")

@@ -1,14 +1,12 @@
 from langchain_core.tools import tool
 from langchain.tools import StructuredTool
-from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any, Union
 from functools import partial
 
-from .search_service import search_iphones
-from .models.schemas import SearchInput, OrderInput
+from .search_service import search_products, search_services
+from .models.schemas import SearchProductInput, SearchServiceInput, OrderProductInput, OrderServiceInput
 
-# --- ĐỊNH NGHĨA LOGIC TÌM KIẾM SẢN PHẨM ---
-def search_iphones_logic(
+def search_products_logic(
     index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -18,11 +16,11 @@ def search_iphones_logic(
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại iPhone có trong kho hàng của cửa hàng.
+    Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại có trong kho hàng của cửa hàng.
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy, hoặc khoảng giá để lọc kết quả.
     """
-    print(f"--- Agent is calling the iPhone search tool for index: {index_name} ---")
-    results = search_iphones(
+    print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho index: {index_name} ---")
+    results = search_products(
         index_name=index_name,
         model=model,
         mau_sac=mau_sac,
@@ -33,9 +31,30 @@ def search_iphones_logic(
     )
     return results
 
-@tool("create_order_tool", args_schema=OrderInput)
-def create_order_tool(
+def search_services_logic(
+    index_name: str,
+    ten_dich_vu: Optional[str] = None,
+    ten_san_pham: Optional[str] = None,
+    chi_tiet_dich_vu: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
+    Cung cấp các tiêu chí cụ thể như tên dịch vụ, tên sản phẩm điện thoại được sửa chữa, chi tiết dịch vụ để lọc kết quả.
+    """
+    print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho index: {index_name} ---")
+
+    results = search_services(
+        index_name=index_name,
+        ten_dich_vu=ten_dich_vu,
+        ten_san_pham=ten_san_pham,
+        chi_tiet_dich_vu=chi_tiet_dich_vu
+    )
+    return results
+
+@tool("create_order_product_tool", args_schema=OrderProductInput)
+def create_order_product_tool(
     ma_san_pham: str,
+    ten_san_pham: str,
     so_luong: int,
     ten_khach_hang: str,
     so_dien_thoai: str,
@@ -43,19 +62,51 @@ def create_order_tool(
 ) -> Dict[str, Union[str, int]]:
     """
     Sử dụng công cụ này khi người dùng muốn đặt mua một sản phẩm.
-    Cần thu thập đủ thông tin: mã sản phẩm (ma_san_pham), số lượng, tên khách hàng, số điện thoại và địa chỉ giao hàng.
+    Cần thu thập đủ thông tin: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng, tên khách hàng, số điện thoại và địa chỉ khách hàng.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
-    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng ---")
-    print(f"Thông tin đơn hàng: Mã SP={ma_san_pham}, Số lượng={so_luong}, Tên KH={ten_khach_hang}, SĐT={so_dien_thoai}, Địa chỉ={dia_chi}")
+    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
+    print(f"Thông tin đơn hàng sản phẩm: Mã SP={ma_san_pham}, Tên SP={ten_san_pham}, Số lượng={so_luong}, Tên KH={ten_khach_hang}, SĐT={so_dien_thoai}, Địa chỉ={dia_chi}")
     
-    # --- Logic giả lập tạo đơn hàng ---
-    # Trong thực tế, bạn sẽ gọi API hoặc lưu vào database ở đây.
     order_id = f"DH_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
     order_detail = {
         "order_id": order_id,
         "ma_san_pham": ma_san_pham,
+        "ten_san_pham": ten_san_pham,
         "so_luong": so_luong,
+        "ten_khach_hang": ten_khach_hang,
+        "so_dien_thoai": so_dien_thoai,
+    }
+
+    return {
+        "status": "success",
+        "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
+        "order_detail": order_detail
+    }
+
+@tool("create_order_service_tool", args_schema=OrderServiceInput)
+def create_order_service_tool(
+    ma_dich_vu: str,
+    ten_dich_vu: str,
+    ten_san_pham: str,
+    ten_khach_hang: str,
+    so_dien_thoai: str,
+    dia_chi: str
+) -> Dict[str, Union[str, int]]:
+    """
+    Sử dụng công cụ này khi người dùng muốn đặt một dịch vụ sửa chữa điện thoại.
+    Cần thu thập đủ thông tin: mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham), tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
+    """
+    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
+    print(f"Thông tin đơn hàng dịch vụ: Mã DV={ma_dich_vu}, Tên DV={ten_dich_vu}, Tên SP={ten_san_pham}, Tên KH={ten_khach_hang}, SĐT={so_dien_thoai}, Địa chỉ={dia_chi}")
+
+    order_id = f"DH_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
+    order_detail = {
+        "order_id": order_id,
+        "ma_dich_vu": ma_dich_vu,
+        "ten_dich_vu": ten_dich_vu,
+        "ten_san_pham": ten_san_pham,
         "ten_khach_hang": ten_khach_hang,
         "so_dien_thoai": so_dien_thoai,
     }
@@ -72,8 +123,8 @@ def escalate_to_human_tool() -> str:
     Sử dụng công cụ này khi người dùng yêu cầu được nói chuyện với nhân viên tư vấn, hoặc khi các công cụ khác không thể giải quyết được yêu cầu phức tạp của họ.
     Công cụ này sẽ kết nối người dùng đến một nhân viên thật.
     """
-    print("--- LangChain Agent đã gọi công cụ chuyển cho người thật ---")
-    return "Đang kết nối bạn với nhân viên tư vấn. Vui lòng chờ trong giây lát..."
+    print("--- Agent đã gọi công cụ chuyển cho người thật ---")
+    return "Đang kết nối anh/chị với nhân viên tư vấn. Anh/chị vui lòng chờ trong giây lát..."
 
 @tool
 def end_conversation_tool() -> str:
@@ -81,38 +132,39 @@ def end_conversation_tool() -> str:
     Sử dụng công cụ này khi người dùng chào tạm biệt, cảm ơn hoặc không có yêu cầu nào khác.
     Công cụ này sẽ kết thúc cuộc trò chuyện một cách lịch sự.
     """
-    print("--- LangChain Agent đã gọi công cụ kết thúc trò chuyện ---")
-    return "Cảm ơn bạn đã quan tâm đến sản phẩm của cửa hàng. Hẹn gặp lại bạn lần sau!"
+    print("--- Agent đã gọi công cụ kết thúc trò chuyện ---")
+    return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
 
-# Danh sách các tool có sẵn để agent sử dụng - This list is no longer used
-# available_tools = [
-#     search_iphones_logic,
-#     create_order_tool,
-#     escalate_to_human_tool,
-#     end_conversation_tool
-# ]
 
 def create_customer_tools(customer_id: str) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    index_name = f"product_{customer_id}"
+    index_name_product = f"product_{customer_id}"
+    index_name_service = f"service_{customer_id}"
+        
+    customer_search_product_func = partial(search_products_logic, index_name=index_name_product)
+    customer_search_service_func = partial(search_services_logic, index_name=index_name_service)
     
-    # Sử dụng partial để tạo một phiên bản của hàm logic tìm kiếm với index_name đã được gán sẵn
-    customer_search_func = partial(search_iphones_logic, index_name=index_name)
-    
-    # Sử dụng StructuredTool để đảm bảo agent hiểu đúng cấu trúc tham số
-    search_tool = StructuredTool.from_function(
-        func=customer_search_func,
-        name="search_iphones_tool",
-        description=search_iphones_logic.__doc__,
-        args_schema=SearchInput
+    search_product_tool = StructuredTool.from_function(
+        func=customer_search_product_func,
+        name="search_products_tool",
+        description=search_products_logic.__doc__,
+        args_schema=SearchProductInput
     )
     
-    # Trả về danh sách các tool, bao gồm cả tool tìm kiếm đã được tùy chỉnh
+    search_service_tool = StructuredTool.from_function(
+        func=customer_search_service_func,
+        name="search_services_tool",
+        description=search_services_logic.__doc__,
+        args_schema=SearchServiceInput
+    )
+    
     available_tools = [
-        search_tool,
-        create_order_tool,
+        search_product_tool,
+        search_service_tool,
+        create_order_product_tool,
+        create_order_service_tool,
         escalate_to_human_tool,
         end_conversation_tool
     ]
