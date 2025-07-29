@@ -47,3 +47,35 @@ class PersonaConfig(BaseModel):
 class PromptConfig(BaseModel):
     """Input model for adding custom system prompt instructions."""
     custom_prompt: str = Field(description="Additional instructions to be added to the system prompt.") 
+
+class ProductRow(BaseModel):
+    ma_san_pham: str
+    model: str
+    mau_sac: Optional[str] = None
+    dung_luong: Optional[str] = None
+    bao_hanh: Optional[str] = None
+    tinh_trang_may: Optional[str] = None
+    tinh_trang_pin: Optional[float] = None
+    gia: Optional[float] = None
+    ton_kho: Optional[int] = None
+    ghi_chu: Optional[str] = None
+    ra_mat: Optional[str] = None
+    man_hinh: Optional[str] = None
+    chip_ram: Optional[str] = None
+    camera: Optional[str] = None
+    pin_mah: Optional[str] = None
+    ket_noi_hdh: Optional[str] = None
+    mau_sac_tieng_anh: Optional[str] = None
+    mau_sac_available: Optional[str] = None
+    dung_luong_available: Optional[str] = None
+    kich_thuoc_trong_luong: Optional[str] = None
+
+class ServiceRow(BaseModel):
+    ma_dich_vu: str
+    ten_dich_vu: str
+    ten_san_pham: Optional[str] = None
+    chi_tiet_dich_vu: Optional[str] = None
+    gia: Optional[float] = None
+    bao_hanh: Optional[str] = None
+    thoi_gian_thuc_hien: Optional[str] = None
+    ghi_chu: Optional[str] = None 

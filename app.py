@@ -1,8 +1,12 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from service.agent_service import create_agent_executor, invoke_agent_with_memory
-from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig
-from service.data_loader_service import create_product_index, process_and_index_product_data, create_service_index, process_and_index_service_data
+from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow
+from service.data_loader_service import (
+    create_product_index, process_and_index_product_data, 
+    create_service_index, process_and_index_service_data,
+    index_single_product, index_single_service
+)
 from elasticsearch import Elasticsearch
 import uvicorn
 import io
@@ -143,6 +147,57 @@ async def insert_service_data(
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert-product-row/{customer_id}")
+async def insert_product_row(
+    customer_id: str,
+    product_row: ProductRow
+):
+    """
+    Inserts a single product row into the customer's product index.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    
+    index_name = f"product_{customer_id}"
+    
+    if not es_client.indices.exists(index=index_name):
+        raise HTTPException(status_code=404, detail=f"Index '{index_name}' does not exist.")
+
+    try:
+        response = index_single_product(es_client, index_name, product_row.dict())
+        return {
+            "message": "Product row inserted successfully.",
+            "document_id": response['_id']
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert-service-row/{customer_id}")
+async def insert_service_row(
+    customer_id: str,
+    service_row: ServiceRow
+):
+    """
+    Inserts a single service row into the customer's service index.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    
+    index_name = f"service_{customer_id}"
+    
+    if not es_client.indices.exists(index=index_name):
+        raise HTTPException(status_code=404, detail=f"Index '{index_name}' does not exist.")
+
+    try:
+        response = index_single_service(es_client, index_name, service_row.dict())
+        return {
+            "message": "Service row inserted successfully.",
+            "document_id": response['_id']
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/config/persona/{customer_id}")
 async def configure_persona(

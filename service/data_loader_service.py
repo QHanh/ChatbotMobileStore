@@ -168,3 +168,38 @@ def process_and_index_service_data(es_client: Elasticsearch, index_name: str, fi
         return success, len(failed)
     except Exception as e:
         raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")
+
+def index_single_product(es_client: Elasticsearch, index_name: str, product_data: dict):
+    """
+    Indexes a single product document into the specified Elasticsearch index.
+    """
+    try:
+        # The 'id' for the document is crucial for updates.
+        # Here, we use a combination of product code and stock, assuming it's unique.
+        document_id = f"{product_data['ma_san_pham']}_{product_data.get('ton_kho', 0)}"
+        response = es_client.index(
+            index=index_name,
+            id=document_id,
+            document=product_data
+        )
+        print(f"✅ Successfully indexed product: {response['_id']}")
+        return response
+    except Exception as e:
+        raise Exception(f"An error occurred while indexing the product: {e}")
+
+def index_single_service(es_client: Elasticsearch, index_name: str, service_data: dict):
+    """
+    Indexes a single service document into the specified Elasticsearch index.
+    """
+    try:
+        # The 'id' for the document is its service code.
+        document_id = service_data['ma_dich_vu']
+        response = es_client.index(
+            index=index_name,
+            id=document_id,
+            document=service_data
+        )
+        print(f"✅ Successfully indexed service: {response['_id']}")
+        return response
+    except Exception as e:
+        raise Exception(f"An error occurred while indexing the service: {e}")
