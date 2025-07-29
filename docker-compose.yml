@@ -3,7 +3,7 @@ version: '3.8'
 services:
   elasticsearch:
     image: elasticsearch:9.0.3
-    container_name: elasticsearch_service
+    container_name: elasticsearch
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
@@ -12,6 +12,24 @@ services:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
-      
+    networks:
+      - elasticnet
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:9.0.3
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - xpack.security.enabled=false
+    depends_on:
+      - elasticsearch
+    networks:
+      - elasticnet
+
 volumes:
   esdata:
+
+networks:
+  elasticnet:
