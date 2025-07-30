@@ -59,6 +59,7 @@ class ProductRow(BaseModel):
     dung_luong: Optional[str] = None
     bao_hanh: Optional[str] = None
     tinh_trang_may: Optional[str] = None
+    loai_thiet_bi: Optional[str] = None
     tinh_trang_pin: Optional[float] = None
     gia: Optional[float] = None
     ton_kho: Optional[int] = None

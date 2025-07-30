@@ -30,6 +30,7 @@ def search_products(
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
     tinh_trang_may: Optional[str] = None,
+    loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
@@ -40,7 +41,8 @@ def search_products(
         model (Optional[str]): Tên model iPhone (ví dụ: "iPhone 15 Pro Max").
         mau_sac (Optional[str]): Màu sắc của sản phẩm.
         dung_luong (Optional[str]): Dung lượng lưu trữ (ví dụ: "256GB").
-        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "Mới", "Cũ").
+        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "trầy xước").
+        loai_thiet_bi (Optional[str]): Loại thiết bị (ví dụ: "Cũ", "Mới").
         min_gia (Optional[float]): Mức giá tối thiểu.
         max_gia (Optional[float]): Mức giá tối đa.
 
@@ -66,6 +68,9 @@ def search_products(
     if mau_sac:
         # 'term' is good for exact matches on keywords like color.
         query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
+
+    if loai_thiet_bi:
+        query["bool"]["filter"].append({"term": {"loai_thiet_bi": loai_thiet_bi}})
         
     if dung_luong:
         query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})

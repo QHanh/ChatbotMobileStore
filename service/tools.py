@@ -12,12 +12,13 @@ def search_products_logic(
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
     tinh_trang_may: Optional[str] = None,
+    loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại có trong kho hàng của cửa hàng.
-    Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy, hoặc khoảng giá để lọc kết quả.
+    Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy (trầy xước, xước nhẹ), loại thiết bị (Cũ, Mới), hoặc khoảng giá để lọc kết quả.
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho index: {index_name} ---")
     results = search_products(
@@ -26,6 +27,7 @@ def search_products_logic(
         mau_sac=mau_sac,
         dung_luong=dung_luong,
         tinh_trang_may=tinh_trang_may,
+        loai_thiet_bi=loai_thiet_bi,
         min_gia=min_gia,
         max_gia=max_gia
     )

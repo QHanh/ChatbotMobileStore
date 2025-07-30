@@ -25,6 +25,7 @@ def create_product_index(es_client: Elasticsearch, index_name: str):
             "dung_luong": {"type": "keyword"},
             "bao_hanh": {"type": "keyword"},
             "tinh_trang_may": {"type": "keyword"},
+            "loai_thiet_bi": {"type": "keyword"},
             "tinh_trang_pin": {"type": "float"},
             "gia": {"type": "double"},
             "ton_kho": {"type": "integer"},
@@ -54,7 +55,7 @@ def process_and_index_product_data(es_client: Elasticsearch, index_name: str, fi
         df = pd.read_excel(io.BytesIO(file_content))
         df.columns = [
             'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
-            'tinh_trang_may', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
+            'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
             'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
             'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
             'kich_thuoc_trong_luong'
