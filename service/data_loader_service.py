@@ -24,7 +24,7 @@ def create_product_index(es_client: Elasticsearch, index_name: str):
             "mau_sac": {"type": "keyword"},
             "dung_luong": {"type": "keyword"},
             "bao_hanh": {"type": "keyword"},
-            "tinh_trang_may": {"type": "keyword"},
+            "tinh_trang_may": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "loai_thiet_bi": {"type": "keyword"},
             "tinh_trang_pin": {"type": "float"},
             "gia": {"type": "double"},

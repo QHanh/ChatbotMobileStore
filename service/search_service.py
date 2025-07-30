@@ -70,7 +70,7 @@ def search_products(
         query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
 
     if loai_thiet_bi:
-        query["bool"]["filter"].append({"term": {"loai_thiet_bi": loai_thiet_bi}})
+        query["bool"]["filter"].append({"match": {"loai_thiet_bi": loai_thiet_bi}})
         
     if dung_luong:
         query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})
