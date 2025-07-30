@@ -32,11 +32,13 @@ def create_agent_executor(
     config = customer_configs.get(customer_id, {})
     persona = config.get("persona", {"ai_name": "Mai", "ai_role": "trợ lý ảo"})
     custom_prompt_text = config.get("custom_prompt", "")
-    service_feature_enabled = config.get("service_feature_enabled", False)
+    service_feature_enabled = config.get("service_feature_enabled", True) # Mặc định bật
 
     customer_tools = create_customer_tools(customer_id, service_feature_enabled)
 
-    # 1. Base instructions with the ultimate rule
+    # === THAY ĐỔI LỚN: CẤU TRÚC LẠI HOÀN TOÀN PROMPT ===
+
+    # 1. Hướng dẫn cơ bản với Quy tắc Tối thượng
     base_instructions = f"""
     Bạn là một trợ lý bán hàng của một cửa hàng, đóng vai một {persona['ai_role']} am hiểu và thân thiện tên là {persona['ai_name']}.
     Nhiệm vụ của bạn là tra cứu thông tin sản phẩm và dịch vụ **CHỈ** từ kho dữ liệu của cửa hàng bằng các công cụ được cung cấp.
@@ -44,11 +46,11 @@ def create_agent_executor(
     **QUY TẮC TỐI THƯỢNG (TUYỆT ĐỐI TUÂN THỦ):**
     1.  **BẠN KHÔNG CÓ KIẾN THỨC RIÊNG.** Toàn bộ kiến thức của bạn về sản phẩm, dịch vụ, và tồn kho đều đến từ công cụ.
     2.  **LUÔN DÙNG CÔNG CỤ.** Với **MỌI** câu hỏi của khách hàng liên quan đến một sản phẩm hoặc dịch vụ (ví dụ: "iPhone 16", "thay pin"), bạn phải **NGAY LẬP TỨC** sử dụng công cụ tìm kiếm.
-    3.  **KHÔNG GIẢ ĐỊNH.** Kể cả khi một sản phẩm nghe có vẻ không có thật (như "iPhone 16"), bạn vẫn phải dùng công cụ để kiểm tra. Nếu công cụ không tìm thấy gì, nghĩa là cửa hàng không có sản phẩm đó.
+    3.  **KHÔNG GIẢ ĐỊNH.** Kể cả khi một sản phẩm nghe có vẻ không có thật (như trong hình ảnh "iPhone 16" vào tháng 7/2025), bạn vẫn phải dùng công cụ để kiểm tra. Nếu công cụ không tìm thấy gì, nghĩa là cửa hàng không có sản phẩm đó.
     4.  **KHÔNG TIẾT LỘ VAI TRÒ.** Nghiêm cấm tuyệt đối tiết lộ bạn là AI hay bot.
     """
 
-    # 2. Workflow instructions based on features
+    # 2. Hướng dẫn quy trình làm việc dựa trên tính năng
     if service_feature_enabled:
         workflow_instructions = """
     **Quy trình làm việc:**
@@ -59,7 +61,7 @@ def create_agent_executor(
         - Nếu có kết quả, trình bày thông tin cho khách.
     4.  Khi khách chốt đơn, sử dụng công cụ tạo đơn hàng tương ứng.
         """
-    else:  # Product-only workflow
+    else:  # Quy trình chỉ cho sản phẩm
         workflow_instructions = """
     **Quy trình làm việc:**
     1.  Với mọi câu hỏi về sản phẩm, dùng `search_products_tool`.
@@ -75,7 +77,8 @@ def create_agent_executor(
         - **Kết thúc trò chuyện:** Khi khách hàng không còn nhu cầu, hãy sử dụng `end_conversation_tool`.
     """
 
-    final_system_prompt = "\\n".join([
+    # Nối các phần lại với nhau
+    final_system_prompt = "\n".join([
         base_instructions,
         workflow_instructions,
         custom_prompt_text,
@@ -107,13 +110,13 @@ def get_session_history(session_id: str, memory: dict):
         memory[session_id] = []
     return memory[session_id]
 
-def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
+async def async_invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
     """
-    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện.
+    Gọi agent bất đồng bộ với input của người dùng và quản lý lịch sử trò chuyện.
     """
     chat_history = get_session_history(session_id, memory)
     
-    response = agent_executor.invoke({
+    response = await agent_executor.ainvoke({
         "input": user_input,
         "chat_history": chat_history
     })
@@ -139,6 +142,6 @@ if __name__ == '__main__':
         if user_input.lower() in ['exit', 'quit']:
             break
         
-        response = invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
+        response = async_invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
         
         print(f"Agent: {response['output']}") 
