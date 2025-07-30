@@ -60,9 +60,11 @@ def search_products(
     }
 
     if model:
+        # Use 'match' for full-text search on the model name, which is more flexible.
         query["bool"]["must"].append({"match": {"model": model}})
     
     if mau_sac:
+        # 'term' is good for exact matches on keywords like color.
         query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
         
     if dung_luong:
@@ -85,7 +87,7 @@ def search_products(
         response = es.search(
             index=index_name,
             query=query,
-            size=20
+            size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp.")
@@ -136,7 +138,7 @@ def search_services(
         response = es.search(
             index=index_name,
             query=query,
-            size=20
+            size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} dịch vụ phù hợp.")
