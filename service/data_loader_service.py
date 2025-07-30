@@ -84,7 +84,7 @@ def process_and_index_product_data(es_client: Elasticsearch, index_name: str, fi
 
         action = {
             "_index": index_name,
-            "_id": doc['ma_san_pham'] + "_" + str(doc['ton_kho']),
+            "_id": doc['ma_san_pham'],
             "_source": doc
         }
         actions.append(action)
@@ -174,9 +174,7 @@ def index_single_product(es_client: Elasticsearch, index_name: str, product_data
     Indexes a single product document into the specified Elasticsearch index.
     """
     try:
-        # The 'id' for the document is crucial for updates.
-        # Here, we use a combination of product code and stock, assuming it's unique.
-        document_id = f"{product_data['ma_san_pham']}_{product_data.get('ton_kho', 0)}"
+        document_id = product_data['ma_san_pham']
         response = es_client.index(
             index=index_name,
             id=document_id,
@@ -192,14 +190,71 @@ def index_single_service(es_client: Elasticsearch, index_name: str, service_data
     Indexes a single service document into the specified Elasticsearch index.
     """
     try:
-        # The 'id' for the document is its service code.
         document_id = service_data['ma_dich_vu']
         response = es_client.index(
             index=index_name,
             id=document_id,
             document=service_data
         )
-        print(f"✅ Successfully indexed service: {response['_id']}")
+        print(f"✅ Thành công tạo index dịch vụ: {response['_id']}")
         return response
     except Exception as e:
         raise Exception(f"An error occurred while indexing the service: {e}")
+
+def update_product_in_index(es_client: Elasticsearch, index_name: str, product_id: str, product_data: dict):
+    """
+    Updates a product document in the specified Elasticsearch index.
+    """
+    try:
+        response = es_client.update(
+            index=index_name,
+            id=product_id,
+            doc=product_data
+        )
+        print(f"✅ Thành công cập nhật sản phẩm: {response['_id']}")
+        return response
+    except Exception as e:
+        raise Exception(f"An error occurred while updating the product: {e}")
+
+def delete_product_from_index(es_client: Elasticsearch, index_name: str, product_id: str):
+    """
+    Xóa một tài liệu sản phẩm từ index Elasticsearch đã chỉ định.
+    """
+    try:
+        response = es_client.delete(
+            index=index_name,
+            id=product_id
+        )
+        print(f"✅ Thành công xóa sản phẩm: {product_id}")
+        return response
+    except Exception as e:
+        raise Exception(f"Một lỗi xảy ra trong quá trình xóa sản phẩm: {e}")
+
+def update_service_in_index(es_client: Elasticsearch, index_name: str, service_id: str, service_data: dict):
+    """
+    Cập nhật một tài liệu dịch vụ trong index Elasticsearch đã chỉ định.
+    """
+    try:
+        response = es_client.update(
+            index=index_name,
+            id=service_id,
+            doc=service_data
+        )
+        print(f"✅ Thành công cập nhật dịch vụ: {response['_id']}")
+        return response
+    except Exception as e:
+        raise Exception(f"Một lỗi xảy ra trong quá trình cập nhật dịch vụ: {e}")
+
+def delete_service_from_index(es_client: Elasticsearch, index_name: str, service_id: str):
+    """
+    Xóa một tài liệu dịch vụ từ index Elasticsearch đã chỉ định.
+    """
+    try:
+        response = es_client.delete(
+            index=index_name,
+            id=service_id
+        )
+        print(f"✅ Thành công xóa dịch vụ: {service_id}")
+        return response
+    except Exception as e:
+        raise Exception(f"Một lỗi xảy ra trong quá trình xóa dịch vụ: {e}")

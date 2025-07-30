@@ -5,7 +5,9 @@ from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, 
 from service.data_loader_service import (
     create_product_index, process_and_index_product_data, 
     create_service_index, process_and_index_service_data,
-    index_single_product, index_single_service
+    index_single_product, index_single_service,
+    update_product_in_index, delete_product_from_index,
+    update_service_in_index, delete_service_from_index
 )
 from elasticsearch import Elasticsearch
 import uvicorn
@@ -195,6 +197,64 @@ async def insert_service_row(
             "message": "Service row inserted successfully.",
             "document_id": response['_id']
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/product/{customer_id}/{product_id}")
+async def update_product(
+    customer_id: str,
+    product_id: str,
+    product_data: ProductRow
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    index_name = f"product_{customer_id}"
+    try:
+        update_product_in_index(es_client, index_name, product_id, product_data.dict(exclude_unset=True))
+        return {"message": "Product updated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/product/{customer_id}/{product_id}")
+async def delete_product(
+    customer_id: str,
+    product_id: str
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    index_name = f"product_{customer_id}"
+    try:
+        delete_product_from_index(es_client, index_name, product_id)
+        return {"message": "Product deleted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/service/{customer_id}/{service_id}")
+async def update_service(
+    customer_id: str,
+    service_id: str,
+    service_data: ServiceRow
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    index_name = f"service_{customer_id}"
+    try:
+        update_service_in_index(es_client, index_name, service_id, service_data.dict(exclude_unset=True))
+        return {"message": "Service updated successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/service/{customer_id}/{service_id}")
+async def delete_service(
+    customer_id: str,
+    service_id: str
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
+    index_name = f"service_{customer_id}"
+    try:
+        delete_service_from_index(es_client, index_name, service_id)
+        return {"message": "Service deleted successfully."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
