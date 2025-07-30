@@ -110,13 +110,13 @@ def get_session_history(session_id: str, memory: dict):
         memory[session_id] = []
     return memory[session_id]
 
-async def async_invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
+def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
     """
     Gọi agent bất đồng bộ với input của người dùng và quản lý lịch sử trò chuyện.
     """
     chat_history = get_session_history(session_id, memory)
     
-    response = await agent_executor.ainvoke({
+    response = agent_executor.invoke({
         "input": user_input,
         "chat_history": chat_history
     })
@@ -141,7 +141,6 @@ if __name__ == '__main__':
         user_input = input("You: ")
         if user_input.lower() in ['exit', 'quit']:
             break
-        
-        response = async_invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
+        response = invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
         
         print(f"Agent: {response['output']}") 
