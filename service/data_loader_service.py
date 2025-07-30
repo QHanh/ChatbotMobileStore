@@ -51,16 +51,14 @@ def process_and_index_product_data(es_client: Elasticsearch, index_name: str, fi
     Đọc dữ liệu sản phẩm từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
     """
     try:
-        df = pd.read_excel(io.BytesIO(file_content), sheet_name='TONGHOP')
+        df = pd.read_excel(io.BytesIO(file_content))
         df.columns = [
             'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
             'tinh_trang_may', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
             'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
             'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
-            'kich_thuoc_trong_luong', 'bao_hanh_2'
+            'kich_thuoc_trong_luong'
         ]
-        if 'bao_hanh_2' in df.columns:
-            df = df.drop(columns=['bao_hanh_2'])
 
         df = df.dropna(subset=['ma_san_pham', 'model'])
 
@@ -133,7 +131,7 @@ def process_and_index_service_data(es_client: Elasticsearch, index_name: str, fi
     Đọc dữ liệu dịch vụ từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
     """
     try:
-        df = pd.read_excel(io.BytesIO(file_content), sheet_name='DICHVU')
+        df = pd.read_excel(io.BytesIO(file_content))
         df.columns = [
             'ma_dich_vu', 'ten_dich_vu', 'ten_san_pham', 'chi_tiet_dich_vu', 'gia', 'bao_hanh', 'thoi_gian_thuc_hien', 'ghi_chu'
         ]
