@@ -2,10 +2,9 @@ import os
 from elasticsearch import Elasticsearch
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
+from config.settings import ELASTIC_HOST
 
 load_dotenv()
-
-ELASTIC_HOST = "http://localhost:9200"
 
 es_client = None
 

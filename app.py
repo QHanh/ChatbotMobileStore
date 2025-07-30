@@ -47,9 +47,9 @@ async def upload_product_data(
     try:
         create_product_index(es_client, index_name)
         
-        file_stream = io.BytesIO(await file.read())
-        
-        success, failed = process_and_index_product_data(es_client, index_name, file_stream)
+        # Đọc nội dung file dưới dạng bytes và truyền thẳng vào hàm xử lý
+        content = await file.read()
+        success, failed = process_and_index_product_data(es_client, index_name, content)
         
         return {
             "message": f"Dữ liệu sản phẩm cho khách hàng '{customer_id}' đã được xử lý.",
@@ -77,9 +77,9 @@ async def upload_service_data(
     try:
         create_service_index(es_client, index_name)
         
-        file_stream = io.BytesIO(await file.read())
-        
-        success, failed = process_and_index_service_data(es_client, index_name, file_stream)
+        # Đọc nội dung file dưới dạng bytes và truyền thẳng vào hàm xử lý
+        content = await file.read()
+        success, failed = process_and_index_service_data(es_client, index_name, content)
         
         return {
             "message": f"Dữ liệu dịch vụ cho khách hàng '{customer_id}' đã được xử lý.",
