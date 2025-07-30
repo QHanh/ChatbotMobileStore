@@ -35,7 +35,8 @@ def search_services_logic(
     index_name: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
-    chi_tiet_dich_vu: Optional[str] = None,
+    hang_san_pham: Optional[str] = None,
+    hang_dich_vu: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
@@ -47,7 +48,8 @@ def search_services_logic(
         index_name=index_name,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
-        chi_tiet_dich_vu=chi_tiet_dich_vu
+        hang_san_pham=hang_san_pham,
+        hang_dich_vu=hang_dich_vu
     )
     return results
 

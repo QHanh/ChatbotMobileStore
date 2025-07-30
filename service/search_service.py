@@ -69,7 +69,7 @@ def search_products(
         query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})
         
     if tinh_trang_may:
-        query["bool"]["should"].append({"term": {"tinh_trang_may": tinh_trang_may}})
+        query["bool"]["should"].append({"match": {"tinh_trang_may": tinh_trang_may}})
     
     price_range = {}
     if min_gia is not None:
@@ -98,7 +98,8 @@ def search_services(
     index_name: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
-    chi_tiet_dich_vu: Optional[str] = None,
+    hang_san_pham: Optional[str] = None,
+    hang_dich_vu: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Tìm kiếm dịch vụ trong Elasticsearch dựa trên các tiêu chí lọc.
@@ -122,11 +123,14 @@ def search_services(
     if ten_dich_vu: 
         query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
     
+    if hang_san_pham:
+        query["bool"]["must"].append({"match": {"hang_san_pham": hang_san_pham}})
+    
     if ten_san_pham:
         query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
     
-    if chi_tiet_dich_vu:
-        query["bool"]["should"].append({"match": {"chi_tiet_dich_vu": chi_tiet_dich_vu}})
+    if hang_dich_vu:
+        query["bool"]["must"].append({"match": {"hang_dich_vu": hang_dich_vu}})
     
     try:
         response = es.search(

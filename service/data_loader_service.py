@@ -113,11 +113,11 @@ def create_service_index(es_client: Elasticsearch, index_name: str):
         "properties": {
             "ma_dich_vu": {"type": "keyword"},
             "ten_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "hang_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "ten_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "chi_tiet_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "hang_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "gia": {"type": "keyword"},
             "bao_hanh": {"type": "keyword"},
-            "thoi_gian_thuc_hien": {"type": "keyword"},
             "ghi_chu": {"type": "text"},
         }
     }
@@ -133,7 +133,7 @@ def process_and_index_service_data(es_client: Elasticsearch, index_name: str, fi
     try:
         df = pd.read_excel(io.BytesIO(file_content))
         df.columns = [
-            'ma_dich_vu', 'ten_dich_vu', 'ten_san_pham', 'chi_tiet_dich_vu', 'gia', 'bao_hanh', 'thoi_gian_thuc_hien', 'ghi_chu'
+            'ma_dich_vu', 'ten_dich_vu', 'hang_san_pham', 'ten_san_pham', 'hang_dich_vu', 'gia', 'bao_hanh', 'ghi_chu'
         ]
         df = df.dropna(subset=['ma_dich_vu', 'ten_dich_vu'])
         df['gia'] = pd.to_numeric(df['gia'], errors='coerce').fillna(0).astype(float)

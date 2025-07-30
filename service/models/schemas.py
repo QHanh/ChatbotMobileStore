@@ -15,7 +15,7 @@ class SearchServiceInput(BaseModel):
     """Input model for the search_services_tool."""
     ten_dich_vu: Optional[str] = Field(description="Tên dịch vụ, ví dụ: 'Thay pin'.")
     ten_san_pham: Optional[str] = Field(description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
-    chi_tiet_dich_vu: Optional[str] = Field(description="Chi tiết dịch vụ, ví dụ: 'Pin Lithium'.")
+    hang_dich_vu: Optional[str] = Field(description="Hãng dịch vụ, ví dụ: 'Pin Lithium'.")
 
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
@@ -77,9 +77,9 @@ class ProductRow(BaseModel):
 class ServiceRow(BaseModel):
     ma_dich_vu: str
     ten_dich_vu: str
+    hang_san_pham: Optional[str] = None
     ten_san_pham: Optional[str] = None
-    chi_tiet_dich_vu: Optional[str] = None
+    hang_dich_vu: Optional[str] = None
     gia: Optional[float] = None
     bao_hanh: Optional[str] = None
-    thoi_gian_thuc_hien: Optional[str] = None
     ghi_chu: Optional[str] = None 
