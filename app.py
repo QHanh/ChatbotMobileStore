@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from service.agent_service import create_agent_executor, invoke_agent_with_memory
+from service.agent_service import create_agent_executor, async_invoke_agent_with_memory
 from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow, ServiceFeatureConfig
 from service.data_loader_service import (
     create_product_index, process_and_index_product_data, 
@@ -350,7 +350,7 @@ async def chat(
             llm_provider=llm_provider
         )
         
-        response = invoke_agent_with_memory(agent_executor, threadId, user_input, chat_memory)
+        response = async_invoke_agent_with_memory(agent_executor, threadId, user_input, chat_memory)
         
         return {"response": response['output']}
 
