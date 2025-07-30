@@ -136,15 +136,12 @@ def end_conversation_tool() -> str:
     return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
 
 
-def create_customer_tools(customer_id: str) -> list:
+def create_customer_tools(customer_id: str, service_feature_enabled: bool = True) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    index_name_product = f"product_{customer_id}"
-    index_name_service = f"service_{customer_id}"
-        
+    index_name_product = f"product_{customer_id}"  
     customer_search_product_func = partial(search_products_logic, index_name=index_name_product)
-    customer_search_service_func = partial(search_services_logic, index_name=index_name_service)
     
     search_product_tool = StructuredTool.from_function(
         func=customer_search_product_func,
@@ -153,19 +150,26 @@ def create_customer_tools(customer_id: str) -> list:
         args_schema=SearchProductInput
     )
     
-    search_service_tool = StructuredTool.from_function(
-        func=customer_search_service_func,
-        name="search_services_tool",
-        description=search_services_logic.__doc__,
-        args_schema=SearchServiceInput
-    )
-    
     available_tools = [
         search_product_tool,
-        search_service_tool,
         create_order_product_tool,
-        create_order_service_tool,
         escalate_to_human_tool,
         end_conversation_tool
     ]
+
+    if service_feature_enabled:
+        index_name_service = f"service_{customer_id}"
+        customer_search_service_func = partial(search_services_logic, index_name=index_name_service)
+        
+        search_service_tool = StructuredTool.from_function(
+            func=customer_search_service_func,
+            name="search_services_tool",
+            description=search_services_logic.__doc__,
+            args_schema=SearchServiceInput
+        )
+        
+        available_tools.extend([
+            search_service_tool,
+            create_order_service_tool,
+        ])
     return available_tools

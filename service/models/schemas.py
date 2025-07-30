@@ -48,6 +48,10 @@ class PromptConfig(BaseModel):
     """Input model for adding custom system prompt instructions."""
     custom_prompt: str = Field(description="Additional instructions to be added to the system prompt.") 
 
+class ServiceFeatureConfig(BaseModel):
+    """Input model for enabling or disabling the service consultation feature."""
+    enabled: bool = Field(description="Bật (true) hoặc tắt (false) chức năng tư vấn dịch vụ.")
+
 class ProductRow(BaseModel):
     ma_san_pham: str
     model: str

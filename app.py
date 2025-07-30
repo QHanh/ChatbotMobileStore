@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from service.agent_service import create_agent_executor, invoke_agent_with_memory
-from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow
+from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow, ServiceFeatureConfig
 from service.data_loader_service import (
     create_product_index, process_and_index_product_data, 
     create_service_index, process_and_index_service_data,
@@ -211,6 +211,22 @@ async def configure_persona(
         customer_configs[customer_id] = {}
     customer_configs[customer_id]["persona"] = config.dict()
     return {"message": f"Vai trò và tên cho chatbot AI của khách hàng '{customer_id}' đã được cập nhật."}
+
+
+@app.post("/config/service-feature/{customer_id}")
+async def configure_service_feature(
+    customer_id: str,
+    config: ServiceFeatureConfig
+):
+    """
+    Bật hoặc tắt chức năng tư vấn dịch vụ cho chatbot của khách hàng.
+    """
+    if customer_id not in customer_configs:
+        customer_configs[customer_id] = {}
+    customer_configs[customer_id]["service_feature_enabled"] = config.enabled
+    status = "bật" if config.enabled else "tắt"
+    return {"message": f"Chức năng tư vấn dịch vụ cho khách hàng '{customer_id}' đã được {status}."}
+
 
 @app.post("/config/prompt/{customer_id}")
 async def configure_prompt(
