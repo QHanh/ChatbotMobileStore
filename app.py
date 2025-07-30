@@ -325,6 +325,29 @@ async def delete_prompt_config(customer_id: str):
         return {"message": f"System prompt tùy chỉnh của khách hàng '{customer_id}' đã được xóa."}
     raise HTTPException(status_code=404, detail="Không tìm thấy system prompt tùy chỉnh để xóa.")
 
+@app.put("/config/service-feature/{customer_id}")
+async def set_service_feature_config(
+    customer_id: str,
+    config: ServiceFeatureConfig
+):
+    """
+    Bật hoặc tắt chức năng tư vấn dịch vụ cho chatbot của khách hàng.
+    """
+    if customer_id not in customer_configs:
+        customer_configs[customer_id] = {}
+    customer_configs[customer_id]["service_feature_enabled"] = config.enabled
+    status = "bật" if config.enabled else "tắt"
+    return {"message": f"Chức năng tư vấn dịch vụ cho khách hàng '{customer_id}' đã được {status}."}
+
+@app.get("/config/service-feature/{customer_id}")
+async def get_service_feature_config(customer_id: str):
+    """
+    Lấy trạng thái bật/tắt chức năng tư vấn dịch vụ của một khách hàng.
+    """
+    config = customer_configs.get(customer_id, {})
+    is_enabled = config.get("service_feature_enabled", True)
+    return {"enabled": is_enabled}
+
 
 @app.post("/chat/{threadId}")
 async def chat(

@@ -7,7 +7,8 @@ class SearchProductInput(BaseModel):
     model: Optional[str] = Field(description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
     mau_sac: Optional[str] = Field(description="Màu sắc của sản phẩm, ví dụ: 'Titan Tự nhiên'.")
     dung_luong: Optional[str] = Field(description="Dung lượng lưu trữ, ví dụ: '256GB'.")
-    tinh_trang_may: Optional[str] = Field(description="Tình trạng của máy, ví dụ: 'cũ', 'mới', 'đẹp', 'trầy xước', tùy theo khách hàng hỏi.")
+    tinh_trang_may: Optional[str] = Field(description="Tình trạng của máy, ví dụ: 'đẹp', 'trầy xước', 'xước nhẹ', tùy theo khách hàng hỏi.")
+    loai_thiet_bi: Optional[str] = Field(description="Loại thiết bị, ví dụ: 'Cũ', 'Mới'.")
     min_gia: Optional[float] = Field(description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(description="Mức giá tối đa.")
 
