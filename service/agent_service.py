@@ -114,7 +114,7 @@ def get_session_history(session_id: str, memory: dict):
 
 def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
     """
-    Gọi agent bất đồng bộ với input của người dùng và quản lý lịch sử trò chuyện.
+    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện.
     """
     chat_history = get_session_history(session_id, memory)
     
