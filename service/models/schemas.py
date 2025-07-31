@@ -81,6 +81,7 @@ class ServiceRow(BaseModel):
     ten_dich_vu: str
     hang_san_pham: Optional[str] = None
     ten_san_pham: Optional[str] = None
+    mau_sac_san_pham: Optional[str] = None
     hang_dich_vu: Optional[str] = None
     gia: Optional[float] = None
     bao_hanh: Optional[str] = None

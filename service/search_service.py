@@ -104,6 +104,7 @@ def search_services(
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
     hang_san_pham: Optional[str] = None,
+    mau_sac_san_pham: Optional[str] = None,
     hang_dich_vu: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
@@ -133,6 +134,9 @@ def search_services(
     
     if ten_san_pham:
         query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
+    
+    if mau_sac_san_pham:
+        query["bool"]["must"].append({"match": {"mau_sac_san_pham": mau_sac_san_pham}})
     
     if hang_dich_vu:
         query["bool"]["must"].append({"match": {"hang_dich_vu": hang_dich_vu}})

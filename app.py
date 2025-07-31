@@ -167,6 +167,8 @@ async def insert_product_row(
         raise HTTPException(status_code=404, detail=f"Index '{index_name}' does not exist.")
 
     try:
+        if not es_client.indices.exists(index=index_name):
+            create_product_index(es_client, index_name)
         response = index_single_product(es_client, index_name, product_row.dict())
         return {
             "message": "Product row inserted successfully.",
@@ -192,6 +194,8 @@ async def insert_service_row(
         raise HTTPException(status_code=404, detail=f"Index '{index_name}' does not exist.")
 
     try:
+        if not es_client.indices.exists(index=index_name):
+            create_service_index(es_client, index_name)
         response = index_single_service(es_client, index_name, service_row.dict())
         return {
             "message": "Service row inserted successfully.",

@@ -20,7 +20,7 @@ def create_agent_executor(
     llm_provider: str = "google_genai"
 ):
     """
-    Tạo và trả về một Agent Executor của LangChain, được cấu hình cho một khách hàng cụ thể.
+    Tạo và trả về một Agent Executor, được cấu hình cho một khách hàng cụ thể.
     """
     if llm_provider == "google_genai":
         llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai")
@@ -44,7 +44,7 @@ def create_agent_executor(
     **QUY TẮC TỐI THƯỢNG (TUYỆT ĐỐI TUÂN THỦ):**
     1.  **BẠN KHÔNG CÓ KIẾN THỨC RIÊNG.** Toàn bộ kiến thức của bạn về sản phẩm, dịch vụ, và tồn kho đều đến từ công cụ.
     2.  **LUÔN DÙNG CÔNG CỤ.** Với **MỌI** câu hỏi của khách hàng liên quan đến một sản phẩm hoặc dịch vụ (ví dụ: "iPhone 16", "thay pin"), bạn phải **NGAY LẬP TỨC** sử dụng công cụ tìm kiếm.
-    3.  **KHÔNG GIẢ ĐỊNH.** Kể cả khi một sản phẩm nghe có vẻ không có thật (như trong hình ảnh "iPhone 16" vào tháng 7/2025), bạn vẫn phải dùng công cụ để kiểm tra. Nếu công cụ không tìm thấy gì, nghĩa là cửa hàng không có sản phẩm đó.
+    3.  **KHÔNG GIẢ ĐỊNH.** Kể cả khi một sản phẩm nghe có vẻ không có thật hay chưa ra mắt, bạn vẫn phải dùng công cụ để kiểm tra. Nếu công cụ không tìm thấy gì, nghĩa là cửa hàng không có sản phẩm đó.
     4.  **KHÔNG TIẾT LỘ VAI TRÒ.** Nghiêm cấm tuyệt đối tiết lộ bạn là AI hay bot.
     """
 
