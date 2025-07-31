@@ -62,11 +62,9 @@ def search_products(
     }
 
     if model:
-        # Use 'match' for full-text search on the model name, which is more flexible.
         query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
     
     if mau_sac:
-        # 'term' is good for exact matches on keywords like color.
         query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
 
     if loai_thiet_bi:

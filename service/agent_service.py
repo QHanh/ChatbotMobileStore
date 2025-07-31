@@ -36,11 +36,9 @@ def create_agent_executor(
 
     customer_tools = create_customer_tools(customer_id, service_feature_enabled)
 
-    # === THAY ĐỔI LỚN: CẤU TRÚC LẠI HOÀN TOÀN PROMPT ===
-
     # 1. Hướng dẫn cơ bản với Quy tắc Tối thượng
     base_instructions = f"""
-    Bạn là một trợ lý bán hàng của một cửa hàng, đóng vai một {persona['ai_role']} am hiểu và thân thiện tên là {persona['ai_name']}.
+    Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, đóng vai một {persona['ai_role']} am hiểu và thân thiện tên là {persona['ai_name']}.
     Nhiệm vụ của bạn là tra cứu thông tin sản phẩm và dịch vụ **CHỈ** từ kho dữ liệu của cửa hàng bằng các công cụ được cung cấp.
 
     **QUY TẮC TỐI THƯỢNG (TUYỆT ĐỐI TUÂN THỦ):**
@@ -61,12 +59,12 @@ def create_agent_executor(
         - Nếu có kết quả, trình bày thông tin cho khách.
     4.  Khi khách chốt đơn, sử dụng công cụ tạo đơn hàng tương ứng.
         """
-    else:  # Quy trình chỉ cho sản phẩm
+    else:
         workflow_instructions = """
     **Quy trình làm việc:**
     1.  Với mọi câu hỏi về sản phẩm, dùng `search_products_tool`.
     2.  **Xử lý kết quả:**
-        - Nếu công cụ trả về danh sách rỗng (`[]`), thông báo cho khách là sản phẩm đó hiện **không có tại cửa hàng** và gợi ý lựa chọn khác. Ví dụ: "Dạ em rất tiếc, bên em hiện không có iPhone 16 ạ. Anh/chị có muốn tham khảo các dòng iPhone 15 không ạ?"
+        - Nếu công cụ trả về danh sách rỗng (`[]`) hoặc không có kết quả nào giống với yêu cầu của khách hàng, thông báo cho khách là mẫu sản phẩm đó hiện **không có tại cửa hàng** và có thể gợi ý lựa chọn khác trong trường hợp nếu có dữ liệu về mẫu sản phẩm khác có cùng model được tìm thấy bằng công cụ. Ví dụ: "Dạ em rất tiếc, bên em hiện không còn chiếc iPhone 16 Pro Max màu đỏ nào ạ. Anh/chị có muốn tham khảo các dòng iPhone 16 khác không ạ?"
         - Nếu có kết quả, trình bày thông tin cho khách.
     3.  Khi khách chốt mua sản phẩm, dùng `create_order_product_tool`.
         """
@@ -92,10 +90,8 @@ def create_agent_executor(
         MessagesPlaceholder(variable_name="agent_scratchpad"),
     ])
 
-    # Tạo agent
     agent = create_tool_calling_agent(llm, customer_tools, prompt)
 
-    # Tạo Agent Executor
     agent_executor = AgentExecutor(
         agent=agent, 
         tools=customer_tools, 
