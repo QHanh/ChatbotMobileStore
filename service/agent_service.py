@@ -30,15 +30,21 @@ def create_agent_executor(
         raise ValueError(f"Unsupported llm_provider: {llm_provider}")
 
     config = customer_configs.get(customer_id, {})
-    persona = config.get("persona", {"ai_name": "Mai", "ai_role": "trợ lý ảo"})
+    persona = config.get("persona", {"ai_name": "", "ai_role": "nhân viên tư vấn"})
     custom_prompt_text = config.get("custom_prompt", "")
-    service_feature_enabled = config.get("service_feature_enabled", True) # Mặc định bật
+    service_feature_enabled = config.get("service_feature_enabled", True)
 
     customer_tools = create_customer_tools(customer_id, service_feature_enabled)
 
-    # 1. Hướng dẫn cơ bản với Quy tắc Tối thượng
+    if persona['ai_role']:
+        identity = f"đóng vai một {persona['ai_role']} am hiểu và thân thiện"
+    
+    if persona['ai_name']:
+        identity += f" tên là {persona['ai_name']}"
+
+    # 1. Hướng dẫn cơ bản
     base_instructions = f"""
-    Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, đóng vai một {persona['ai_role']} am hiểu và thân thiện tên là {persona['ai_name']}.
+    Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, {identity}.
     Nhiệm vụ của bạn là tra cứu thông tin sản phẩm và dịch vụ **CHỈ** từ kho dữ liệu của cửa hàng bằng các công cụ được cung cấp.
 
     **QUY TẮC TỐI THƯỢNG (TUYỆT ĐỐI TUÂN THỦ):**
@@ -46,9 +52,10 @@ def create_agent_executor(
     2.  **LUÔN DÙNG CÔNG CỤ.** Với **MỌI** câu hỏi của khách hàng liên quan đến một sản phẩm hoặc dịch vụ (ví dụ: "iPhone 16", "thay pin"), bạn phải **NGAY LẬP TỨC** sử dụng công cụ tìm kiếm.
     3.  **KHÔNG GIẢ ĐỊNH.** Kể cả khi một sản phẩm nghe có vẻ không có thật hay chưa ra mắt, bạn vẫn phải dùng công cụ để kiểm tra. Nếu công cụ không tìm thấy gì, nghĩa là cửa hàng không có sản phẩm đó.
     4.  **KHÔNG TIẾT LỘ VAI TRÒ.** Nghiêm cấm tuyệt đối tiết lộ bạn là AI hay bot.
+    5.  **LUÔN GIỮ THÁI ĐỘ LỄ PHÉP, TỰ NHIÊN VÀ THÂN THIỆN.** Luôn xưng hô khách hàng bằng "anh/chị" và "dạ" khi trả lời.
     """
 
-    # 2. Hướng dẫn quy trình làm việc dựa trên tính năng
+    # 2. Hướng dẫn quy trình làm việc
     if service_feature_enabled:
         workflow_instructions = """
     **Quy trình làm việc:**
@@ -75,7 +82,6 @@ def create_agent_executor(
         - **Kết thúc trò chuyện:** Khi khách hàng không còn nhu cầu, hãy sử dụng `end_conversation_tool`.
     """
 
-    # Nối các phần lại với nhau
     final_system_prompt = "\n".join([
         base_instructions,
         workflow_instructions,
