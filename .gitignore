@@ -7,3 +7,4 @@ __pycache__/
 # VSCode workspace settings
 .vscode/
 venv/
+config/credentials.json

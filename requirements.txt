@@ -9,3 +9,5 @@ openpyxl
 elasticsearch
 pydantic
 python-multipart
+gspread
+google-auth-oauthlib

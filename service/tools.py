@@ -2,9 +2,14 @@ from langchain_core.tools import tool
 from langchain.tools import StructuredTool
 from typing import Optional, List, Dict, Any, Union
 from functools import partial
+import os
 
 from .search_service import search_products, search_services
 from .models.schemas import SearchProductInput, SearchServiceInput, OrderProductInput, OrderServiceInput
+from .sheet_service import insert_order_to_sheet
+
+# Lấy Spreadsheet ID từ biến môi trường
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
 def search_products_logic(
     index_name: str,
@@ -72,9 +77,8 @@ def create_order_product_tool(
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
-    print(f"Thông tin đơn hàng sản phẩm: Mã SP={ma_san_pham}, Tên SP={ten_san_pham}, Số lượng={so_luong}, Tên KH={ten_khach_hang}, SĐT={so_dien_thoai}, Địa chỉ={dia_chi}")
     
-    order_id = f"DH_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
+    order_id = f"DHSP_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
     order_detail = {
         "order_id": order_id,
         "ma_san_pham": ma_san_pham,
@@ -82,8 +86,18 @@ def create_order_product_tool(
         "so_luong": so_luong,
         "ten_khach_hang": ten_khach_hang,
         "so_dien_thoai": so_dien_thoai,
+        "dia_chi": dia_chi,
+        "loai_don_hang": "Sản phẩm"
     }
 
+    # Ghi vào Google Sheet
+    if SPREADSHEET_ID:
+        insert_order_to_sheet(
+            spreadsheet_id=SPREADSHEET_ID,
+            worksheet_name="DonHang",
+            order_data=order_detail
+        )
+    
     return {
         "status": "success",
         "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
@@ -105,17 +119,26 @@ def create_order_service_tool(
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
-    print(f"Thông tin đơn hàng dịch vụ: Mã DV={ma_dich_vu}, Tên DV={ten_dich_vu}, Tên SP={ten_san_pham}, Tên KH={ten_khach_hang}, SĐT={so_dien_thoai}, Địa chỉ={dia_chi}")
 
-    order_id = f"DH_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
+    order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
     order_detail = {
         "order_id": order_id,
         "ma_dich_vu": ma_dich_vu,
         "ten_dich_vu": ten_dich_vu,
-        "ten_san_pham": ten_san_pham,
+        "ten_san_pham_sua_chua": ten_san_pham,
         "ten_khach_hang": ten_khach_hang,
         "so_dien_thoai": so_dien_thoai,
+        "dia_chi": dia_chi,
+        "loai_don_hang": "Dịch vụ"
     }
+
+    # Ghi vào Google Sheet
+    if SPREADSHEET_ID:
+        insert_order_to_sheet(
+            spreadsheet_id=SPREADSHEET_ID,
+            worksheet_name="DonHang",
+            order_data=order_detail
+        )
 
     return {
         "status": "success",

@@ -21,6 +21,7 @@ class SearchServiceInput(BaseModel):
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
     ma_san_pham: str = Field(description="Mã sản phẩm khách hàng đặt.")
+    ten_san_pham: str = Field(description="Tên sản phẩm khách hàng đặt.")
     so_luong: int = Field(description="Số lượng sản phẩm muốn mua.")
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
@@ -29,7 +30,8 @@ class OrderProductInput(BaseModel):
 class OrderServiceInput(BaseModel):
     """Input model for the create_order_service_tool."""
     ma_dich_vu: str = Field(description="Mã dịch vụ khách hàng đặt.")
-    so_luong: int = Field(description="Số lượng dịch vụ muốn mua.")
+    ten_dich_vu: str = Field(description="Tên dịch vụ khách hàng đặt.")
+    ten_san_pham: str = Field(description="Tên sản phẩm điện thoại được sửa chữa.")
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
     dia_chi: str = Field(description="Địa chỉ người mua.")
