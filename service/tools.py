@@ -73,7 +73,8 @@ def create_order_product_tool(
 ) -> Dict[str, Union[str, int]]:
     """
     Sử dụng công cụ này khi người dùng muốn đặt mua một sản phẩm.
-    Cần thu thập đủ thông tin: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng, tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Các thông tin gồm: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
@@ -94,7 +95,7 @@ def create_order_product_tool(
     if SPREADSHEET_ID:
         insert_order_to_sheet(
             spreadsheet_id=SPREADSHEET_ID,
-            worksheet_name="DonHang",
+            worksheet_name="DonHangSanPham",
             order_data=order_detail
         )
     
@@ -115,7 +116,8 @@ def create_order_service_tool(
 ) -> Dict[str, Union[str, int]]:
     """
     Sử dụng công cụ này khi người dùng muốn đặt một dịch vụ sửa chữa điện thoại.
-    Cần thu thập đủ thông tin: mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham), tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Các thông tin gồm mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham) bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
@@ -136,7 +138,7 @@ def create_order_service_tool(
     if SPREADSHEET_ID:
         insert_order_to_sheet(
             spreadsheet_id=SPREADSHEET_ID,
-            worksheet_name="DonHang",
+            worksheet_name="DonHangDichVu",
             order_data=order_detail
         )
 

@@ -56,7 +56,7 @@ def get_worksheet(client, spreadsheet_id: str, worksheet_name: str):
 # --- Chức năng ---
 def insert_order_to_sheet(spreadsheet_id: str, worksheet_name: str, order_data: Dict[str, Any]):
     """
-    Chèn một dòng dữ liệu đơn hàng vào worksheet được chỉ định.
+    Chèn một dòng dữ liệu đơn hàng vào worksheet.
     """
     client = get_gspread_client()
     worksheet = get_worksheet(client, spreadsheet_id, worksheet_name)
