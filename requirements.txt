@@ -8,3 +8,4 @@ pandas
 openpyxl
 elasticsearch
 pydantic
+python-multipart
