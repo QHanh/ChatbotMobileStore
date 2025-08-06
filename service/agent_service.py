@@ -9,8 +9,8 @@ from functools import partial
 
 load_dotenv()
 
-if not os.getenv("GOOGLE_API_KEY"):
-  os.environ["GOOGLE_API_KEY"] = getpass.getpass("Enter API key for Google Gemini: ")
+if not os.getenv("GEMINI_API_KEY"):
+  os.environ["GEMINI_API_KEY"] = getpass.getpass("Enter API key for Google Gemini: ")
 
 from .tools import create_customer_tools
 
