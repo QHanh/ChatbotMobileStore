@@ -87,4 +87,18 @@ class ServiceRow(BaseModel):
     hang_dich_vu: Optional[str] = None
     gia: Optional[float] = None
     bao_hanh: Optional[str] = None
-    ghi_chu: Optional[str] = None 
+    ghi_chu: Optional[str] = None
+
+class AccessoryRow(BaseModel):
+    accessory_code: str
+    accessory_name: str
+    category: Optional[str] = None
+    properties: Optional[str] = None
+    lifecare_price: Optional[float] = None
+    trademark: Optional[str] = None
+    guarantee: Optional[str] = None
+    inventory: Optional[int] = None
+    specifications: Optional[str] = None
+    avatar_images: Optional[str] = None
+    link_accessory: Optional[str] = None
+    
