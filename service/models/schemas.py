@@ -19,6 +19,16 @@ class SearchServiceInput(BaseModel):
     hang_san_pham: Optional[str] = Field(default=None, description="Hãng sản phẩm, ví dụ: 'Apple'.")
     mau_sac_san_pham: Optional[str] = Field(default=None, description="Màu sắc sản phẩm, ví dụ: 'Titan Tự nhiên'.")
     loai_dich_vu: Optional[str] = Field(default=None, description="Loại dịch vụ, ví dụ: 'Pin Lithium', 'fix sọc'.")
+    min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
+    max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
+
+class SearchAccessoryInput(BaseModel):
+    """Input model for the search_accessories_tool."""
+    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, ví dụ: 'Tai nghe', 'Kính'.")
+    thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'model', 'cỡ',....")
+    phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện")
+    min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
+    max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
 
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
@@ -34,6 +44,15 @@ class OrderServiceInput(BaseModel):
     ma_dich_vu: str = Field(description="Mã dịch vụ khách hàng đặt.")
     ten_dich_vu: str = Field(description="Tên dịch vụ khách hàng đặt.")
     ten_san_pham: str = Field(description="Tên sản phẩm điện thoại được sửa chữa.")
+    ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
+    so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
+    dia_chi: str = Field(description="Địa chỉ người mua.")
+
+class OrderAccessoryInput(BaseModel):
+    """Input model for the create_order_accessory_tool."""
+    ma_phu_kien: str = Field(description="Mã phụ kiện khách hàng đặt.")
+    ten_phu_kien: str = Field(description="Tên phụ kiện khách hàng đặt.")
+    so_luong: int = Field(description="Số lượng phụ kiện muốn mua.")
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
     dia_chi: str = Field(description="Địa chỉ người mua.")
@@ -57,6 +76,10 @@ class PromptConfig(BaseModel):
 class ServiceFeatureConfig(BaseModel):
     """Input model for enabling or disabling the service consultation feature."""
     enabled: bool = Field(description="Bật (true) hoặc tắt (false) chức năng tư vấn dịch vụ.")
+
+class AccessoryFeatureConfig(BaseModel):
+    """Input model for enabling or disabling the accessory consultation feature."""
+    enabled: bool = Field(description="Bật (true) hoặc tắt (false) chức năng tư vấn phụ kiện.")
 
 class ProductRow(BaseModel):
     ma_san_pham: str

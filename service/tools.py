@@ -4,8 +4,8 @@ from typing import Optional, List, Dict, Any, Union
 from functools import partial
 import os
 
-from .search_service import search_products, search_services
-from .models.schemas import SearchProductInput, SearchServiceInput, OrderProductInput, OrderServiceInput
+from .search_service import search_products, search_services, search_accessories
+from .models.schemas import SearchProductInput, SearchServiceInput, OrderProductInput, OrderServiceInput, SearchAccessoryInput, OrderAccessoryInput
 from .sheet_service import insert_order_to_sheet
 
 # Lấy Spreadsheet ID từ biến môi trường
@@ -45,6 +45,8 @@ def search_services_logic(
     hang_san_pham: Optional[str] = None,
     mau_sac_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
@@ -58,7 +60,32 @@ def search_services_logic(
         ten_san_pham=ten_san_pham,
         hang_san_pham=hang_san_pham,
         mau_sac_san_pham=mau_sac_san_pham,
-        loai_dich_vu=loai_dich_vu
+        loai_dich_vu=loai_dich_vu,
+        min_gia=min_gia,
+        max_gia=max_gia
+    )
+    return results
+
+def search_accessories_logic(
+    index_name: str,
+    ten_phu_kien: Optional[str] = None,
+    thuoc_tinh_phu_kien: Optional[str] = None,
+    phan_loai_phu_kien: Optional[str] = None,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None
+) -> List[Dict[str, Any]]:
+    """
+    Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các phụ kiện có trong dữ liệu của cửa hàng.
+    Cung cấp các tiêu chí cụ thể như tên phụ kiện, thuộc tính phụ kiện, phân loại phụ kiện, hoặc khoảng giá để lọc kết quả.
+    """
+    print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho index: {index_name} ---")
+    results = search_accessories(
+        index_name=index_name,
+        ten_phu_kien=ten_phu_kien,
+        thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
+        phan_loai_phu_kien=phan_loai_phu_kien,
+        min_gia=min_gia,
+        max_gia=max_gia
     )
     return results
 
@@ -148,6 +175,49 @@ def create_order_service_tool(
         "order_detail": order_detail
     }
 
+@tool("create_order_accessory_tool", args_schema=OrderAccessoryInput)
+def create_order_accessory_tool(
+    ma_phu_kien: str,
+    ten_phu_kien: str,
+    so_luong: int,
+    ten_khach_hang: str,
+    so_dien_thoai: str,
+    dia_chi: str
+) -> Dict[str, Union[str, int]]:
+    """
+    Sử dụng công cụ này khi người dùng muốn đặt mua một phụ kiện.
+    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
+    Các thông tin gồm: tên phụ kiện (ten_phu_kien), số lượng bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
+    Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
+    """
+    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
+
+    order_id = f"DHPK_{so_dien_thoai[-4:]}_{ma_phu_kien.split('-')[-1]}"
+    order_detail = {
+        "order_id": order_id,
+        "ma_phu_kien": ma_phu_kien,
+        "ten_phu_kien": ten_phu_kien,
+        "so_luong": so_luong,
+        "ten_khach_hang": ten_khach_hang,
+        "so_dien_thoai": so_dien_thoai,
+        "dia_chi": dia_chi,
+        "loai_don_hang": "Phụ kiện"
+    }
+
+    # Ghi vào Google Sheet
+    if SPREADSHEET_ID:
+        insert_order_to_sheet(
+            spreadsheet_id=SPREADSHEET_ID,
+            worksheet_name="DonHangPhuKien",
+            order_data=order_detail
+        )
+    
+    return {
+        "status": "success",
+        "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
+        "order_detail": order_detail
+    }
+
 @tool
 def escalate_to_human_tool() -> str:
     """
@@ -167,7 +237,7 @@ def end_conversation_tool() -> str:
     return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
 
 
-def create_customer_tools(customer_id: str, service_feature_enabled: bool = True) -> list:
+def create_customer_tools(customer_id: str, service_feature_enabled: bool = True, accessory_feature_enabled: bool = True) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
@@ -203,4 +273,20 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
             search_service_tool,
             create_order_service_tool,
         ])
+
+    if accessory_feature_enabled:
+        index_name_accessory = f"accessory_{customer_id}"
+        customer_search_accessory_func = partial(search_accessories_logic, index_name=index_name_accessory)
+        
+        search_accessory_tool = StructuredTool.from_function(
+            func=customer_search_accessory_func,
+            name="search_accessories_tool",
+            description=search_accessories_logic.__doc__,
+            args_schema=SearchAccessoryInput
+        )
+
+        available_tools.extend([
+            search_accessory_tool,
+        ])
+
     return available_tools

@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from service.agent_service import create_agent_executor, invoke_agent_with_memory
-from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow, ServiceFeatureConfig, AccessoryRow
+from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow, ServiceFeatureConfig, AccessoryRow, AccessoryFeatureConfig
 from service.data_loader_service import (
     create_product_index, process_and_index_product_data, 
     create_service_index, process_and_index_service_data,
@@ -465,6 +465,28 @@ async def insert_accessory_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.put("/config/accessory-feature/{customer_id}")
+async def set_accessory_feature_config(
+    customer_id: str,
+    config: AccessoryFeatureConfig
+):
+    """
+    Bật hoặc tắt chức năng tư vấn phụ kiện cho chatbot của khách hàng.
+    """
+    if customer_id not in customer_configs:
+        customer_configs[customer_id] = {}
+    customer_configs[customer_id]["accessory_feature_enabled"] = config.enabled
+    status = "bật" if config.enabled else "tắt"
+    return {"message": f"Chức năng tư vấn phụ kiện cho khách hàng '{customer_id}' đã được {status}."}
+
+@app.get("/config/accessory-feature/{customer_id}")
+async def get_accessory_feature_config(customer_id: str):
+    """
+    Lấy trạng thái bật/tắt chức năng tư vấn phụ kiện của một khách hàng.
+    """
+    config = customer_configs.get(customer_id, {})
+    is_enabled = config.get("accessory_feature_enabled", True)
+    return {"enabled": is_enabled}
 
 @app.post("/chat/{threadId}")
 async def chat(
@@ -500,4 +522,4 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8010, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=8010, reload=True, log_level="warning")
