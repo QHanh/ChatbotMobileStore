@@ -105,7 +105,7 @@ def search_services(
     ten_san_pham: Optional[str] = None,
     hang_san_pham: Optional[str] = None,
     mau_sac_san_pham: Optional[str] = None,
-    hang_dich_vu: Optional[str] = None,
+    loai_dich_vu: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """
     Tìm kiếm dịch vụ trong Elasticsearch dựa trên các tiêu chí lọc.
@@ -138,18 +138,47 @@ def search_services(
     if mau_sac_san_pham:
         query["bool"]["must"].append({"match": {"mau_sac_san_pham": mau_sac_san_pham}})
     
-    if hang_dich_vu:
-        query["bool"]["must"].append({"match": {"hang_dich_vu": hang_dich_vu}})
+    if loai_dich_vu:
+        query["bool"]["must"].append({"match": {"loai_dich_vu": loai_dich_vu}})
     
     try:
-        response = es.search(
-            index=index_name,
-            query=query,
-            size=10
-        )
+        response = es.search(index=index_name, query=query, size=10)
         hits = [hit['_source'] for hit in response['hits']['hits']]
-        print(f"Tìm thấy {len(hits)} dịch vụ phù hợp.")
-        return hits
+        if hits:
+            print(f"Tìm thấy {len(hits)} dịch vụ phù hợp (theo bộ lọc cụ thể).")
+            return hits
+
+        # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
+        search_terms: List[str] = []
+        for term in [ten_dich_vu, ten_san_pham, hang_san_pham, mau_sac_san_pham, loai_dich_vu]:
+            if term:
+                search_terms.append(str(term))
+
+        if search_terms:
+            combined_query = " ".join(search_terms)
+            fallback_query = {
+                "multi_match": {
+                    "query": combined_query,
+                    "type": "most_fields",
+                    "fields": [
+                        "ten_dich_vu^3",
+                        "loai_dich_vu^2",
+                        "hang_san_pham",
+                        "mau_sac_san_pham",
+                        "ten_san_pham",
+                        "ghi_chu"
+                    ],
+                    "fuzziness": "AUTO"
+                }
+            }
+            response = es.search(index=index_name, query=fallback_query, size=10)
+            hits = [hit['_source'] for hit in response['hits']['hits']]
+            print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
+            return hits
+
+        # Không có tham số nào để fallback
+        print("Không có tham số tìm kiếm để thực hiện fallback multi_match.")
+        return []
     except Exception as e:
         print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]

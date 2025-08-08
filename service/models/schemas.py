@@ -16,7 +16,9 @@ class SearchServiceInput(BaseModel):
     """Input model for the search_services_tool."""
     ten_dich_vu: Optional[str] = Field(description="Tên dịch vụ, ví dụ: 'Thay pin'.")
     ten_san_pham: Optional[str] = Field(description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
-    hang_dich_vu: Optional[str] = Field(description="Hãng dịch vụ, ví dụ: 'Pin Lithium'.")
+    hang_san_pham: Optional[str] = Field(description="Hãng sản phẩm, ví dụ: 'Apple'.")
+    mau_sac_san_pham: Optional[str] = Field(description="Màu sắc sản phẩm, ví dụ: 'Titan Tự nhiên'.")
+    loai_dich_vu: Optional[str] = Field(description="Loại dịch vụ, ví dụ: 'Pin Lithium'.")
 
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
@@ -41,6 +43,7 @@ class ChatbotRequest(BaseModel):
     query: str = Field(description="The user's query for the chatbot.")
     customer_id: str = Field(description="The unique identifier for the store owner.")
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
+    api_key: Optional[str] = Field(description="The API key for the LLM provider.")
 
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""
@@ -84,7 +87,7 @@ class ServiceRow(BaseModel):
     hang_san_pham: Optional[str] = None
     ten_san_pham: Optional[str] = None
     mau_sac_san_pham: Optional[str] = None
-    hang_dich_vu: Optional[str] = None
+    loai_dich_vu: Optional[str] = None
     gia: Optional[float] = None
     bao_hanh: Optional[str] = None
     ghi_chu: Optional[str] = None

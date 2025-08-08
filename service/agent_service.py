@@ -9,25 +9,26 @@ from functools import partial
 
 load_dotenv()
 
-if not os.getenv("GEMINI_API_KEY"):
-  os.environ["GEMINI_API_KEY"] = getpass.getpass("Nhập GeminiAPI_Key: ")
-
 from .tools import create_customer_tools
 
 def create_agent_executor(
     customer_id: str,
     customer_configs: dict,
-    llm_provider: str = "google_genai"
+    llm_provider: str = "google_genai",
+    api_key: str = None
 ):
     """
     Tạo và trả về một Agent Executor, được cấu hình cho một khách hàng cụ thể.
     """
+    if not api_key:
+        raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
+
     if llm_provider == "google_genai":
-        llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai")
+        llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai", api_key=api_key)
     elif llm_provider == "openai":
-        llm = init_chat_model(model="gpt-4o-mini", model_provider="openai")
+        llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
     else:
-        raise ValueError(f"Unsupported llm_provider: {llm_provider}")
+        raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
 
     config = customer_configs.get(customer_id, {})
     persona = config.get("persona", {"ai_name": "", "ai_role": "nhân viên tư vấn"})

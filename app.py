@@ -483,11 +483,13 @@ async def chat(
         user_input = request.query
         llm_provider = request.llm_provider
         customer_id = request.customer_id
+        api_key = request.api_key
 
         agent_executor = create_agent_executor(
             customer_id=customer_id,
             customer_configs=customer_configs,
-            llm_provider=llm_provider
+            llm_provider=llm_provider,
+            api_key=api_key
         )
         
         response = invoke_agent_with_memory(agent_executor, threadId, user_input, chat_memory)
