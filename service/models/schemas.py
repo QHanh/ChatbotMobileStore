@@ -4,21 +4,21 @@ from typing import Optional
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
     # query_text: Optional[str] = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, ví dụ: 'iPhone màu xanh giá rẻ'.")
-    model: Optional[str] = Field(description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
-    mau_sac: Optional[str] = Field(description="Màu sắc của sản phẩm, ví dụ: 'Titan Tự nhiên'.")
-    dung_luong: Optional[str] = Field(description="Dung lượng lưu trữ, ví dụ: '256GB'.")
-    tinh_trang_may: Optional[str] = Field(description="Tình trạng của máy, ví dụ: 'đẹp', 'trầy xước', 'xước nhẹ', tùy theo khách hàng hỏi.")
-    loai_thiet_bi: Optional[str] = Field(description="Loại thiết bị, ví dụ: 'Cũ', 'Mới'.")
-    min_gia: Optional[float] = Field(description="Mức giá tối thiểu.")
-    max_gia: Optional[float] = Field(description="Mức giá tối đa.")
+    model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
+    mau_sac: Optional[str] = Field(default=None, description="Màu sắc của sản phẩm, ví dụ: 'Titan Tự nhiên'.")
+    dung_luong: Optional[str] = Field(default=None, description="Dung lượng lưu trữ, ví dụ: '256GB'.")
+    tinh_trang_may: Optional[str] = Field(default=None, description="Tình trạng của máy, ví dụ: 'đẹp', 'trầy xước', 'xước nhẹ', tùy theo khách hàng hỏi.")
+    loai_thiet_bi: Optional[str] = Field(default=None, description="Loại thiết bị, ví dụ: 'Cũ', 'Mới'.")
+    min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
+    max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
 
 class SearchServiceInput(BaseModel):
     """Input model for the search_services_tool."""
-    ten_dich_vu: Optional[str] = Field(description="Tên dịch vụ, ví dụ: 'Thay pin'.")
-    ten_san_pham: Optional[str] = Field(description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
-    hang_san_pham: Optional[str] = Field(description="Hãng sản phẩm, ví dụ: 'Apple'.")
-    mau_sac_san_pham: Optional[str] = Field(description="Màu sắc sản phẩm, ví dụ: 'Titan Tự nhiên'.")
-    loai_dich_vu: Optional[str] = Field(description="Loại dịch vụ, ví dụ: 'Pin Lithium'.")
+    ten_dich_vu: Optional[str] = Field(default=None, description="Tên dịch vụ, ví dụ: 'Thay pin'.")
+    ten_san_pham: Optional[str] = Field(default=None, description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
+    hang_san_pham: Optional[str] = Field(default=None, description="Hãng sản phẩm, ví dụ: 'Apple'.")
+    mau_sac_san_pham: Optional[str] = Field(default=None, description="Màu sắc sản phẩm, ví dụ: 'Titan Tự nhiên'.")
+    loai_dich_vu: Optional[str] = Field(default=None, description="Loại dịch vụ, ví dụ: 'Pin Lithium', 'fix sọc'.")
 
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
