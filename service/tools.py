@@ -287,6 +287,7 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
 
         available_tools.extend([
             search_accessory_tool,
+            create_order_accessory_tool,
         ])
 
     return available_tools

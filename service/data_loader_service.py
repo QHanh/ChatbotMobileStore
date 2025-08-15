@@ -313,7 +313,7 @@ def process_and_index_accessory_data(es_client: Elasticsearch, index_name: str, 
     
     actions = []
     total_rows = len(df)
-    API_ENDPOINT = "http://localhost:8000/embed"
+    API_ENDPOINT = "https://embed.doiquanai.vn/embed"
 
     for index, row in df.iterrows():
         print(f"Đang xử lý dòng {index + 1}/{total_rows}: {row['accessory_name']}")
@@ -366,7 +366,7 @@ def index_single_accessory(es_client: Elasticsearch, index_name: str, accessory_
     """
     try:
         document_id = accessory_data['accessory_code']
-        API_ENDPOINT = "http://localhost:8000/embed"
+        API_ENDPOINT = "https://embed.doiquanai.vn/embed"
         image_url = accessory_data['avatar_images']
         embedding_vector = None
 
