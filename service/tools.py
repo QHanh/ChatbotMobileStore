@@ -11,7 +11,7 @@ from .sheet_service import insert_order_to_sheet
 # Lấy Spreadsheet ID từ biến môi trường
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
-def search_products_logic(
+async def search_products_logic(
     index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -26,7 +26,7 @@ def search_products_logic(
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy (trầy xước, xước nhẹ), loại thiết bị (Cũ, Mới), hoặc khoảng giá để lọc kết quả.
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho index: {index_name} ---")
-    results = search_products(
+    results = await search_products(
         index_name=index_name,
         model=model,
         mau_sac=mau_sac,
@@ -38,7 +38,7 @@ def search_products_logic(
     )
     return results
 
-def search_services_logic(
+async def search_services_logic(
     index_name: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
@@ -54,7 +54,7 @@ def search_services_logic(
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho index: {index_name} ---")
 
-    results = search_services(
+    results = await search_services(
         index_name=index_name,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
@@ -66,7 +66,7 @@ def search_services_logic(
     )
     return results
 
-def search_accessories_logic(
+async def search_accessories_logic(
     index_name: str,
     ten_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
@@ -79,7 +79,7 @@ def search_accessories_logic(
     Cung cấp các tiêu chí cụ thể như tên phụ kiện, thuộc tính phụ kiện, phân loại phụ kiện, hoặc khoảng giá để lọc kết quả.
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho index: {index_name} ---")
-    results = search_accessories(
+    results = await search_accessories(
         index_name=index_name,
         ten_phu_kien=ten_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
@@ -90,7 +90,7 @@ def search_accessories_logic(
     return results
 
 @tool("create_order_product_tool", args_schema=OrderProductInput)
-def create_order_product_tool(
+async def create_order_product_tool(
     ma_san_pham: str,
     ten_san_pham: str,
     so_luong: int,
@@ -101,7 +101,7 @@ def create_order_product_tool(
     """
     Sử dụng công cụ này khi người dùng muốn đặt mua một sản phẩm.
     Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
+    Các thông tin gồm: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
@@ -133,7 +133,7 @@ def create_order_product_tool(
     }
 
 @tool("create_order_service_tool", args_schema=OrderServiceInput)
-def create_order_service_tool(
+async def create_order_service_tool(
     ma_dich_vu: str,
     ten_dich_vu: str,
     ten_san_pham: str,
@@ -144,7 +144,7 @@ def create_order_service_tool(
     """
     Sử dụng công cụ này khi người dùng muốn đặt một dịch vụ sửa chữa điện thoại.
     Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham) bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
+    Các thông tin gồm mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham) bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
@@ -176,7 +176,7 @@ def create_order_service_tool(
     }
 
 @tool("create_order_accessory_tool", args_schema=OrderAccessoryInput)
-def create_order_accessory_tool(
+async def create_order_accessory_tool(
     ma_phu_kien: str,
     ten_phu_kien: str,
     so_luong: int,
@@ -187,7 +187,7 @@ def create_order_accessory_tool(
     """
     Sử dụng công cụ này khi người dùng muốn đặt mua một phụ kiện.
     Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm: tên phụ kiện (ten_phu_kien), số lượng bạn hãy tự cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
+    Các thông tin gồm: mã phụ kiện (ma_phu_kien), tên phụ kiện (ten_phu_kien), số lượng bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
     Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
@@ -219,7 +219,7 @@ def create_order_accessory_tool(
     }
 
 @tool
-def escalate_to_human_tool() -> str:
+async def escalate_to_human_tool() -> str:
     """
     Sử dụng công cụ này khi người dùng yêu cầu được nói chuyện với nhân viên tư vấn, hoặc khi các công cụ khác không thể giải quyết được yêu cầu phức tạp của họ.
     Công cụ này sẽ kết nối người dùng đến một nhân viên thật.
@@ -228,7 +228,7 @@ def escalate_to_human_tool() -> str:
     return "Đang kết nối anh/chị với nhân viên tư vấn. Anh/chị vui lòng chờ trong giây lát..."
 
 @tool
-def end_conversation_tool() -> str:
+async def end_conversation_tool() -> str:
     """
     Sử dụng công cụ này khi người dùng chào tạm biệt, cảm ơn hoặc không có yêu cầu nào khác.
     Công cụ này sẽ kết thúc cuộc trò chuyện một cách lịch sự.
@@ -248,7 +248,8 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
         func=customer_search_product_func,
         name="search_products_tool",
         description=search_products_logic.__doc__,
-        args_schema=SearchProductInput
+        args_schema=SearchProductInput,
+        coroutine=customer_search_product_func
     )
     
     available_tools = [
@@ -266,7 +267,8 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
             func=customer_search_service_func,
             name="search_services_tool",
             description=search_services_logic.__doc__,
-            args_schema=SearchServiceInput
+            args_schema=SearchServiceInput,
+            coroutine=customer_search_service_func
         )
         
         available_tools.extend([
@@ -282,7 +284,8 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
             func=customer_search_accessory_func,
             name="search_accessories_tool",
             description=search_accessories_logic.__doc__,
-            args_schema=SearchAccessoryInput
+            args_schema=SearchAccessoryInput,
+            coroutine=customer_search_accessory_func
         )
 
         available_tools.extend([

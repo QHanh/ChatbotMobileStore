@@ -122,13 +122,13 @@ def get_session_history(session_id: str, memory: dict):
         memory[session_id] = []
     return memory[session_id]
 
-def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
+async def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
     """
     Gọi agent với input của người dùng và quản lý lịch sử trò chuyện.
     """
     chat_history = get_session_history(session_id, memory)
     
-    response = agent_executor.invoke({
+    response = await agent_executor.ainvoke({
         "input": user_input,
         "chat_history": chat_history
     })
@@ -141,18 +141,26 @@ def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, m
     return response
 
 if __name__ == '__main__':
-    print("Đang khởi tạo agent...")
-    agent_executor = create_agent_executor(customer_id="test_customer", customer_configs={})
-    
-    chat_memory = {}
-    session_id = "user123"
+    import asyncio
 
-    print("\nAgent đã sẵn sàng. Bắt đầu cuộc trò chuyện.")
-    
-    while True:
-        user_input = input("You: ")
-        if user_input.lower() in ['exit', 'quit']:
-            break
-        response = invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
+    async def main():
+        print("Đang khởi tạo agent...")
+        agent_executor = create_agent_executor(customer_id="test_customer", customer_configs={})
         
-        print(f"Agent: {response['output']}") 
+        chat_memory = {}
+        session_id = "user123"
+
+        print("\nAgent đã sẵn sàng. Bắt đầu cuộc trò chuyện.")
+        
+        while True:
+            user_input = input("You: ")
+            if user_input.lower() in ['exit', 'quit']:
+                break
+            response = await invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
+            
+            print(f"Agent: {response['output']}")
+
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\nĐã đóng chương trình.") 

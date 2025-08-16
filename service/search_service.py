@@ -1,5 +1,5 @@
 import os
-from elasticsearch import Elasticsearch
+from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 from dotenv import load_dotenv
 from config.settings import ELASTIC_HOST
@@ -8,15 +8,15 @@ load_dotenv()
 
 es_client = None
 
-def get_es_client():
+async def get_es_client():
     """
     Initializes and returns a single instance of the Elasticsearch client.
     """
     global es_client
     if es_client is None:
         try:
-            es_client = Elasticsearch(hosts=[ELASTIC_HOST])
-            if not es_client.ping():
+            es_client = AsyncElasticsearch(hosts=[ELASTIC_HOST])
+            if not await es_client.ping():
                 raise ConnectionError("Không thể kết nối đến Elasticsearch.")
             print("search_service: Kết nối đến Elasticsearch thành công!")
         except ConnectionError as e:
@@ -24,7 +24,7 @@ def get_es_client():
             es_client = None
     return es_client
 
-def search_products(
+async def search_products(
     index_name: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -49,7 +49,7 @@ def search_products(
     Returns:
         List[Dict[str, Any]]: Danh sách các sản phẩm phù hợp.
     """
-    es = get_es_client()
+    es = await get_es_client()
     if not es:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
@@ -87,7 +87,7 @@ def search_products(
     query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
 
     try:
-        response = es.search(
+        response = await es.search(
             index=index_name,
             query=query,
             size=10
@@ -99,7 +99,7 @@ def search_products(
         print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
 
-def search_services(
+async def search_services(
     index_name: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
@@ -116,7 +116,7 @@ def search_services(
         ten_san_pham (Optional[str]): Tên sản phẩm đi kèm (ví dụ: "iPhone 15 Pro Max").
         chi_tiet_dich_vu (Optional[str]): Chi tiết dịch vụ (ví dụ: "Pin Lithium").
     """
-    es = get_es_client()
+    es = await get_es_client()
     if not es:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
     
@@ -152,7 +152,7 @@ def search_services(
         query["bool"]["filter"].append({"range": {"gia": price_range}})
     
     try:
-        response = es.search(index=index_name, query=query, size=10)
+        response = await es.search(index=index_name, query=query, size=10)
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp (theo bộ lọc cụ thể).")
@@ -181,7 +181,7 @@ def search_services(
                     "fuzziness": "AUTO"
                 }
             }
-            response = es.search(index=index_name, query=fallback_query, size=10)
+            response = await es.search(index=index_name, query=fallback_query, size=10)
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
             return hits
@@ -193,7 +193,7 @@ def search_services(
         print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
     
-def search_accessories(
+async def search_accessories(
     index_name: str,
     ten_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
@@ -204,7 +204,7 @@ def search_accessories(
     """
     Tìm kiếm phụ kiện trong Elasticsearch dựa trên các tiêu chí lọc.
     """
-    es = get_es_client()
+    es = await get_es_client()
     if not es:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
     
@@ -234,7 +234,7 @@ def search_accessories(
         query["bool"]["filter"].append({"range": {"gia": price_range}})
     
     try:
-        response = es.search(index=index_name, query=query, size=10)
+        response = await es.search(index=index_name, query=query, size=10)
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} phụ kiện phù hợp (theo bộ lọc cụ thể).")
@@ -260,7 +260,7 @@ def search_accessories(
                     "fuzziness": "AUTO"
                 }
             }
-            response = es.search(index=index_name, query=fallback_query, size=10)
+            response = await es.search(index=index_name, query=fallback_query, size=10)
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} phụ kiện phù hợp.")
             return hits
@@ -273,7 +273,12 @@ def search_accessories(
         return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
 
 if __name__ == '__main__':
-    results = search_products(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
-    if results:
-        for product in results:
-            print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")
+    import asyncio
+
+    async def main():
+        results = await search_products(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+        if results:
+            for product in results:
+                print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")
+
+    asyncio.run(main())
