@@ -29,6 +29,10 @@ class SearchAccessoryInput(BaseModel):
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
 
+class RetrieveDocumentInput(BaseModel):
+    """Input model for the retrieve_document_tool."""
+    query: str = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, bạn nên dựa vào lịch sử hội thoại để viết lại câu hỏi của khách hàng đầy đủ ngữ nghĩa nhất để truy xuất dữ liệu, ví dụ: 'iPhone màu xanh giá rẻ'.")
+
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
     ma_san_pham: str = Field(description="Mã sản phẩm khách hàng đặt.")

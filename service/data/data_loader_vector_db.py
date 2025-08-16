@@ -4,6 +4,8 @@ from typing import List, Dict, Any
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, Docx2txtLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_weaviate.vectorstores import WeaviateVectorStore
+from langchain_core.documents import Document
+import tempfile
 
 # Cấu hình kết nối Weaviate
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
@@ -44,13 +46,15 @@ def load_documents_from_directory(path: str) -> List[Dict[str, Any]]:
             ".pdf": PyPDFLoader,
             ".docx": Docx2txtLoader,
             ".txt": TextLoader,
+            ".md": TextLoader,
+            ".json": TextLoader,
         },
     )
     documents = loader.load()
     print(f"Đã tải thành công {len(documents)} tài liệu.")
     return documents
 
-def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 1000, chunk_overlap: int = 150) -> List[Dict[str, Any]]:
+def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 500, chunk_overlap: int = 50) -> List[Dict[str, Any]]:
     """
     Chia nhỏ tài liệu thành các chunk văn bản bằng RecursiveCharacterTextSplitter.
     """
@@ -82,34 +86,37 @@ def load_chunks_to_weaviate(client: weaviate.Client, chunks: List[Dict[str, Any]
     except Exception as e:
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
 
-def main(data_path: str, weaviate_class: str):
+def process_and_load_text(client: weaviate.Client, text: str, class_name: str):
     """
-    Hàm chính để thực hiện quy trình tải và nhúng tài liệu.
+    Xử lý văn bản thô, chia nhỏ và tải vào Weaviate.
     """
-    # 1. Kết nối đến Weaviate
-    client = get_weaviate_client()
-    if not client:
-        return
-
-    # 2. Tải và xử lý tài liệu
-    documents = load_documents_from_directory(data_path)
-    if not documents:
-        print("Không tìm thấy tài liệu nào để xử lý.")
-        return
-        
-    # 3. Chia nhỏ tài liệu
+    documents = [Document(page_content=text)]
     chunks = split_documents(documents)
+    load_chunks_to_weaviate(client, chunks, class_name)
 
-    # 4. Tải chunks vào Weaviate
-    load_chunks_to_weaviate(client, chunks, weaviate_class)
+def process_and_load_file(client: weaviate.Client, file_content: bytes, file_name: str, class_name: str):
+    """
+    Xử lý tệp, chia nhỏ và tải vào Weaviate.
+    """
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as tmp_file:
+        tmp_file.write(file_content)
+        tmp_file_path = tmp_file.name
 
-if __name__ == "__main__":
-    # Thay đổi đường dẫn đến thư mục chứa dữ liệu của bạn
-    DATA_DIRECTORY = "path/to/your/data" 
-    # Thay đổi tên class (collection) trong Weaviate mà bạn muốn lưu dữ liệu
-    WEAVIATE_CLASS_NAME = "MyDocumentCollection" 
+    loader_cls = None
+    file_ext = os.path.splitext(file_name)[1].lower()
+    if file_ext == ".pdf":
+        loader_cls = PyPDFLoader
+    elif file_ext == ".docx":
+        loader_cls = Docx2txtLoader
+    elif file_ext in [".txt", ".md"]:
+        loader_cls = TextLoader
+    elif file_ext == ".json":
+        loader_cls = TextLoader
 
-    if not os.path.exists(DATA_DIRECTORY):
-        print(f"Lỗi: Thư mục '{DATA_DIRECTORY}' không tồn tại. Vui lòng cung cấp đường dẫn hợp lệ.")
-    else:
-        main(DATA_DIRECTORY, WEAVIATE_CLASS_NAME)
+    if loader_cls:
+        loader = loader_cls(tmp_file_path)
+        documents = loader.load()
+        chunks = split_documents(documents)
+        load_chunks_to_weaviate(client, chunks, class_name)
+    
+    os.remove(tmp_file_path)

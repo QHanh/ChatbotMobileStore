@@ -4,12 +4,30 @@ from typing import Optional, List, Dict, Any, Union
 from functools import partial
 import os
 
-from .search_service import search_products, search_services, search_accessories
-from .models.schemas import SearchProductInput, SearchServiceInput, OrderProductInput, OrderServiceInput, SearchAccessoryInput, OrderAccessoryInput
-from .sheet_service import insert_order_to_sheet
+from service.retrieve.search_service import search_products, search_services, search_accessories
+from service.retrieve.retrieve_vector_service import retrieve_documents
+from service.models.schemas import (
+    SearchProductInput, SearchServiceInput, OrderProductInput, 
+    OrderServiceInput, SearchAccessoryInput, OrderAccessoryInput,
+    RetrieveDocumentInput
+)
+from service.integrations.sheet_service import insert_order_to_sheet
 
 # Lấy Spreadsheet ID từ biến môi trường
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+
+async def retrieve_document_logic(
+    class_name: str,
+    query: str
+) -> List[Dict[str, Any]]:
+    """
+    Sử dụng công cụ này để tìm kiếm thông tin chung, chính sách, hướng dẫn hoặc bất kỳ câu hỏi nào không liên quan trực tiếp đến thông số kỹ thuật của một sản phẩm, dịch vụ hoặc phụ kiện cụ thể.
+    Ví dụ: "chính sách công ty", "hướng dẫn đổi trả", "địa chỉ cửa hàng".
+    Công cụ này sẽ truy xuất thông tin từ cơ sở tri thức, thông tin của cửa hàng.
+    """
+    print(f"--- Agent đã gọi công cụ truy xuất tài liệu cho class: {class_name} ---")
+    results = await retrieve_documents(query=query, class_name=class_name)
+    return results
 
 async def search_products_logic(
     index_name: str,
@@ -251,9 +269,20 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
         args_schema=SearchProductInput,
         coroutine=customer_search_product_func
     )
+
+    class_name_document = f"document_{customer_id}"
+    customer_retrieve_document_func = partial(retrieve_document_logic, class_name=class_name_document)
+    retrieve_document_tool = StructuredTool.from_function(
+        func=customer_retrieve_document_func,
+        name="retrieve_document_tool",
+        description=retrieve_document_logic.__doc__,
+        args_schema=RetrieveDocumentInput,
+        coroutine=customer_retrieve_document_func
+    )
     
     available_tools = [
         search_product_tool,
+        retrieve_document_tool,
         create_order_product_tool,
         escalate_to_human_tool,
         end_conversation_tool
