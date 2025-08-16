@@ -130,4 +130,8 @@ class AccessoryRow(BaseModel):
     specifications: Optional[str] = None
     avatar_images: Optional[str] = None
     link_accessory: Optional[str] = None
+
+class DocumentInput(BaseModel):
+    """Input model for adding a document."""
+    text: str = Field(description="Nội dung văn bản thô cần thêm vào cơ sở dữ liệu vector.") 
     

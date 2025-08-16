@@ -6,30 +6,23 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain_core.documents import Document
 import tempfile
+from weaviate.auth import AuthApiKey
+from dotenv import load_dotenv
 
+load_dotenv()
 # Cấu hình kết nối Weaviate
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 
 def get_weaviate_client():
-    """
-    Khởi tạo và trả về một client Weaviate.
-    """
-    client_params = {
-        "url": WEAVIATE_URL,
-    }
-    if WEAVIATE_API_KEY:
-        client_params["auth_client_secret"] = weaviate.AuthApiKey(api_key=WEAVIATE_API_KEY)
-    
-    try:
-        client = weaviate.Client(**client_params)
-        if not client.is_ready():
-            raise ConnectionError("Không thể kết nối đến Weaviate.")
-        print("Kết nối đến Weaviate thành công!")
-        return client
-    except Exception as e:
-        print(f"Lỗi khi kết nối đến Weaviate: {e}")
-        return None
+    client = weaviate.Client(
+        url=WEAVIATE_URL,
+        auth_client_secret=AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
+    )
+    if not client.is_ready():
+        raise ConnectionError("Không thể kết nối đến Weaviate.")
+    print("Kết nối đến Weaviate thành công!")
+    return client
 
 def load_documents_from_directory(path: str) -> List[Dict[str, Any]]:
     """
@@ -69,7 +62,7 @@ def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 500, chun
     print(f"Đã tạo thành công {len(chunks)} chunk văn bản.")
     return chunks
 
-def load_chunks_to_weaviate(client: weaviate.Client, chunks: List[Dict[str, Any]], class_name: str):
+def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Dict[str, Any]], class_name: str):
     """
     Tải các chunk văn bản vào Weaviate.
     """
@@ -80,13 +73,13 @@ def load_chunks_to_weaviate(client: weaviate.Client, chunks: List[Dict[str, Any]
             documents=chunks,
             client=client,
             index_name=class_name,
-            text_key="text" # Đảm bảo text_key khớp với schema của bạn
+            text_key="text"
         )
         print("Tải dữ liệu lên Weaviate thành công!")
     except Exception as e:
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
 
-def process_and_load_text(client: weaviate.Client, text: str, class_name: str):
+def process_and_load_text(client: weaviate.WeaviateClient, text: str, class_name: str):
     """
     Xử lý văn bản thô, chia nhỏ và tải vào Weaviate.
     """
@@ -94,7 +87,7 @@ def process_and_load_text(client: weaviate.Client, text: str, class_name: str):
     chunks = split_documents(documents)
     load_chunks_to_weaviate(client, chunks, class_name)
 
-def process_and_load_file(client: weaviate.Client, file_content: bytes, file_name: str, class_name: str):
+def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, file_name: str, class_name: str):
     """
     Xử lý tệp, chia nhỏ và tải vào Weaviate.
     """

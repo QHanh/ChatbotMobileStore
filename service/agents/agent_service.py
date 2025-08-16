@@ -9,7 +9,7 @@ from functools import partial
 
 load_dotenv()
 
-from ..utils.tools import create_customer_tools
+from service.utils.tools import create_customer_tools
 
 def create_agent_executor(
     customer_id: str,
@@ -38,9 +38,9 @@ def create_agent_executor(
 
     customer_tools = create_customer_tools(customer_id, service_feature_enabled, accessory_feature_enabled)
 
+    identity = ""
     if persona['ai_role']:
         identity = f"đóng vai một {persona['ai_role']} am hiểu và thân thiện"
-    
     if persona['ai_name']:
         identity += f" tên là {persona['ai_name']}"
 
