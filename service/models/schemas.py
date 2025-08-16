@@ -3,7 +3,6 @@ from typing import Optional
 
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
-    # query_text: Optional[str] = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, ví dụ: 'iPhone màu xanh giá rẻ'.")
     model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
     mau_sac: Optional[str] = Field(default=None, description="Màu sắc của sản phẩm, ví dụ: 'Titan Tự nhiên'.")
     dung_luong: Optional[str] = Field(default=None, description="Dung lượng lưu trữ, ví dụ: '256GB'.")

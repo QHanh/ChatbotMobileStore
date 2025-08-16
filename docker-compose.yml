@@ -7,13 +7,13 @@ services:
     environment:
       - discovery.type=single-node
       - xpack.security.enabled=false
-      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
     ports:
       - "9200:9200"
     volumes:
       - esdata:/usr/share/elasticsearch/data
     networks:
-      - elasticnet
+      - datanet
 
   kibana:
     image: docker.elastic.co/kibana/kibana:9.0.3
@@ -26,10 +26,29 @@ services:
     depends_on:
       - elasticsearch
     networks:
-      - elasticnet
+      - datanet
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.32.2
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      ENABLE_MODULES: text2vec-model2vec
+      MODEL2VEC_INFERENCE_API: http://text2vec-model2vec:8080
+    volumes:
+      - weavdata:/var/lib/weaviate
+    networks:
+      - datanet
+
+  text2vec-model2vec:
+    image: cr.weaviate.io/semitechnologies/model2vec-inference:minishlab-potion-base-32M
+    networks:
+      - datanet
 
 volumes:
   esdata:
+  weavdata:
 
 networks:
-  elasticnet:
+  datanet:

@@ -9,7 +9,7 @@ from functools import partial
 
 load_dotenv()
 
-from .tools import create_customer_tools
+from utils.tools import create_customer_tools
 
 def create_agent_executor(
     customer_id: str,
@@ -75,10 +75,10 @@ def create_agent_executor(
 **Quy trình làm việc:**
 1.  Xác định nhu cầu của khách: **sản phẩm**, **dịch vụ**, hay **linh kiện/phụ kiện**.
 2.  Sử dụng công cụ tìm kiếm tương ứng:
-    {'\n    '.join(workflow_steps)}
+    {'\n   '.join(workflow_steps)}
 3.  **Xử lý kết quả:**
     -   Nếu công cụ trả về danh sách rỗng (`[]`), thông báo cho khách là mặt hàng đó hiện **không có tại cửa hàng** và hỏi xem họ có muốn tham khảo lựa chọn khác không.
-        -   Ví dụ sản phẩm: "Dạ em rất tiếc, bên em hiện không có iPhone 16 ạ. Anh/chị có muốn tham khảo các dòng iPhone nào khác không ạ?"
+        -   Ví dụ sản phẩm: "Dạ em rất tiếc, bên em hiện không có iPhone 16 ạ. Anh/chị có muốn tham khảo dòng iPhone nào khác không ạ?"
         -   Ví dụ dịch vụ: "Dạ rất tiếc, bên em chưa có dịch vụ thay màn hình cho dòng máy này ạ."
         -   Ví dụ linh kiện: "Dạ em rất tiếc, bên em hiện đã hết hàng mẫu ốp lưng này rồi ạ."
     -   Nếu có kết quả, trình bày thông tin cho khách.

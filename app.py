@@ -1,8 +1,8 @@
 from fastapi import FastAPI, Path, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from service.agent_service import create_agent_executor, invoke_agent_with_memory
+from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory
 from service.models.schemas import ChatbotRequest, PersonaConfig, PromptConfig, ProductRow, ServiceRow, ServiceFeatureConfig, AccessoryRow, AccessoryFeatureConfig
-from service.data_loader_service import (
+from service.data.data_loader_elastic_search import (
     create_product_index, process_and_index_product_data, 
     create_service_index, process_and_index_service_data,
     index_single_product, index_single_service,
@@ -522,4 +522,4 @@ async def chat(
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8010, reload=True, log_level="warning")
+    uvicorn.run("app:app", host="127.0.0.1", port=8010, reload=True)

@@ -13,3 +13,8 @@ gspread
 google-auth-oauthlib
 requests
 elasticsearch[async]
+weaviate-client
+langchain-weaviate
+pypdf
+python-docx
+langchain-community
