@@ -12,6 +12,8 @@ from weaviate.auth import AuthApiKey
 from dotenv import load_dotenv
 from weaviate.client import WeaviateClient
 from weaviate.connect import ConnectionParams
+import re
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
@@ -27,9 +29,7 @@ def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
         try:
             client.collections.create(
                 name=class_name,
-                vectorizer_config=Configure.Vectorizer.custom(
-                    vectorizer="text2vec-model2vec" 
-                ),
+                vectorizer_config=Configure.Vectorizer.none(),
                 properties=[
                     Property(name="text", data_type=DataType.TEXT),
                     Property(name="source", data_type=DataType.TEXT)
@@ -41,13 +41,11 @@ def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
             raise
     else:
         print(f"Collection '{class_name}' đã tồn tại.")
-        # Đảm bảo thuộc tính 'source' tồn tại trong schema để dùng cho liệt kê
         try:
             collection = client.collections.get(class_name)
             collection.config.add_property(Property(name="source", data_type=DataType.TEXT))
             print("Đã đảm bảo thuộc tính 'source' tồn tại trong schema.")
         except Exception as e:
-            # Bỏ qua nếu thuộc tính đã tồn tại hoặc không thể thêm vì lý do khác
             print(f"Bỏ qua thêm thuộc tính 'source': {e}")
 
 def get_weaviate_client():
@@ -108,15 +106,30 @@ def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 500, chun
     print(f"Đã tạo thành công {len(chunks)} chunk văn bản.")
     return chunks
 
-def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Dict[str, Any]], class_name: str):
+def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Document], class_name: str):
     """
-    Tải các chunk văn bản vào Weaviate.
+    Tải các chunk văn bản vào Weaviate, sử dụng Google Embeddings ở phía client.
     """
     print(f"Chuẩn bị tải {len(chunks)} chunk vào Weaviate class: '{class_name}'...")
+
+    def _sanitize_property_name(name: str) -> str:
+        name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
+        if name and name[0].isdigit():
+            name = f"_{name}"
+        return name
+
+    for chunk in chunks:
+        if chunk.metadata:
+            chunk.metadata = {
+                _sanitize_property_name(key): value
+                for key, value in chunk.metadata.items()
+            }
+
     try:
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         WeaviateVectorStore.from_documents(
             documents=chunks,
-            embedding=None,
+            embedding=embeddings,
             client=client,
             index_name=class_name,
             text_key="text"
