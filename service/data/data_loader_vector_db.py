@@ -31,7 +31,8 @@ def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
                     vectorizer="text2vec-model2vec" 
                 ),
                 properties=[
-                    Property(name="text", data_type=DataType.TEXT)
+                    Property(name="text", data_type=DataType.TEXT),
+                    Property(name="source", data_type=DataType.TEXT)
                 ]
             )
             print(f"✅ Đã tạo thành công collection '{class_name}'!")
@@ -40,6 +41,14 @@ def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
             raise
     else:
         print(f"Collection '{class_name}' đã tồn tại.")
+        # Đảm bảo thuộc tính 'source' tồn tại trong schema để dùng cho liệt kê
+        try:
+            collection = client.collections.get(class_name)
+            collection.config.add_property(Property(name="source", data_type=DataType.TEXT))
+            print("Đã đảm bảo thuộc tính 'source' tồn tại trong schema.")
+        except Exception as e:
+            # Bỏ qua nếu thuộc tính đã tồn tại hoặc không thể thêm vì lý do khác
+            print(f"Bỏ qua thêm thuộc tính 'source': {e}")
 
 def get_weaviate_client():
     """
