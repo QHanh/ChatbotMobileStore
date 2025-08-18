@@ -6,7 +6,11 @@ import json
 import warnings
 import io
 import requests
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+API_EMBED_IMAGE = os.getenv("API_EMBED_IMAGE")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 def create_product_index(es_client: Elasticsearch, index_name: str):
@@ -313,7 +317,6 @@ def process_and_index_accessory_data(es_client: Elasticsearch, index_name: str, 
     
     actions = []
     total_rows = len(df)
-    API_ENDPOINT = "https://embed.doiquanai.vn/embed"
 
     for index, row in df.iterrows():
         print(f"Đang xử lý dòng {index + 1}/{total_rows}: {row['accessory_name']}")
@@ -324,7 +327,7 @@ def process_and_index_accessory_data(es_client: Elasticsearch, index_name: str, 
 
         if isinstance(image_url, str) and image_url.startswith('http'):
             try:
-                response = requests.post(API_ENDPOINT, data={"image_url": image_url}, timeout=15)
+                response = requests.post(API_EMBED_IMAGE, data={"image_url": image_url}, timeout=15)
                 response.raise_for_status()
                 result = response.json()
 
@@ -366,13 +369,12 @@ def index_single_accessory(es_client: Elasticsearch, index_name: str, accessory_
     """
     try:
         document_id = accessory_data['accessory_code']
-        API_ENDPOINT = "https://embed.doiquanai.vn/embed"
         image_url = accessory_data['avatar_images']
         embedding_vector = None
 
         if isinstance(image_url, str) and image_url.startswith('http'):
             try:
-                response = requests.post(API_ENDPOINT, data={"image_url": image_url}, timeout=15)
+                response = requests.post(API_EMBED_IMAGE, data={"image_url": image_url}, timeout=15)
                 response.raise_for_status()
                 result = response.json()
 
