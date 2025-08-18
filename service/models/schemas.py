@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List
 
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
@@ -32,6 +32,10 @@ class SearchAccessoryInput(BaseModel):
 class RetrieveDocumentInput(BaseModel):
     """Input model for the retrieve_document_tool."""
     query: str = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, bạn nên dựa vào lịch sử hội thoại để viết lại câu hỏi của khách hàng đầy đủ ngữ nghĩa nhất để truy xuất dữ liệu, ví dụ: 'iPhone màu xanh giá rẻ'.")
+
+class SendImageInput(BaseModel):
+    """Input model for the send_image_tool."""
+    image_urls: List[str] = Field(description="Một danh sách các đường dẫn (URL) đến hình ảnh cần gửi cho người dùng.")
 
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
@@ -66,6 +70,11 @@ class ChatbotRequest(BaseModel):
     customer_id: str = Field(description="The unique identifier for the store owner.")
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
     api_key: Optional[str] = Field(description="The API key for the LLM provider.")
+
+class ChatbotResponse(BaseModel):
+    """Output model for the chatbot."""
+    answer: str = Field(description="Câu trả lời bằng văn bản của chatbot.")
+    image_urls: Optional[List[str]] = Field(default=None, description="Danh sách các URL hình ảnh (nếu có) để hiển thị cho người dùng.")
 
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""
@@ -133,5 +142,5 @@ class AccessoryRow(BaseModel):
 
 class DocumentInput(BaseModel):
     """Input model for adding a document."""
-    text: str = Field(description="Nội dung văn bản thô cần thêm vào cơ sở dữ liệu vector.") 
+    text: str = Field(description="Nội dung văn bản thô cần thêm vào cơ sở dữ liệu vector.")
     

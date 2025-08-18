@@ -9,7 +9,7 @@ from service.retrieve.retrieve_vector_service import retrieve_documents
 from service.models.schemas import (
     SearchProductInput, SearchServiceInput, OrderProductInput, 
     OrderServiceInput, SearchAccessoryInput, OrderAccessoryInput,
-    RetrieveDocumentInput
+    RetrieveDocumentInput, SendImageInput
 )
 from service.integrations.sheet_service import insert_order_to_sheet
 
@@ -236,6 +236,21 @@ async def create_order_accessory_tool(
         "order_detail": order_detail
     }
 
+@tool("send_image_tool", args_schema=SendImageInput)
+async def send_image_tool(
+    image_urls: List[str],
+    image_url_holder: List[str]
+) -> str:
+    """
+    Sử dụng công cụ này khi người dùng muốn xem hình ảnh của một sản phẩm, dịch vụ hoặc phụ kiện.
+    Công cụ này sẽ chuẩn bị hình ảnh để gửi cho người dùng.
+    """
+    print(f"--- Agent đã gọi công cụ gửi hình ảnh với các URL: {image_urls} ---")
+    
+    image_url_holder.extend(image_urls)
+    
+    return "Hình ảnh đã được chuẩn bị để gửi tới người dùng."
+
 @tool
 async def escalate_to_human_tool() -> str:
     """
@@ -255,7 +270,12 @@ async def end_conversation_tool() -> str:
     return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
 
 
-def create_customer_tools(customer_id: str, service_feature_enabled: bool = True, accessory_feature_enabled: bool = True) -> list:
+def create_customer_tools(
+    customer_id: str,
+    # image_url_holder: List[str] = [],
+    service_feature_enabled: bool = True, 
+    accessory_feature_enabled: bool = True
+) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
@@ -280,10 +300,21 @@ def create_customer_tools(customer_id: str, service_feature_enabled: bool = True
         coroutine=customer_retrieve_document_func
     )
     
+    # customer_send_image_func = partial(send_image_tool, image_url_holder=image_url_holder)
+
+    # send_image_structured_tool = StructuredTool.from_function(
+    #     func=customer_send_image_func,
+    #     name="send_image_tool",
+    #     description=send_image_tool.__doc__,
+    #     args_schema=SendImageInput,
+    #     coroutine=customer_send_image_func
+    # )
+
     available_tools = [
         search_product_tool,
         retrieve_document_tool,
         create_order_product_tool,
+        # send_image_structured_tool,
         escalate_to_human_tool,
         end_conversation_tool
     ]

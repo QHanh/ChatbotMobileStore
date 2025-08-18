@@ -4,9 +4,7 @@ import uvicorn
 from config.settings import APP_CONFIG, CORS_CONFIG
 from api import product_routes, service_routes, accessory_routes, config_routes, chat_routes, document_routes
 import logging
-import warnings
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
-warnings.filterwarnings("ignore", category=DeprecationWarning, module=r"websockets\.legacy")
 
 app = FastAPI(**APP_CONFIG)
 
