@@ -2,25 +2,62 @@ import os
 import weaviate
 from typing import List, Dict, Any
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, Docx2txtLoader, TextLoader
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain_core.documents import Document
+from weaviate.classes.config import Configure, Property, DataType
 import tempfile
 from weaviate.auth import AuthApiKey
 from dotenv import load_dotenv
+from weaviate.client import WeaviateClient
+from weaviate.connect import ConnectionParams
 
 load_dotenv()
-# Cấu hình kết nối Weaviate
+
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 
+def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
+    """
+    Kiểm tra xem một collection đã tồn tại chưa. Nếu chưa, tạo nó với cấu hình đúng.
+    """
+    if not client.collections.exists(class_name):
+        print(f"Collection '{class_name}' chưa tồn tại. Đang tạo...")
+        try:
+            client.collections.create(
+                name=class_name,
+                vectorizer_config=Configure.Vectorizer.custom(
+                    vectorizer="text2vec-model2vec" 
+                ),
+                properties=[
+                    Property(name="text", data_type=DataType.TEXT)
+                ]
+            )
+            print(f"✅ Đã tạo thành công collection '{class_name}'!")
+        except Exception as e:
+            print(f"❌ Lỗi khi tạo collection '{class_name}': {e}")
+            raise
+    else:
+        print(f"Collection '{class_name}' đã tồn tại.")
+
 def get_weaviate_client():
-    client = weaviate.Client(
-        url=WEAVIATE_URL,
-        auth_client_secret=AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
+    """
+    Establishes a connection to the Weaviate instance with proper authentication.
+    """
+    auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
+
+    client = WeaviateClient(
+        connection_params=ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051),
+        auth_client_secret=auth_credentials
     )
+    
+    client.connect()
+
     if not client.is_ready():
+        client.close() 
         raise ConnectionError("Không thể kết nối đến Weaviate.")
+    
     print("Kết nối đến Weaviate thành công!")
     return client
 
@@ -67,15 +104,16 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Dict[s
     Tải các chunk văn bản vào Weaviate.
     """
     print(f"Chuẩn bị tải {len(chunks)} chunk vào Weaviate class: '{class_name}'...")
-
     try:
         WeaviateVectorStore.from_documents(
             documents=chunks,
+            embedding=None,
             client=client,
             index_name=class_name,
             text_key="text"
         )
         print("Tải dữ liệu lên Weaviate thành công!")
+        client.close()
     except Exception as e:
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
 
