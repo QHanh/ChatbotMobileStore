@@ -71,11 +71,6 @@ class ChatbotRequest(BaseModel):
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
     api_key: Optional[str] = Field(description="The API key for the LLM provider.")
 
-class ChatbotResponse(BaseModel):
-    """Output model for the chatbot."""
-    answer: str = Field(description="Câu trả lời bằng văn bản của chatbot.")
-    image_urls: Optional[List[str]] = Field(default=None, description="Danh sách các URL hình ảnh (nếu có) để hiển thị cho người dùng.")
-
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""
     ai_name: str = Field(description="The name of the AI assistant, e.g., 'Mai'.")
