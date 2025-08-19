@@ -65,8 +65,14 @@ def create_agent_executor(
         workflow_steps.append(service_workflow)
     if accessory_feature_enabled:
         workflow_steps.append(accessory_workflow)
-        
-    workflow_instructions = instructions_dict.get("workflow_instructions", "").format(workflow_steps='\n   '.join(workflow_steps))
+    
+    workflow_instructions = f"""
+    **Quy trình làm việc:**
+    1. Xác định nhu cầu của khách: **sản phẩm**, **dịch vụ**, hay **linh kiện/phụ kiện**.
+    2. Sử dụng công cụ tìm kiếm tương ứng:
+       {'\n   '.join(workflow_steps)}
+    """
+    workflow_instructions_add = instructions_dict.get("workflow_instructions", "")
     
     other_instructions = instructions_dict.get("other_instructions", "")
 
@@ -74,6 +80,7 @@ def create_agent_executor(
         indentity_instructions,
         base_instructions,
         workflow_instructions,
+        workflow_instructions_add,
         custom_prompt_text,
         other_instructions
     ])
