@@ -27,15 +27,14 @@ async def chat(
         customer_id = request.customer_id
         api_key = request.api_key
 
-        # Lấy thông tin config của customer từ DB
         customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
         if not customer_config:
-            # Nếu chưa có config, tạo một config mặc định tạm thời để agent có thể chạy
             customer_config = Customer()
 
         agent_executor = create_agent_executor(
+            db=db, # Truyền session DB
             customer_id=customer_id,
-            customer_config=customer_config, # Truyền object config từ DB
+            customer_config=customer_config,
             llm_provider=llm_provider,
             api_key=api_key
         )

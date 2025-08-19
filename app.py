@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from contextlib import asynccontextmanager
 from config.settings import APP_CONFIG, CORS_CONFIG
-from api import product_routes, service_routes, accessory_routes, config_routes, chat_routes, document_routes
+from api import product_routes, service_routes, accessory_routes, config_routes, chat_routes, document_routes, instruction_routes
 from database.database import init_db
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
@@ -26,6 +26,7 @@ app.include_router(service_routes.router, tags=["Services"])
 app.include_router(accessory_routes.router, tags=["Accessories"])
 app.include_router(document_routes.router, tags=["Documents"])
 app.include_router(config_routes.router, tags=["Configuration"])
+app.include_router(instruction_routes.router, tags=["Instructions"])
 app.include_router(chat_routes.router, tags=["Chat"])
 
 if __name__ == "__main__":
