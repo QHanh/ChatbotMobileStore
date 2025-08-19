@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean
+from sqlalchemy import create_engine, Column, String, Boolean, Text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
@@ -20,6 +20,12 @@ class Customer(Base):
     custom_prompt = Column(String, nullable=True)
     service_feature_enabled = Column(Boolean, default=False)
     accessory_feature_enabled = Column(Boolean, default=False)
+
+class SystemInstruction(Base):
+    __tablename__ = "system_instructions"
+    
+    key = Column(String, primary_key=True, index=True)
+    value = Column(Text, nullable=False)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
