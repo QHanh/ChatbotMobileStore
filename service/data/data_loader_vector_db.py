@@ -135,9 +135,9 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             text_key="text"
         )
         print("Tải dữ liệu lên Weaviate thành công!")
-        client.close()
     except Exception as e:
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
+        raise
 
 def process_and_load_text(client: weaviate.WeaviateClient, text: str, class_name: str):
     """
@@ -171,5 +171,8 @@ def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, 
         documents = loader.load()
         chunks = split_documents(documents)
         load_chunks_to_weaviate(client, chunks, class_name)
+    else:
+        os.remove(tmp_file_path)
+        raise ValueError(f"Không hỗ trợ định dạng file: {file_ext}")
     
     os.remove(tmp_file_path)
