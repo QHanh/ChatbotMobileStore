@@ -10,10 +10,11 @@ from functools import partial
 load_dotenv()
 
 from service.utils.tools import create_customer_tools
+from database.database import Customer
 
 def create_agent_executor(
     customer_id: str,
-    customer_configs: dict,
+    customer_config: Customer,
     llm_provider: str = "google_genai",
     api_key: str = None
 ):
@@ -30,11 +31,11 @@ def create_agent_executor(
     else:
         raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
 
-    config = customer_configs.get(customer_id, {})
-    persona = config.get("persona", {"ai_name": "", "ai_role": "nhân viên tư vấn"})
-    custom_prompt_text = config.get("custom_prompt", "")
-    service_feature_enabled = config.get("service_feature_enabled", True)
-    accessory_feature_enabled = config.get("accessory_feature_enabled", True)
+    # Lấy thông tin cấu hình trực tiếp từ object Customer
+    persona = {"ai_name": customer_config.ai_name, "ai_role": customer_config.ai_role}
+    custom_prompt_text = customer_config.custom_prompt or ""
+    service_feature_enabled = customer_config.service_feature_enabled
+    accessory_feature_enabled = customer_config.accessory_feature_enabled
 
     customer_tools = create_customer_tools(customer_id, service_feature_enabled, accessory_feature_enabled)
 
@@ -145,7 +146,19 @@ if __name__ == '__main__':
 
     async def main():
         print("Đang khởi tạo agent...")
-        agent_executor = create_agent_executor(customer_id="test_customer", customer_configs={})
+        # Phần này cần được cập nhật để giả lập object Customer cho việc test
+        mock_customer_config = Customer(
+            customer_id="test_customer",
+            ai_name="TestBot",
+            ai_role="trợ lý ảo test",
+            custom_prompt="Luôn trả lời bằng tiếng Việt.",
+            service_feature_enabled=True,
+            accessory_feature_enabled=False
+        )
+        agent_executor = create_agent_executor(
+            customer_id="test_customer", 
+            customer_config=mock_customer_config
+        )
         
         chat_memory = {}
         session_id = "user123"

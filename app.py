@@ -1,12 +1,23 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from contextlib import asynccontextmanager
 from config.settings import APP_CONFIG, CORS_CONFIG
 from api import product_routes, service_routes, accessory_routes, config_routes, chat_routes, document_routes
+from database.database import init_db
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
 
-app = FastAPI(**APP_CONFIG)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Code to run on startup
+    print("Application startup...")
+    # init_db()
+    yield
+    # Code to run on shutdown
+    print("Application shutdown.")
+
+app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
 

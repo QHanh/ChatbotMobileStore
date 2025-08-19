@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Path, HTTPException
+from fastapi import APIRouter, Path, HTTPException, Depends
+from sqlalchemy.orm import Session
 from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory
 from service.models.schemas import ChatbotRequest
-from dependencies import chat_memory, customer_configs
+from database.database import get_db, Customer
+from dependencies import chat_memory
 
 router = APIRouter()
 
 @router.post("/chat/{threadId}")
 async def chat(
     request: ChatbotRequest,
-    threadId: str = Path(..., description="Mã phiên chat với người dùng.")
+    threadId: str = Path(..., description="Mã phiên chat với người dùng."),
+    db: Session = Depends(get_db)
 ):
     """
     Xử lý yêu cầu chat từ người dùng.
@@ -24,9 +27,15 @@ async def chat(
         customer_id = request.customer_id
         api_key = request.api_key
 
+        # Lấy thông tin config của customer từ DB
+        customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+        if not customer_config:
+            # Nếu chưa có config, tạo một config mặc định tạm thời để agent có thể chạy
+            customer_config = Customer()
+
         agent_executor = create_agent_executor(
             customer_id=customer_id,
-            customer_configs=customer_configs,
+            customer_config=customer_config, # Truyền object config từ DB
             llm_provider=llm_provider,
             api_key=api_key
         )
