@@ -33,16 +33,8 @@ services:
     ports:
       - "8080:8080"
       - "50051:50051"
-    environment:
-      ENABLE_MODULES: text2vec-model2vec
-      MODEL2VEC_INFERENCE_API: http://text2vec-model2vec:8080
     volumes:
       - weavdata:/var/lib/weaviate
-    networks:
-      - datanet
-
-  text2vec-model2vec:
-    image: cr.weaviate.io/semitechnologies/model2vec-inference:minishlab-potion-base-32M
     networks:
       - datanet
 
