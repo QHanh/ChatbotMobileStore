@@ -1,9 +1,10 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
-from dependencies import es_client
+# Xóa import es_client toàn cục
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
 
 async def search_products(
+    es_client: AsyncElasticsearch, # Thêm tham số es_client
     customer_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -23,7 +24,6 @@ async def search_products(
     
     # Bắt buộc lọc theo customer_id
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
-    query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
     
     if model: query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
     if mau_sac: query["bool"]["should"].append({"match": {"mau_sac": mau_sac}})
@@ -51,6 +51,7 @@ async def search_products(
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 async def search_services(
+    es_client: AsyncElasticsearch, # Thêm tham số es_client
     customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
@@ -120,6 +121,7 @@ async def search_services(
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 async def search_accessories(
+    es_client: AsyncElasticsearch, # Thêm tham số es_client
     customer_id: str,
     ten_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
@@ -192,7 +194,9 @@ if __name__ == '__main__':
     import asyncio
 
     async def main():
-        results = await search_products(customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+        # Tạo một client Elasticsearch mẫu để truyền vào
+        es_client_mock = AsyncElasticsearch()
+        results = await search_products(es_client_mock, customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
         if results:
             for product in results:
                 print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")

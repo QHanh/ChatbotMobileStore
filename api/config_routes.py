@@ -47,8 +47,8 @@ async def delete_persona_config(customer_id: str, db: Session = Depends(get_db))
     """
     customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
     if customer:
-        customer.ai_name = "Mai"  # Default value
-        customer.ai_role = "trợ lý ảo" # Default value
+        customer.ai_name = None
+        customer.ai_role = None
         db.commit()
         return {"message": f"Cấu hình vai trò của khách hàng '{customer_id}' đã được xóa về mặc định."}
     raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng.")

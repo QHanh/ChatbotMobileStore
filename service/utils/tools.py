@@ -3,6 +3,7 @@ from langchain.tools import StructuredTool
 from typing import Optional, List, Dict, Any, Union
 from functools import partial
 import os
+from elasticsearch import AsyncElasticsearch
 
 from service.retrieve.search_service import search_products, search_services, search_accessories
 from service.retrieve.retrieve_vector_service import retrieve_documents
@@ -30,6 +31,7 @@ async def retrieve_document_logic(
     return results
 
 async def search_products_logic(
+    es_client: AsyncElasticsearch,
     customer_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -45,6 +47,7 @@ async def search_products_logic(
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho khách hàng: {customer_id} ---")
     results = await search_products(
+        es_client=es_client,
         customer_id=customer_id,
         model=model,
         mau_sac=mau_sac,
@@ -57,6 +60,7 @@ async def search_products_logic(
     return results
 
 async def search_services_logic(
+    es_client: AsyncElasticsearch,
     customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
@@ -73,6 +77,7 @@ async def search_services_logic(
     print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho khách hàng: {customer_id} ---")
 
     results = await search_services(
+        es_client=es_client,
         customer_id=customer_id,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
@@ -85,6 +90,7 @@ async def search_services_logic(
     return results
 
 async def search_accessories_logic(
+    es_client: AsyncElasticsearch,
     customer_id: str,
     ten_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
@@ -98,6 +104,7 @@ async def search_accessories_logic(
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho khách hàng: {customer_id} ---")
     results = await search_accessories(
+        es_client=es_client,
         customer_id=customer_id,
         ten_phu_kien=ten_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
@@ -271,15 +278,15 @@ async def end_conversation_tool() -> str:
 
 
 def create_customer_tools(
+    es_client: AsyncElasticsearch,
     customer_id: str,
-    # image_url_holder: List[str] = [],
     service_feature_enabled: bool = True, 
     accessory_feature_enabled: bool = True
 ) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    customer_search_product_func = partial(search_products_logic, customer_id=customer_id)
+    customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id)
     
     search_product_tool = StructuredTool.from_function(
         func=customer_search_product_func,
@@ -301,28 +308,17 @@ def create_customer_tools(
         args_schema=RetrieveDocumentInput,
         coroutine=customer_retrieve_document_func
     )
-    
-    # customer_send_image_func = partial(send_image_tool, image_url_holder=image_url_holder)
-
-    # send_image_structured_tool = StructuredTool.from_function(
-    #     func=customer_send_image_func,
-    #     name="send_image_tool",
-    #     description=send_image_tool.__doc__,
-    #     args_schema=SendImageInput,
-    #     coroutine=customer_send_image_func
-    # )
 
     available_tools = [
         search_product_tool,
         retrieve_document_tool,
         create_order_product_tool,
-        # send_image_structured_tool,
         escalate_to_human_tool,
         end_conversation_tool
     ]
 
     if service_feature_enabled:
-        customer_search_service_func = partial(search_services_logic, customer_id=customer_id)
+        customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id)
         
         search_service_tool = StructuredTool.from_function(
             func=customer_search_service_func,
@@ -338,7 +334,7 @@ def create_customer_tools(
         ])
 
     if accessory_feature_enabled:
-        customer_search_accessory_func = partial(search_accessories_logic, customer_id=customer_id)
+        customer_search_accessory_func = partial(search_accessories_logic, es_client=es_client, customer_id=customer_id)
         
         search_accessory_tool = StructuredTool.from_function(
             func=customer_search_accessory_func,

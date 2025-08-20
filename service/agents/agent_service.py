@@ -7,6 +7,7 @@ from langchain.chat_models import init_chat_model
 import getpass
 from functools import partial
 from sqlalchemy.orm import Session
+from elasticsearch import AsyncElasticsearch
 
 load_dotenv()
 
@@ -14,6 +15,7 @@ from service.utils.tools import create_customer_tools
 from database.database import Customer, SystemInstruction
 
 def create_agent_executor(
+    es_client: AsyncElasticsearch,
     db: Session,
     customer_id: str,
     customer_config: Customer,
@@ -38,7 +40,7 @@ def create_agent_executor(
     service_feature_enabled = customer_config.service_feature_enabled
     accessory_feature_enabled = customer_config.accessory_feature_enabled
 
-    customer_tools = create_customer_tools(customer_id, service_feature_enabled, accessory_feature_enabled)
+    customer_tools = create_customer_tools(es_client, customer_id, service_feature_enabled, accessory_feature_enabled)
 
     identity = ""
     if persona['ai_role']:
@@ -162,7 +164,11 @@ if __name__ == '__main__':
                 db_session.add(instr)
         db_session.commit()
 
+        # Mock Elasticsearch client for testing
+        es_client = AsyncElasticsearch()
+
         agent_executor = create_agent_executor(
+            es_client=es_client,
             db=db_session,
             customer_id="test_customer", 
             customer_config=mock_customer_config

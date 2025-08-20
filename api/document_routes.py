@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form, Path, Query
+from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Query
 from service.data.data_loader_vector_db import (
     get_weaviate_client, 
     process_and_load_text, 

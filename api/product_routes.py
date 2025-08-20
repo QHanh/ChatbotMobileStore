@@ -15,7 +15,6 @@ from service.models.schemas import ProductRow
 
 router = APIRouter()
 
-# Cấu hình cụ thể cho việc xử lý file sản phẩm
 PRODUCT_COLUMNS_CONFIG = {
     'names': [
         'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
@@ -101,7 +100,6 @@ async def update_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        # ma_san_pham không cần thiết trong body khi update
         product_dict = product_data.dict(exclude_unset=True)
         if 'ma_san_pham' in product_dict:
             del product_dict['ma_san_pham']

@@ -2,15 +2,11 @@ import pandas as pd
 from elasticsearch import Elasticsearch
 from elasticsearch.helpers import async_bulk
 import numpy as np
-import json
 import warnings
 import io
-from dotenv import load_dotenv
 
-load_dotenv()
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# Định nghĩa tên các index chia sẻ
 PRODUCTS_INDEX = "products"
 SERVICES_INDEX = "services"
 ACCESSORIES_INDEX = "accessories"
@@ -82,7 +78,6 @@ async def clear_customer_data(es_client: Elasticsearch, index_name: str, custome
         )
         print(f"✅ Xóa dữ liệu cũ thành công.")
     except Exception as e:
-        # Bỏ qua lỗi nếu index không tồn tại hoặc không có dữ liệu để xóa
         print(f"⚠️ Không thể xóa dữ liệu cũ (có thể do chưa có): {e}")
 
 async def process_and_index_data(
@@ -95,10 +90,8 @@ async def process_and_index_data(
     """
     Hàm tổng quát để đọc, xử lý và nạp dữ liệu vào một index chia sẻ.
     """
-    # Bước 1: Xóa dữ liệu cũ của khách hàng
     await clear_customer_data(es_client, index_name, customer_id)
 
-    # Bước 2: Đọc và xử lý dữ liệu mới
     try:
         df = pd.read_excel(io.BytesIO(file_content))
         df.columns = columns_config['names']
@@ -112,7 +105,6 @@ async def process_and_index_data(
     except Exception as e:
         raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
 
-    # Bước 3: Chuẩn bị và thực hiện bulk indexing với custom routing
     actions = []
     for _, row in df.iterrows():
         doc = row.to_dict()

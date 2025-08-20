@@ -15,7 +15,6 @@ from service.models.schemas import ServiceRow
 
 router = APIRouter()
 
-# Cấu hình cụ thể cho việc xử lý file dịch vụ
 SERVICE_COLUMNS_CONFIG = {
     'names': [
         'ma_dich_vu', 'ten_dich_vu', 'hang_san_pham', 'ten_san_pham', 
