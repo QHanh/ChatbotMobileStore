@@ -17,7 +17,7 @@ from service.integrations.sheet_service import insert_order_to_sheet
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
 async def retrieve_document_logic(
-    class_name: str,
+    tenant_id: str,
     query: str
 ) -> List[Dict[str, Any]]:
     """
@@ -25,8 +25,8 @@ async def retrieve_document_logic(
     Ví dụ: "chính sách công ty", "hướng dẫn đổi trả", "địa chỉ cửa hàng".
     Công cụ này sẽ truy xuất thông tin từ cơ sở tri thức, thông tin của cửa hàng.
     """
-    print(f"--- Agent đã gọi công cụ truy xuất tài liệu cho class: {class_name} ---")
-    results = await retrieve_documents(query=query, class_name=class_name)
+    print(f"--- Agent đã gọi công cụ truy xuất tài liệu cho tenant: {tenant_id} ---")
+    results = await retrieve_documents(query=query, tenant_id=tenant_id)
     return results
 
 async def search_products_logic(
@@ -290,8 +290,11 @@ def create_customer_tools(
         coroutine=customer_search_product_func
     )
 
-    class_name_document = f"document_{customer_id}"
-    customer_retrieve_document_func = partial(retrieve_document_logic, class_name=class_name_document)
+    sanitized_tenant_id = customer_id.replace("-", "_")
+    if sanitized_tenant_id and sanitized_tenant_id[0].isdigit():
+        sanitized_tenant_id = f"t_{sanitized_tenant_id}"
+        
+    customer_retrieve_document_func = partial(retrieve_document_logic, tenant_id=sanitized_tenant_id)
     retrieve_document_tool = StructuredTool.from_function(
         func=customer_retrieve_document_func,
         name="retrieve_document_tool",

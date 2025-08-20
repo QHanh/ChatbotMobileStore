@@ -3,36 +3,39 @@ import weaviate
 import asyncio
 from typing import List, Dict, Any
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from service.data.data_loader_vector_db import get_weaviate_client, DOCUMENT_CLASS_NAME
+from weaviate.classes.query import Filter
 
-from service.data.data_loader_vector_db import get_weaviate_client
-
-def _retrieve_documents_sync(query: str, class_name: str, query_vector: List[float], top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
+def _get_sanitized_tenant_id(customer_id: str) -> str:
     """
-    Hàm đồng bộ để truy xuất tài liệu từ Weaviate bằng tìm kiếm kết hợp (Hybrid Search).
+    Làm sạch customer_id để sử dụng làm tenant_id hợp lệ.
+    - Thay thế '-' bằng '_'.
+    - Thêm tiền tố 't_' nếu bắt đầu bằng số.
+    """
+    sanitized = customer_id.replace("-", "_")
+    if sanitized and sanitized[0].isdigit():
+        return f"t_{sanitized}"
+    return sanitized
+
+def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[float], top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
+    """
+    Hàm đồng bộ để truy xuất tài liệu từ một tenant cụ thể bằng Hybrid Search.
     """
     client = get_weaviate_client()
     if not client:
         return [{"error": "Không thể kết nối đến Weaviate."}]
 
     try:
-        raw_customer_id = class_name.split('_')[-1]
-        customer_id = raw_customer_id.replace("-", "_")
+        # Tên tenant_id đã được làm sạch từ tool.
+        collection = client.collections.get(DOCUMENT_CLASS_NAME)
         
-        class_name_lower = f"document_{customer_id}"
-        class_name_upper = f"Document_{customer_id}"
+        if not collection.tenants.exists(tenant_id):
+            return [{"message": f"Cơ sở tri thức cho khách hàng '{tenant_id}' chưa được tạo."}]
 
-        final_class_name = None
-        if client.collections.exists(class_name_lower):
-            final_class_name = class_name_lower
-        elif client.collections.exists(class_name_upper):
-            final_class_name = class_name_upper
-        else:
-            return [{"message": f"Cơ sở tri thức cho ID khách hàng '{customer_id}' chưa được tạo."}]
-
-        collection = client.collections.get(final_class_name)
-
+        tenant_collection = collection.with_tenant(tenant_id)
+        
         try:
-            response = collection.query.hybrid(
+            response = tenant_collection.query.hybrid(
                 query=query,
                 vector=query_vector,
                 limit=top_k,
@@ -43,7 +46,7 @@ def _retrieve_documents_sync(query: str, class_name: str, query_vector: List[flo
         except Exception as e:
             if "no such prop with name 'source'" in str(e):
                 print("Warning: Thuộc tính 'source' không tồn tại. Fallback về chỉ lấy 'text'.")
-                response = collection.query.hybrid(
+                response = tenant_collection.query.hybrid(
                     query=query,
                     vector=query_vector,
                     limit=top_k,
@@ -55,31 +58,27 @@ def _retrieve_documents_sync(query: str, class_name: str, query_vector: List[flo
                 raise e
 
         formatted_results = [
-            {
-                "content": obj.properties.get('text'),
-                "metadata": {'source': obj.properties.get('source')}
-            }
+            {"content": obj.properties.get('text'), "metadata": {'source': obj.properties.get('source')}}
             for obj in response.objects
         ]
         
-        print(f"Truy xuất lai ghép được {len(formatted_results)} tài liệu từ '{final_class_name}'.")
+        print(f"Truy xuất lai ghép được {len(formatted_results)} tài liệu từ tenant '{tenant_id}'.")
         return formatted_results
 
     except Exception as e:
         print(f"Lỗi khi truy xuất tài liệu từ Weaviate: {e}")
         return [{"error": f"Lỗi truy xuất: {e}"}]
     finally:
-        if client:
-            client.close()
+        if client: client.close()
 
-async def retrieve_documents(query: str, class_name: str, top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
+async def retrieve_documents(query: str, tenant_id: str, top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
     """
-    Lớp vỏ (wrapper) bất đồng bộ cho hàm truy xuất tài liệu.
+    Lớp vỏ (wrapper) bất đồng bộ cho hàm truy xuất tài liệu từ một tenant.
     """
     embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     query_vector = await embeddings.aembed_query(query)
     
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
-        None, _retrieve_documents_sync, query, class_name, query_vector, top_k, alpha
+        None, _retrieve_documents_sync, query, tenant_id, query_vector, top_k, alpha
     )

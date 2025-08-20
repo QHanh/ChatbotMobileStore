@@ -19,34 +19,41 @@ load_dotenv()
 
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
+DOCUMENT_CLASS_NAME = "Document" # Tên class chung cho tất cả khách hàng
 
-def ensure_collection_exists(client: weaviate.WeaviateClient, class_name: str):
+def ensure_document_collection_exists(client: weaviate.WeaviateClient):
     """
-    Kiểm tra xem một collection đã tồn tại chưa. Nếu chưa, tạo nó với cấu hình đúng.
+    Đảm bảo class 'Document' tồn tại và được cấu hình cho multi-tenancy.
     """
-    if not client.collections.exists(class_name):
-        print(f"Collection '{class_name}' chưa tồn tại. Đang tạo...")
+    if not client.collections.exists(DOCUMENT_CLASS_NAME):
+        print(f"Collection '{DOCUMENT_CLASS_NAME}' chưa tồn tại. Đang tạo...")
         try:
             client.collections.create(
-                name=class_name,
+                name=DOCUMENT_CLASS_NAME,
                 vectorizer_config=Configure.Vectorizer.none(),
                 properties=[
                     Property(name="text", data_type=DataType.TEXT),
-                    Property(name="source", data_type=DataType.TEXT)
-                ]
+                    Property(name="source", data_type=DataType.TEXT),
+                ],
+                multi_tenancy_config=Configure.multi_tenancy(enabled=True)
             )
-            print(f"✅ Đã tạo thành công collection '{class_name}'!")
+            print(f"✅ Đã tạo thành công collection '{DOCUMENT_CLASS_NAME}' với multi-tenancy!")
         except Exception as e:
-            print(f"❌ Lỗi khi tạo collection '{class_name}': {e}")
+            print(f"❌ Lỗi khi tạo collection '{DOCUMENT_CLASS_NAME}': {e}")
             raise
     else:
-        print(f"Collection '{class_name}' đã tồn tại.")
-        try:
-            collection = client.collections.get(class_name)
-            collection.config.add_property(Property(name="source", data_type=DataType.TEXT))
-            print("Đã đảm bảo thuộc tính 'source' tồn tại trong schema.")
-        except Exception as e:
-            print(f"Bỏ qua thêm thuộc tính 'source': {e}")
+        print(f"Collection '{DOCUMENT_CLASS_NAME}' đã tồn tại.")
+
+def ensure_tenant_exists(client: weaviate.WeaviateClient, tenant_id: str):
+    """
+    Đảm bảo một tenant tồn tại trong collection 'Document'.
+    Lưu ý: tenant_id chính là customer_id đã được làm sạch.
+    """
+    collection = client.collections.get(DOCUMENT_CLASS_NAME)
+    if not collection.tenants.exists(tenant_id):
+        print(f"Tenant '{tenant_id}' chưa tồn tại. Đang tạo...")
+        collection.tenants.create(tenant_id)
+        print(f"✅ Đã tạo tenant '{tenant_id}'.")
 
 def get_weaviate_client():
     """
@@ -106,11 +113,11 @@ def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 500, chun
     print(f"Đã tạo thành công {len(chunks)} chunk văn bản.")
     return chunks
 
-def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Document], class_name: str):
+def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Document], tenant_id: str):
     """
-    Tải các chunk văn bản vào Weaviate, sử dụng Google Embeddings ở phía client.
+    Tải các chunk văn bản vào một tenant cụ thể của Weaviate.
     """
-    print(f"Chuẩn bị tải {len(chunks)} chunk vào Weaviate class: '{class_name}'...")
+    print(f"Chuẩn bị tải {len(chunks)} chunk vào tenant: '{tenant_id}'...")
 
     def _sanitize_property_name(name: str) -> str:
         name = re.sub(r'[^a-zA-Z0-9_]', '_', name)
@@ -126,32 +133,38 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             }
 
     try:
+        # Khởi tạo và sử dụng Google Embeddings để tạo vector
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        
+        # Lấy collection và chỉ định tenant để làm việc
+        collection = client.collections.get(DOCUMENT_CLASS_NAME)
+        tenant_collection = collection.with_tenant(tenant_id)
+
         WeaviateVectorStore.from_documents(
             documents=chunks,
             embedding=embeddings,
             client=client,
-            index_name=class_name,
-            text_key="text"
+            index_name=DOCUMENT_CLASS_NAME, # Luôn là tên class chung
+            text_key="text",
+            tenant=tenant_id # Chỉ định tenant khi thêm dữ liệu
         )
         print("Tải dữ liệu lên Weaviate thành công!")
     except Exception as e:
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
         raise
 
-def process_and_load_text(client: weaviate.WeaviateClient, text: str, source_name: str, class_name: str):
+def process_and_load_text(client: weaviate.WeaviateClient, text: str, source_name: str, tenant_id: str):
     """
-    Xử lý văn bản thô, chia nhỏ và tải vào Weaviate.
+    Xử lý văn bản thô, chia nhỏ và tải vào Weaviate cho một tenant.
     """
     metadata = {"source": source_name}
     documents = [Document(page_content=text, metadata=metadata)]
     chunks = split_documents(documents)
-    load_chunks_to_weaviate(client, chunks, class_name)
+    load_chunks_to_weaviate(client, chunks, tenant_id)
 
-def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, source_name: str, original_filename: str, class_name: str):
+def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, source_name: str, original_filename: str, tenant_id: str):
     """
-    Xử lý tệp, chia nhỏ và tải vào Weaviate.
-    Sử dụng source_name cho metadata và original_filename để xác định loader.
+    Xử lý tệp, chia nhỏ và tải vào Weaviate cho một tenant.
     """
     file_ext = os.path.splitext(original_filename)[1].lower()
     
@@ -177,7 +190,7 @@ def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, 
             doc.metadata["source"] = source_name
             
         chunks = split_documents(documents)
-        load_chunks_to_weaviate(client, chunks, class_name)
+        load_chunks_to_weaviate(client, chunks, tenant_id)
     else:
         # Xóa file tạm nếu không có loader phù hợp
         os.remove(tmp_file_path)
