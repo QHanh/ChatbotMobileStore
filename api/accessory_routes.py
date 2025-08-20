@@ -77,8 +77,11 @@ async def add_accessory(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        accessory_dict = accessory_data.dict()
-        doc_id = accessory_dict.pop('accessory_code')
+        accessory_dict = accessory_data.model_dump()
+        doc_id = accessory_dict.get('accessory_code')
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'accessory_code' trong dữ liệu đầu vào.")
+
         response = await index_single_document(es_client, ACCESSORIES_INDEX, customer_id, doc_id, accessory_dict)
         return {"message": "Phụ kiện đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
@@ -97,7 +100,7 @@ async def update_accessory(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        accessory_dict = accessory_data.dict(exclude_unset=True)
+        accessory_dict = accessory_data.model_dump(exclude_unset=True)
         if 'accessory_code' in accessory_dict:
             del accessory_dict['accessory_code']
             
@@ -136,7 +139,7 @@ async def add_accessories_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        accessory_dicts = [a.dict() for a in accessories]
+        accessory_dicts = [a.model_dump() for a in accessories]
         success, failed = await bulk_index_documents(
             es_client, 
             ACCESSORIES_INDEX, 

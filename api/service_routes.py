@@ -75,8 +75,11 @@ async def add_service(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        service_dict = service_data.dict()
-        doc_id = service_dict.pop('ma_dich_vu')
+        service_dict = service_data.model_dump()
+        doc_id = service_dict.get('ma_dich_vu')
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'ma_dich_vu' trong dữ liệu đầu vào.")
+
         response = await index_single_document(es_client, SERVICES_INDEX, customer_id, doc_id, service_dict)
         return {"message": "Dịch vụ đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
@@ -95,7 +98,7 @@ async def update_service(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        service_dict = service_data.dict(exclude_unset=True)
+        service_dict = service_data.model_dump(exclude_unset=True)
         if 'ma_dich_vu' in service_dict:
             del service_dict['ma_dich_vu']
             
@@ -134,7 +137,7 @@ async def add_services_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        service_dicts = [s.dict() for s in services]
+        service_dicts = [s.model_dump() for s in services]
         success, failed = await bulk_index_documents(
             es_client, 
             SERVICES_INDEX, 

@@ -80,8 +80,11 @@ async def add_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        product_dict = product_data.dict()
-        doc_id = product_dict.pop('ma_san_pham')
+        product_dict = product_data.model_dump()
+        doc_id = product_dict.get('ma_san_pham')
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'ma_san_pham' trong dữ liệu đầu vào.")
+        
         response = await index_single_document(es_client, PRODUCTS_INDEX, customer_id, doc_id, product_dict)
         return {"message": "Sản phẩm đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
@@ -100,7 +103,7 @@ async def update_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        product_dict = product_data.dict(exclude_unset=True)
+        product_dict = product_data.model_dump(exclude_unset=True)
         if 'ma_san_pham' in product_dict:
             del product_dict['ma_san_pham']
             
@@ -139,7 +142,7 @@ async def add_products_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        product_dicts = [p.dict() for p in products]
+        product_dicts = [p.model_dump() for p in products]
         success, failed = await bulk_index_documents(
             es_client, 
             PRODUCTS_INDEX, 
