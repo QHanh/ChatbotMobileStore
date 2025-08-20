@@ -14,7 +14,6 @@ from service.models.schemas import (
 )
 from service.integrations.sheet_service import insert_order_to_sheet
 
-# Lấy Spreadsheet ID từ biến môi trường
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
 async def retrieve_document_logic(
@@ -64,8 +63,6 @@ async def search_services_logic(
     customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
-    hang_san_pham: Optional[str] = None,
-    mau_sac_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
@@ -81,8 +78,6 @@ async def search_services_logic(
         customer_id=customer_id,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
-        hang_san_pham=hang_san_pham,
-        mau_sac_san_pham=mau_sac_san_pham,
         loai_dich_vu=loai_dich_vu,
         min_gia=min_gia,
         max_gia=max_gia
@@ -93,8 +88,8 @@ async def search_accessories_logic(
     es_client: AsyncElasticsearch,
     customer_id: str,
     ten_phu_kien: Optional[str] = None,
-    thuoc_tinh_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
+    thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
@@ -107,8 +102,8 @@ async def search_accessories_logic(
         es_client=es_client,
         customer_id=customer_id,
         ten_phu_kien=ten_phu_kien,
-        thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         phan_loai_phu_kien=phan_loai_phu_kien,
+        thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         min_gia=min_gia,
         max_gia=max_gia
     )
@@ -143,7 +138,6 @@ async def create_order_product_tool(
         "loai_don_hang": "Sản phẩm"
     }
 
-    # Ghi vào Google Sheet
     if SPREADSHEET_ID:
         insert_order_to_sheet(
             spreadsheet_id=SPREADSHEET_ID,
@@ -186,7 +180,6 @@ async def create_order_service_tool(
         "loai_don_hang": "Dịch vụ"
     }
 
-    # Ghi vào Google Sheet
     if SPREADSHEET_ID:
         insert_order_to_sheet(
             spreadsheet_id=SPREADSHEET_ID,
@@ -229,7 +222,6 @@ async def create_order_accessory_tool(
         "loai_don_hang": "Phụ kiện"
     }
 
-    # Ghi vào Google Sheet
     if SPREADSHEET_ID:
         insert_order_to_sheet(
             spreadsheet_id=SPREADSHEET_ID,

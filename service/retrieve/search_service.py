@@ -1,6 +1,7 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
+from service.utils.helpers import sanitize_es_id
 
 async def search_products(
     es_client: AsyncElasticsearch,
@@ -19,12 +20,23 @@ async def search_products(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
+    sanitized_customer_id = sanitize_es_id(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
     
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
     
-    if model: query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
-    if mau_sac: query["bool"]["should"].append({"match": {"mau_sac": mau_sac}})
+    if model:
+        query["bool"]["must"].append({
+            "bool": {
+                "should": [
+                    {"term": {"model.keyword": {"value": model, "boost": 3.0}}},
+                    {"match_phrase": {"model": {"query": model, "boost": 2.0}}},
+                    {"match": {"model": model}}
+                ]
+            }
+        })
+
+    if mau_sac: query["bool"]["must"].append({"match": {"mau_sac": mau_sac}})
     if loai_thiet_bi: query["bool"]["should"].append({"match": {"loai_thiet_bi": loai_thiet_bi}})
     if dung_luong: query["bool"]["must"].append({"match": {"dung_luong": dung_luong}})
     if tinh_trang_may: query["bool"]["should"].append({"match": {"tinh_trang_may": tinh_trang_may}})
@@ -38,7 +50,7 @@ async def search_products(
         response = await es_client.search(
             index=PRODUCTS_INDEX,
             query=query,
-            routing=customer_id,
+            routing=sanitized_customer_id,
             size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
@@ -63,11 +75,14 @@ async def search_services(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
+    sanitized_customer_id = sanitize_es_id(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
 
     if ten_dich_vu: query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
-    if ten_san_pham: query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
+    
+    if ten_san_pham: query["bool"]["filter"].append({"term": {"ten_san_pham.keyword": ten_san_pham}})
+
     if loai_dich_vu: query["bool"]["should"].append({"match": {"loai_dich_vu": loai_dich_vu}})
 
     price_range = {}
@@ -79,15 +94,14 @@ async def search_services(
         response = await es_client.search(
             index=SERVICES_INDEX,
             query=query,
-            routing=customer_id,
+            routing=sanitized_customer_id,
             size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
-        
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
             return hits
-        
+
         search_terms: List[str] = []
         for term in [ten_dich_vu, ten_san_pham, loai_dich_vu]:
             if term:
@@ -96,23 +110,30 @@ async def search_services(
         if search_terms:
             combined_query = " ".join(search_terms)
             fallback_query = {
-                "multi_match": {
-                    "query": combined_query,
-                    "type": "most_fields",
-                    "fields": [
-                        "ten_dich_vu^3",
-                        "loai_dich_vu^2",
-                        "ten_san_pham",
-                    ],
-                    "fuzziness": "AUTO"
+                "bool": {
+                    "must": {
+                        "multi_match": {
+                            "query": combined_query,
+                            "fields": ["ten_dich_vu^3", "ten_san_pham", "loai_dich_vu^2"],
+                            "fuzziness": "AUTO"
+                        }
+                    },
+                    "filter": [
+                        {"term": {"customer_id": customer_id}}
+                    ]
                 }
             }
-            response = await es_client.search(index=SERVICES_INDEX, query=fallback_query, size=10)
+            response = await es_client.search(
+                index=SERVICES_INDEX,
+                query=fallback_query,
+                routing=sanitized_customer_id,
+                size=10
+            )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
             return hits
-        else:
-            return [{"error": "Không tìm thấy dịch vụ phù hợp."}]
+
+        return []
     except Exception as e:
         print(f"Lỗi khi tìm kiếm dịch vụ: {e}")
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
@@ -132,13 +153,33 @@ async def search_accessories(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
-    query = {"bool": {"must": [], "should": [], "filter": []}}
+    sanitized_customer_id = sanitize_es_id(customer_id)
+    query = {"bool": {"must": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
     query["bool"]["filter"].append({"range": {"inventory": {"gt": 0}}})
 
-    if ten_phu_kien: query["bool"]["must"].append({"match": {"accessory_name": ten_phu_kien}})
-    if phan_loai_phu_kien: query["bool"]["should"].append({"match": {"category": phan_loai_phu_kien}})
-    if thuoc_tinh_phu_kien: query["bool"]["should"].append({"match": {"properties": thuoc_tinh_phu_kien}})
+    if ten_phu_kien:
+        query["bool"]["must"].append({
+            "bool": {
+                "must": [
+                    {"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 2.0}}},
+                    {"match": {"accessory_name": ten_phu_kien}}
+                ]
+            }
+        })
+
+    if phan_loai_phu_kien:
+        query["bool"]["should"].append({
+            "bool": {
+                "should": [
+                    {"match_phrase": {"category": {"query": phan_loai_phu_kien, "boost": 2.0}}},
+                    {"match": {"category": phan_loai_phu_kien}}
+                ]
+            }
+        })
+    
+    if thuoc_tinh_phu_kien:
+        query["bool"]["should"].append({"match": {"properties": thuoc_tinh_phu_kien}})
 
     price_range = {}
     if min_gia is not None: price_range["gte"] = min_gia
@@ -149,39 +190,13 @@ async def search_accessories(
         response = await es_client.search(
             index=ACCESSORIES_INDEX,
             query=query,
-            routing=customer_id,
+            routing=sanitized_customer_id,
             size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
-        if hits:
-            print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
-            return hits
-        else:
-            search_terms: List[str] = []
-            for term in [ten_phu_kien, phan_loai_phu_kien, thuoc_tinh_phu_kien]:
-                if term:
-                    search_terms.append(str(term))
+        print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
+        return hits
 
-            if search_terms:
-                combined_query = " ".join(search_terms)
-                fallback_query = {
-                    "multi_match": {
-                        "query": combined_query,
-                        "type": "most_fields",
-                        "fields": [
-                            "accessory_name^3",
-                            "category^2",
-                            "properties"
-                        ],
-                        "fuzziness": "AUTO"
-                    }
-                }
-                response = await es_client.search(index=ACCESSORIES_INDEX, query=fallback_query, size=10)
-                hits = [hit['_source'] for hit in response['hits']['hits']]
-                print(f"Fallback multi_match: tìm thấy {len(hits)} phụ kiện phù hợp.")
-                return hits
-            else:
-                return [{"error": "Không tìm thấy phụ kiện phù hợp."}]
     except Exception as e:
         print(f"Lỗi khi tìm kiếm phụ kiện: {e}")
         return [{"error": f"Lỗi tìm kiếm: {e}"}]

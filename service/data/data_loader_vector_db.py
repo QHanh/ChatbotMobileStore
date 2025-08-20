@@ -19,7 +19,7 @@ load_dotenv()
 
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
-DOCUMENT_CLASS_NAME = "Document" # Tên class chung cho tất cả khách hàng
+DOCUMENT_CLASS_NAME = "Document"
 
 def ensure_document_collection_exists(client: weaviate.WeaviateClient):
     """
