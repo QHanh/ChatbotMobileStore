@@ -1,122 +1,121 @@
 from fastapi import APIRouter, Path, HTTPException, File, UploadFile
+from dependencies import es_client
 from service.data.data_loader_elastic_search import (
-    create_product_index, process_and_index_product_data, 
-    index_single_product, update_product_in_index, delete_product_from_index
+    process_and_index_data, 
+    PRODUCTS_INDEX,
+    index_single_document,
+    update_single_document,
+    delete_single_document
 )
 from service.models.schemas import ProductRow
-from dependencies import es_client
 
 router = APIRouter()
 
-@router.post("/upload-product/{customer_id}")
+# Cấu hình cụ thể cho việc xử lý file sản phẩm
+PRODUCT_COLUMNS_CONFIG = {
+    'names': [
+        'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
+        'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
+        'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
+        'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
+        'kich_thuoc_trong_luong'
+    ],
+    'required': ['ma_san_pham', 'model'],
+    'id_field': 'ma_san_pham',
+    'numerics': {
+        'ton_kho': int,
+        'gia': float,
+        'tinh_trang_pin': float
+    }
+}
+
+@router.post("/upload-products/{customer_id}")
 async def upload_product_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm.")
 ):
     """
-    Tải lên file Excel cho khách hàng cụ thể, tạo index Elasticsearch riêng biệt,
-    và đưa dữ liệu từ file vào index.
+    Tải lên file Excel dữ liệu sản phẩm cho một khách hàng.
+    Hệ thống sẽ XÓA TẤT CẢ dữ liệu sản phẩm cũ của khách hàng này 
+    và nạp lại toàn bộ dữ liệu từ file mới.
     """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     
-    index_name = f"product_{customer_id}"
-    
     try:
-        create_product_index(es_client, index_name)
-        
         content = await file.read()
-        success, failed = process_and_index_product_data(es_client, index_name, content)
+        
+        success, failed = await process_and_index_data(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=PRODUCTS_INDEX,
+            file_content=content,
+            columns_config=PRODUCT_COLUMNS_CONFIG
+        )
         
         return {
             "message": f"Dữ liệu sản phẩm cho khách hàng '{customer_id}' đã được xử lý.",
-            "index_name": index_name,
+            "index_name": PRODUCTS_INDEX,
             "successfully_indexed": success,
             "failed_to_index": failed
         }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/insert-product/{customer_id}")
-async def insert_product_data(
-    customer_id: str = Path(..., description="Mã khách hàng để thêm sản phẩm."),
-    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm mới để thêm vào.")
+@router.post("/products/{customer_id}")
+async def add_product(
+    customer_id: str,
+    product_data: ProductRow
 ):
     """
-    Thêm (insert/append) dữ liệu sản phẩm mới vào một index đã tồn tại cho khách hàng.
-    Endpoint này sẽ không xóa dữ liệu cũ.
+    Thêm mới hoặc ghi đè một sản phẩm vào index chia sẻ.
     """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
-    
-    index_name = f"product_{customer_id}"
-    
-    if not es_client.indices.exists(index=index_name):
-        raise HTTPException(status_code=404, detail=f"Index '{index_name}' không tồn tại. Vui lòng sử dụng endpoint /upload-product để tạo index trước.")
-
     try:
-        content = await file.read()
-        success, failed = process_and_index_product_data(es_client, index_name, content)
-        
-        return {
-            "message": f"Dữ liệu sản phẩm mới cho khách hàng '{customer_id}' đã được thêm thành công.",
-            "index_name": index_name,
-            "successfully_indexed": success,
-            "failed_to_index": failed
-        }
+        product_dict = product_data.dict()
+        doc_id = product_dict.pop('ma_san_pham')
+        response = await index_single_document(es_client, PRODUCTS_INDEX, customer_id, doc_id, product_dict)
+        return {"message": "Sản phẩm đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/insert-product-row/{customer_id}")
-async def insert_product_row(
-    customer_id: str,
-    product_row: ProductRow
-):
-    """
-    Inserts a single product row into the customer's product index.
-    """
-    if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    
-    index_name = f"product_{customer_id}"
-    
-    if not es_client.indices.exists(index=index_name):
-        create_product_index(es_client, index_name)
-
-    try:
-        response = index_single_product(es_client, index_name, product_row.dict())
-        return {
-            "message": "Product row inserted successfully.",
-            "document_id": response['_id']
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.put("/product/{customer_id}/{product_id}")
+@router.put("/products/{customer_id}/{product_id}")
 async def update_product(
     customer_id: str,
     product_id: str,
     product_data: ProductRow
 ):
+    """
+    Cập nhật thông tin cho một sản phẩm đã có.
+    """
     if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    index_name = f"product_{customer_id}"
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        update_product_in_index(es_client, index_name, product_id, product_data.dict(exclude_unset=True))
-        return {"message": "Product updated successfully."}
+        # ma_san_pham không cần thiết trong body khi update
+        product_dict = product_data.dict(exclude_unset=True)
+        if 'ma_san_pham' in product_dict:
+            del product_dict['ma_san_pham']
+            
+        response = await update_single_document(es_client, PRODUCTS_INDEX, customer_id, product_id, product_dict)
+        return {"message": "Sản phẩm đã được cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/product/{customer_id}/{product_id}")
+@router.delete("/products/{customer_id}/{product_id}")
 async def delete_product(
     customer_id: str,
     product_id: str
 ):
+    """
+    Xóa một sản phẩm khỏi index.
+    """
     if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    index_name = f"product_{customer_id}"
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        delete_product_from_index(es_client, index_name, product_id)
-        return {"message": "Product deleted successfully."}
+        response = await delete_single_document(es_client, PRODUCTS_INDEX, customer_id, product_id)
+        return {"message": "Sản phẩm đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

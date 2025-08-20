@@ -30,7 +30,7 @@ async def retrieve_document_logic(
     return results
 
 async def search_products_logic(
-    index_name: str,
+    customer_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -43,9 +43,9 @@ async def search_products_logic(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại có trong kho hàng của cửa hàng.
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy (trầy xước, xước nhẹ), loại thiết bị (Cũ, Mới), hoặc khoảng giá để lọc kết quả.
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho index: {index_name} ---")
+    print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho khách hàng: {customer_id} ---")
     results = await search_products(
-        index_name=index_name,
+        customer_id=customer_id,
         model=model,
         mau_sac=mau_sac,
         dung_luong=dung_luong,
@@ -57,7 +57,7 @@ async def search_products_logic(
     return results
 
 async def search_services_logic(
-    index_name: str,
+    customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
     hang_san_pham: Optional[str] = None,
@@ -70,10 +70,10 @@ async def search_services_logic(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
     Cung cấp các tiêu chí cụ thể như tên dịch vụ, tên sản phẩm điện thoại được sửa chữa, hãng sản phẩm ví dụ iPhone, màu sắc sản phẩm ví dụ đỏ, hãng dịch vụ ví dụ Pin Lithium để lọc kết quả.
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho index: {index_name} ---")
+    print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho khách hàng: {customer_id} ---")
 
     results = await search_services(
-        index_name=index_name,
+        customer_id=customer_id,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
         hang_san_pham=hang_san_pham,
@@ -85,7 +85,7 @@ async def search_services_logic(
     return results
 
 async def search_accessories_logic(
-    index_name: str,
+    customer_id: str,
     ten_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
@@ -96,9 +96,9 @@ async def search_accessories_logic(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các phụ kiện có trong dữ liệu của cửa hàng.
     Cung cấp các tiêu chí cụ thể như tên phụ kiện, thuộc tính phụ kiện, phân loại phụ kiện, hoặc khoảng giá để lọc kết quả.
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho index: {index_name} ---")
+    print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho khách hàng: {customer_id} ---")
     results = await search_accessories(
-        index_name=index_name,
+        customer_id=customer_id,
         ten_phu_kien=ten_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         phan_loai_phu_kien=phan_loai_phu_kien,
@@ -279,8 +279,7 @@ def create_customer_tools(
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    index_name_product = f"product_{customer_id}"  
-    customer_search_product_func = partial(search_products_logic, index_name=index_name_product)
+    customer_search_product_func = partial(search_products_logic, customer_id=customer_id)
     
     search_product_tool = StructuredTool.from_function(
         func=customer_search_product_func,
@@ -323,8 +322,7 @@ def create_customer_tools(
     ]
 
     if service_feature_enabled:
-        index_name_service = f"service_{customer_id}"
-        customer_search_service_func = partial(search_services_logic, index_name=index_name_service)
+        customer_search_service_func = partial(search_services_logic, customer_id=customer_id)
         
         search_service_tool = StructuredTool.from_function(
             func=customer_search_service_func,
@@ -340,8 +338,7 @@ def create_customer_tools(
         ])
 
     if accessory_feature_enabled:
-        index_name_accessory = f"accessory_{customer_id}"
-        customer_search_accessory_func = partial(search_accessories_logic, index_name=index_name_accessory)
+        customer_search_accessory_func = partial(search_accessories_logic, customer_id=customer_id)
         
         search_accessory_tool = StructuredTool.from_function(
             func=customer_search_accessory_func,

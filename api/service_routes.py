@@ -1,121 +1,115 @@
 from fastapi import APIRouter, Path, HTTPException, File, UploadFile
+from dependencies import es_client
 from service.data.data_loader_elastic_search import (
-    create_service_index, process_and_index_service_data,
-    index_single_service, update_service_in_index, delete_service_from_index
+    process_and_index_data, 
+    SERVICES_INDEX,
+    index_single_document,
+    update_single_document,
+    delete_single_document
 )
 from service.models.schemas import ServiceRow
-from dependencies import es_client
 
 router = APIRouter()
 
-@router.post("/upload-service/{customer_id}")
+# Cấu hình cụ thể cho việc xử lý file dịch vụ
+SERVICE_COLUMNS_CONFIG = {
+    'names': [
+        'ma_dich_vu', 'ten_dich_vu', 'hang_san_pham', 'ten_san_pham', 
+        'mau_sac_san_pham', 'loai_dich_vu', 'gia', 'bao_hanh', 'ghi_chu'
+    ],
+    'required': ['ma_dich_vu', 'ten_dich_vu'],
+    'id_field': 'ma_dich_vu',
+    'numerics': {
+        'gia': float
+    }
+}
+
+@router.post("/upload-services/{customer_id}")
 async def upload_service_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ.")
 ):
     """
-    Tải lên file Excel cho khách hàng cụ thể, tạo index Elasticsearch riêng biệt,
-    và đưa dữ liệu từ file vào index.
+    Tải lên file Excel dữ liệu dịch vụ cho một khách hàng.
+    Hệ thống sẽ XÓA TẤT CẢ dữ liệu dịch vụ cũ của khách hàng này 
+    và nạp lại toàn bộ dữ liệu từ file mới.
     """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     
-    index_name = f"service_{customer_id}"
-    
     try:
-        create_service_index(es_client, index_name)
-        
         content = await file.read()
-        success, failed = process_and_index_service_data(es_client, index_name, content)
+        
+        success, failed = await process_and_index_data(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=SERVICES_INDEX,
+            file_content=content,
+            columns_config=SERVICE_COLUMNS_CONFIG
+        )
         
         return {
             "message": f"Dữ liệu dịch vụ cho khách hàng '{customer_id}' đã được xử lý.",
-            "index_name": index_name,
+            "index_name": SERVICES_INDEX,
             "successfully_indexed": success,
             "failed_to_index": failed
         }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/insert-service/{customer_id}")
-async def insert_service_data(
-    customer_id: str = Path(..., description="Mã khách hàng để thêm dịch vụ."),
-    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ mới để thêm vào.")
+@router.post("/services/{customer_id}")
+async def add_service(
+    customer_id: str,
+    service_data: ServiceRow
 ):
     """
-    Thêm (insert/append) dữ liệu dịch vụ mới vào một index đã tồn tại cho khách hàng.
-    Endpoint này sẽ không xóa dữ liệu cũ.
+    Thêm mới hoặc ghi đè một dịch vụ vào index chia sẻ.
     """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
-    
-    index_name = f"service_{customer_id}"
-
-    if not es_client.indices.exists(index=index_name):
-        raise HTTPException(status_code=404, detail=f"Index '{index_name}' không tồn tại. Vui lòng sử dụng endpoint /upload-service để tạo index trước.")
-
     try:
-        content = await file.read()
-        success, failed = process_and_index_service_data(es_client, index_name, content)
-        
-        return {
-            "message": f"Dữ liệu dịch vụ mới cho khách hàng '{customer_id}' đã được thêm thành công.",
-            "index_name": index_name,
-            "successfully_indexed": success,
-            "failed_to_index": failed
-        }
+        service_dict = service_data.dict()
+        doc_id = service_dict.pop('ma_dich_vu')
+        response = await index_single_document(es_client, SERVICES_INDEX, customer_id, doc_id, service_dict)
+        return {"message": "Dịch vụ đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/insert-service-row/{customer_id}")
-async def insert_service_row(
-    customer_id: str,
-    service_row: ServiceRow
-):
-    """
-    Inserts a single service row into the customer's service index.
-    """
-    if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    
-    index_name = f"service_{customer_id}"
-    
-    if not es_client.indices.exists(index=index_name):
-        create_service_index(es_client, index_name)
-    try:
-        response = index_single_service(es_client, index_name, service_row.dict())
-        return {
-            "message": "Service row inserted successfully.",
-            "document_id": response['_id']
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.put("/service/{customer_id}/{service_id}")
+@router.put("/services/{customer_id}/{service_id}")
 async def update_service(
     customer_id: str,
     service_id: str,
     service_data: ServiceRow
 ):
+    """
+    Cập nhật thông tin cho một dịch vụ đã có.
+    """
     if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    index_name = f"service_{customer_id}"
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        update_service_in_index(es_client, index_name, service_id, service_data.dict(exclude_unset=True))
-        return {"message": "Service updated successfully."}
+        service_dict = service_data.dict(exclude_unset=True)
+        if 'ma_dich_vu' in service_dict:
+            del service_dict['ma_dich_vu']
+            
+        response = await update_single_document(es_client, SERVICES_INDEX, customer_id, service_id, service_dict)
+        return {"message": "Dịch vụ đã được cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/service/{customer_id}/{service_id}")
+@router.delete("/services/{customer_id}/{service_id}")
 async def delete_service(
     customer_id: str,
     service_id: str
 ):
+    """
+    Xóa một dịch vụ khỏi index.
+    """
     if not es_client:
-        raise HTTPException(status_code=503, detail="Elasticsearch is not available.")
-    index_name = f"service_{customer_id}"
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        delete_service_from_index(es_client, index_name, service_id)
-        return {"message": "Service deleted successfully."}
+        response = await delete_single_document(es_client, SERVICES_INDEX, customer_id, service_id)
+        return {"message": "Dịch vụ đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

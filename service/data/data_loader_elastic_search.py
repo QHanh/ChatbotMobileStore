@@ -5,379 +5,186 @@ import numpy as np
 import json
 import warnings
 import io
-import requests
-import os
 from dotenv import load_dotenv
-load_dotenv()
 
+load_dotenv()
 warnings.filterwarnings("ignore", category=UserWarning)
 
-def create_product_index(es_client: Elasticsearch, index_name: str):
-    """
-    Tạo index mới trong Elasticsearch với mapping cho sản phẩm của khách hàng.
-    Nếu index đã tồn tại, nó sẽ bị xóa và tạo lại.
-    """
-    if es_client.indices.exists(index=index_name):
-        print(f"⚠️ Index '{index_name}' đã tồn tại. Đang xóa index cũ.")
-        es_client.indices.delete(index=index_name)
+# Định nghĩa tên các index chia sẻ
+PRODUCTS_INDEX = "products"
+SERVICES_INDEX = "services"
+ACCESSORIES_INDEX = "accessories"
 
-    mapping = {
-        "properties": {
+def get_shared_index_mapping(data_type: str):
+    """
+    Trả về mapping cho một loại dữ liệu cụ thể, đã bao gồm trường 'customer_id'.
+    """
+    common_properties = {
+        "customer_id": {"type": "keyword"}
+    }
+    if data_type == "product":
+        specific_properties = {
             "ma_san_pham": {"type": "keyword"},
             "model": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "mau_sac": {"type": "keyword"},
             "dung_luong": {"type": "keyword"},
-            "bao_hanh": {"type": "keyword"},
             "tinh_trang_may": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "loai_thiet_bi": {"type": "keyword"},
-            "tinh_trang_pin": {"type": "float"},
-            "gia": {"type": "double"},
-            "ton_kho": {"type": "integer"},
-            "ghi_chu": {"type": "text"},
-            "ra_mat": {"type": "text"},
-            "man_hinh": {"type": "text"},
-            "chip_ram": {"type": "text"},
-            "camera": {"type": "text"},
-            "pin_mah": {"type": "text"},
-            "ket_noi_hdh": {"type": "text"},
-            "mau_sac_tieng_anh": {"type": "text"},
-            "mau_sac_available": {"type": "text"},
-            "dung_luong_available": {"type": "text"},
-            "kich_thuoc_trong_luong": {"type": "text"},
+            "gia": {"type": "double"}, "ton_kho": {"type": "integer"},
         }
-    }
-
-    print(f"🛠 Đang tạo index '{index_name}' với mapping...")
-    es_client.indices.create(index=index_name, mappings=mapping)
-    print("✅ Thành công tạo index.")
-
-def process_and_index_product_data(es_client: Elasticsearch, index_name: str, file_content: bytes):
-    """
-    Đọc dữ liệu sản phẩm từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
-    """
-    try:
-        df = pd.read_excel(io.BytesIO(file_content))
-        df.columns = [
-            'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
-            'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
-            'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
-            'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
-            'kich_thuoc_trong_luong'
-        ]
-
-        df = df.dropna(subset=['ma_san_pham', 'model'])
-
-        df['ton_kho'] = pd.to_numeric(df['ton_kho'], errors='coerce').fillna(0).astype(int)
-        df['gia'] = pd.to_numeric(df['gia'], errors='coerce').fillna(0).astype(float)
-        df['tinh_trang_pin'] = pd.to_numeric(df['tinh_trang_pin'], errors='coerce').fillna(0).astype(float)
-
-        df['mau_sac'] = df['mau_sac'].astype(str).str.strip().str.title()
-
-        df = df.where(pd.notnull(df), None).replace({np.nan: None})
-
-    except Exception as e:
-        raise Exception(f"Error reading Excel content: {e}")
-
-    actions = []
-    total_rows = len(df)
-
-    for index, row in df.iterrows():
-        print(f"➡️ Đang xử lý dòng {index + 1}/{total_rows}: {row['model']}")
-        doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
-
-        action = {
-            "_index": index_name,
-            "_id": doc['ma_san_pham'],
-            "_source": doc
-        }
-        actions.append(action)
-
-    print(f"\n🚀 Đang tạo index {len(actions)} sản phẩm...")
-    try:
-        success, failed = bulk(es_client, actions, raise_on_error=False)
-        print(f"✅ Thành công tạo index: {success} sản phẩm.")
-        if failed:
-            print(f"❌ Thất bại tạo index: {len(failed)} sản phẩm.")
-            for i, fail_info in enumerate(failed[:5]):
-                error = fail_info.get('index', {}).get('error', {})
-                print(f"  - Error {i+1}: {error.get('type', 'unknown')} - {error.get('reason', 'no reason')}")
-        return success, len(failed)
-    except Exception as e:
-        raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")
-    
-def create_service_index(es_client: Elasticsearch, index_name: str):
-    """
-    Tạo index mới trong Elasticsearch với mapping cho dịch vụ của khách hàng.
-    Nếu index đã tồn tại, nó sẽ bị xóa và tạo lại.
-    """
-    if es_client.indices.exists(index=index_name):
-        print(f"⚠️ Index '{index_name}' đã tồn tại. Đang xóa index cũ.")
-        es_client.indices.delete(index=index_name)
-
-    mapping = {
-        "properties": {
+    elif data_type == "service":
+        specific_properties = {
             "ma_dich_vu": {"type": "keyword"},
             "ten_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "hang_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "ten_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "mau_sac_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "loai_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "gia": {"type": "keyword"},
-            "bao_hanh": {"type": "keyword"},
-            "ghi_chu": {"type": "text"},
+            "gia": {"type": "double"},
         }
-    }
-
-    print(f"🛠 Đang tạo index '{index_name}' với mapping...")
-    es_client.indices.create(index=index_name, mappings=mapping)
-    print("✅ Thành công tạo index.")
-
-def process_and_index_service_data(es_client: Elasticsearch, index_name: str, file_content: bytes):
-    """
-    Đọc dữ liệu dịch vụ từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
-    """
-    try:
-        df = pd.read_excel(io.BytesIO(file_content))
-        df.columns = [
-            'ma_dich_vu', 'ten_dich_vu', 'hang_san_pham', 'ten_san_pham', 'mau_sac_san_pham', 'loai_dich_vu', 'gia', 'bao_hanh', 'ghi_chu'
-        ]
-        df = df.dropna(subset=['ma_dich_vu', 'ten_dich_vu'])
-        df['gia'] = pd.to_numeric(df['gia'], errors='coerce').fillna(0).astype(float)
-    except Exception as e:
-        raise Exception(f"Error reading Excel content: {e}")
-    
-    actions = []
-    total_rows = len(df)
-
-    for index, row in df.iterrows():
-        print(f"➡️ Đang xử lý dòng {index + 1}/{total_rows}: {row['ten_dich_vu']}")
-        doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
-
-        action = {
-            "_index": index_name,
-            "_id": doc['ma_dich_vu'],
-            "_source": doc
-        }
-        actions.append(action)
-
-    print(f"\n🚀 Đang tạo index {len(actions)} dịch vụ...")
-    try:
-        success, failed = bulk(es_client, actions, raise_on_error=False)
-        print(f"✅ Thành công tạo index: {success} dịch vụ.")
-        if failed:
-            print(f"❌ Thất bại tạo index: {len(failed)} dịch vụ.")
-            for i, fail_info in enumerate(failed[:5]):
-                error = fail_info.get('index', {}).get('error', {})
-                print(f"  - Error {i+1}: {error.get('type', 'unknown')} - {error.get('reason', 'no reason')}")
-        return success, len(failed)
-    except Exception as e:
-        raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")
-
-def index_single_product(es_client: Elasticsearch, index_name: str, product_data: dict):
-    """
-    Tạo index cho một sản phẩm trong Elasticsearch.
-    """
-    try:
-        document_id = product_data['ma_san_pham']
-        response = es_client.index(
-            index=index_name,
-            id=document_id,
-            document=product_data
-        )
-        print(f"✅ Successfully indexed product: {response['_id']}")
-        return response
-    except Exception as e:
-        raise Exception(f"An error occurred while indexing the product: {e}")
-
-def index_single_service(es_client: Elasticsearch, index_name: str, service_data: dict):
-    """
-    Tạo index cho một dịch vụ trong Elasticsearch.
-    """
-    try:
-        document_id = service_data['ma_dich_vu']
-        response = es_client.index(
-            index=index_name,
-            id=document_id,
-            document=service_data
-        )
-        print(f"✅ Thành công tạo index dịch vụ: {response['_id']}")
-        return response
-    except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình tạo index dịch vụ: {e}")
-
-def update_product_in_index(es_client: Elasticsearch, index_name: str, product_id: str, product_data: dict):
-    """
-    Cập nhật một sản phẩm trong index Elasticsearch đã chỉ định.
-    """
-    try:
-        response = es_client.update(
-            index=index_name,
-            id=product_id,
-            doc=product_data
-        )
-        print(f"✅ Thành công cập nhật sản phẩm: {response['_id']}")
-        return response
-    except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình cập nhật sản phẩm: {e}")
-
-def delete_product_from_index(es_client: Elasticsearch, index_name: str, product_id: str):
-    """
-    Xóa một sản phẩm từ index Elasticsearch đã chỉ định.
-    """
-    try:
-        response = es_client.delete(
-            index=index_name,
-            id=product_id
-        )
-        print(f"✅ Thành công xóa sản phẩm: {product_id}")
-        return response
-    except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình xóa sản phẩm: {e}")
-
-def update_service_in_index(es_client: Elasticsearch, index_name: str, service_id: str, service_data: dict):
-    """
-    Cập nhật một dịch vụ trong index Elasticsearch đã chỉ định.
-    """
-    try:
-        response = es_client.update(
-            index=index_name,
-            id=service_id,
-            doc=service_data
-        )
-        print(f"✅ Thành công cập nhật dịch vụ: {response['_id']}")
-        return response
-    except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình cập nhật dịch vụ: {e}")
-
-def delete_service_from_index(es_client: Elasticsearch, index_name: str, service_id: str):
-    """
-    Xóa một dịch vụ từ index Elasticsearch đã chỉ định.
-    """
-    try:
-        response = es_client.delete(
-            index=index_name,
-            id=service_id
-        )
-        print(f"✅ Thành công xóa dịch vụ: {service_id}")
-        return response
-    except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình xóa dịch vụ: {e}")
-
-def create_accessory_index(es_client: Elasticsearch, index_name: str):
-    """
-    Tạo index mới trong Elasticsearch với mapping cho phụ kiện của khách hàng.
-    Nếu index đã tồn tại, nó sẽ bị xóa và tạo lại.
-    """
-    if es_client.indices.exists(index=index_name):
-        print(f"⚠️ Index '{index_name}' đã tồn tại. Đang xóa index cũ.")
-        es_client.indices.delete(index=index_name)
-
-    mapping = {
-        "properties": {
+    elif data_type == "accessory":
+        specific_properties = {
             "accessory_code": {"type": "keyword"},
             "accessory_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "properties": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "lifecare_price": {"type": "double"},
-            "trademark": {"type": "keyword"},
-            "guarantee": {"type": "keyword"},
-            "inventory": {"type": "integer"},
-            "specifications": {"type": "text"},
-            "avatar_images": {"type": "keyword"},
-            "link_accessory": {"type": "keyword"}
+            "lifecare_price": {"type": "double"}, "inventory": {"type": "integer"},
         }
+    else:
+        return {}
+        
+    common_properties.update(specific_properties)
+    return {"properties": common_properties}
+
+async def ensure_shared_indices_exist(es_client: Elasticsearch):
+    """
+    Kiểm tra và tạo các index chia sẻ nếu chúng chưa tồn tại.
+    """
+    indices_to_create = {
+        PRODUCTS_INDEX: "product",
+        SERVICES_INDEX: "service",
+        ACCESSORIES_INDEX: "accessory"
     }
+    for index_name, data_type in indices_to_create.items():
+        if not await es_client.indices.exists(index=index_name):
+            print(f"🛠 Đang tạo index chia sẻ '{index_name}'...")
+            mapping = get_shared_index_mapping(data_type)
+            await es_client.indices.create(index=index_name, mappings=mapping)
+            print(f"✅ Tạo thành công index '{index_name}'.")
 
-    print(f"🛠 Đang tạo index '{index_name}' với mapping...")
-    es_client.indices.create(index=index_name, mappings=mapping)
-    print("✅ Thành công tạo index.")
+async def clear_customer_data(es_client: Elasticsearch, index_name: str, customer_id: str):
+    """
+    Xóa tất cả dữ liệu của một customer_id cụ thể khỏi một index.
+    """
+    print(f"🗑️ Đang xóa dữ liệu cũ của khách hàng '{customer_id}' trong index '{index_name}'...")
+    try:
+        await es_client.delete_by_query(
+            index=index_name,
+            query={"term": {"customer_id": customer_id}},
+            refresh=True,
+            wait_for_completion=True
+        )
+        print(f"✅ Xóa dữ liệu cũ thành công.")
+    except Exception as e:
+        # Bỏ qua lỗi nếu index không tồn tại hoặc không có dữ liệu để xóa
+        print(f"⚠️ Không thể xóa dữ liệu cũ (có thể do chưa có): {e}")
 
-def process_and_index_accessory_data(es_client: Elasticsearch, index_name: str, file_content: bytes):
+async def process_and_index_data(
+    es_client: Elasticsearch, 
+    customer_id: str,
+    index_name: str, 
+    file_content: bytes, 
+    columns_config: dict
+):
     """
-    Đọc dữ liệu phụ kiện từ nội dung file Excel, xử lý và tạo index trong Elasticsearch.
+    Hàm tổng quát để đọc, xử lý và nạp dữ liệu vào một index chia sẻ.
     """
+    # Bước 1: Xóa dữ liệu cũ của khách hàng
+    await clear_customer_data(es_client, index_name, customer_id)
+
+    # Bước 2: Đọc và xử lý dữ liệu mới
     try:
         df = pd.read_excel(io.BytesIO(file_content))
-        df.columns = [
-            'accessory_code', 'accessory_name', 'category', 'properties',
-            'lifecare_price', 'trademark', 'guarantee', 'inventory',
-            'specifications', 'avatar_images', 'link_accessory'
-        ]
-        df = df.dropna(subset=['accessory_code', 'accessory_name'])
-        df['inventory'] = pd.to_numeric(df['inventory'], errors='coerce').fillna(0).astype(int)
-        df['lifecare_price'] = pd.to_numeric(df['lifecare_price'].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(float)
-        df = df.where(pd.notnull(df), None)
-    except Exception as e:
-        raise Exception(f"Error reading Excel content: {e}")
-    
-    actions = []
-    total_rows = len(df)
-
-    for index, row in df.iterrows():
-        print(f"Đang xử lý dòng {index + 1}/{total_rows}: {row['accessory_name']}")
+        df.columns = columns_config['names']
+        df = df.dropna(subset=columns_config['required'])
         
-        doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
+        for col, dtype in columns_config.get('numerics', {}).items():
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(dtype)
+            
+        df['customer_id'] = customer_id
+        df = df.where(pd.notnull(df), None).replace({np.nan: None})
+    except Exception as e:
+        raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
+
+    # Bước 3: Chuẩn bị và thực hiện bulk indexing với custom routing
+    actions = []
+    for _, row in df.iterrows():
+        doc = row.to_dict()
         action = {
             "_index": index_name,
-            "_id": doc['accessory_code'],
-            "_source": doc
+            "_id": f"{customer_id}_{doc[columns_config['id_field']]}",
+            "_source": doc,
+            "routing": customer_id
         }
         actions.append(action)
 
-    print(f"\n🚀 Đang tạo index {len(actions)} phụ kiện...")
+    if not actions:
+        return 0, 0
+
+    print(f"🚀 Đang nạp {len(actions)} bản ghi vào index '{index_name}' cho khách hàng '{customer_id}'...")
     try:
-        success, failed = bulk(es_client, actions, raise_on_error=False)
-        print(f"✅ Thành công tạo index: {success} phụ kiện.")
+        success, failed = await bulk(es_client, actions, raise_on_error=False, refresh=True)
+        print(f"✅ Thành công: {success} bản ghi.")
         if failed:
-            print(f"❌ Thất bại tạo index: {len(failed)} phụ kiện.")
-            for i, fail_info in enumerate(failed[:5]):
-                error = fail_info.get('index', {}).get('error', {})
-                print(f"  - Error {i+1}: {error.get('type', 'unknown')} - {error.get('reason', 'no reason')}")
+            print(f"❌ Thất bại: {len(failed)} bản ghi.")
         return success, len(failed)
     except Exception as e:
-        raise Exception(f"Lỗi xảy ra trong quá trình tạo index: {e}")
+        raise IOError(f"Lỗi trong quá trình bulk indexing: {e}")
 
-def index_single_accessory(es_client: Elasticsearch, index_name: str, accessory_data: dict):
+async def index_single_document(es_client: Elasticsearch, index_name: str, customer_id: str, doc_id: str, doc_body: dict):
     """
-    Tạo index cho một phụ kiện trong Elasticsearch.
+    Nạp (hoặc ghi đè) một bản ghi duy nhất vào index chia sẻ với routing.
     """
+    doc_body['customer_id'] = customer_id
+    composite_id = f"{customer_id}_{doc_id}"
+    
     try:
-        document_id = accessory_data['accessory_code']
-        response = es_client.index(
+        response = await es_client.index(
             index=index_name,
-            id=document_id,
-            document=accessory_data
+            id=composite_id,
+            document=doc_body,
+            routing=customer_id,
+            refresh=True
         )
-        print(f"✅ Thành công tạo index phụ kiện: {response['_id']}")
         return response
     except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình tạo index phụ kiện: {e}")
+        raise IOError(f"Lỗi khi nạp bản ghi đơn: {e}")
 
-def update_accessory_in_index(es_client: Elasticsearch, index_name: str, accessory_id: str, accessory_data: dict):
+async def update_single_document(es_client: Elasticsearch, index_name: str, customer_id: str, doc_id: str, doc_body: dict):
     """
-    Cập nhật một phụ kiện trong index Elasticsearch đã chỉ định.
+    Cập nhật một bản ghi duy nhất trong index chia sẻ.
     """
+    composite_id = f"{customer_id}_{doc_id}"
     try:
-        response = es_client.update(
+        response = await es_client.update(
             index=index_name,
-            id=accessory_id,
-            doc=accessory_data
+            id=composite_id,
+            doc=doc_body,
+            routing=customer_id,
+            refresh=True
         )
-        print(f"✅ Thành công cập nhật phụ kiện: {response['_id']}")
         return response
     except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình cập nhật phụ kiện: {e}")
+        raise IOError(f"Lỗi khi cập nhật bản ghi: {e}")
 
-def delete_accessory_from_index(es_client: Elasticsearch, index_name: str, accessory_id: str):
+async def delete_single_document(es_client: Elasticsearch, index_name: str, customer_id: str, doc_id: str):
     """
-    Xóa một phụ kiện từ index Elasticsearch đã chỉ định.
+    Xóa một bản ghi duy nhất khỏi index chia sẻ.
     """
+    composite_id = f"{customer_id}_{doc_id}"
     try:
-        response = es_client.delete(
+        response = await es_client.delete(
             index=index_name,
-            id=accessory_id
+            id=composite_id,
+            routing=customer_id,
+            refresh=True
         )
-        print(f"✅ Thành công xóa phụ kiện: {accessory_id}")
         return response
     except Exception as e:
-        raise Exception(f"Một lỗi xảy ra trong quá trình xóa phụ kiện: {e}")
+        raise IOError(f"Lỗi khi xóa bản ghi: {e}")

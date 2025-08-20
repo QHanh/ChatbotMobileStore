@@ -1,31 +1,10 @@
-import os
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
-from dotenv import load_dotenv
-from config.settings import ELASTIC_HOST
-
-load_dotenv()
-
-es_client = None
-
-async def get_es_client():
-    """
-    Initializes and returns a single instance of the Elasticsearch client.
-    """
-    global es_client
-    if es_client is None:
-        try:
-            es_client = AsyncElasticsearch(hosts=[ELASTIC_HOST])
-            if not await es_client.ping():
-                raise ConnectionError("Không thể kết nối đến Elasticsearch.")
-            print("search_service: Kết nối đến Elasticsearch thành công!")
-        except ConnectionError as e:
-            print(f"Lỗi trong search_service: {e}")
-            es_client = None
-    return es_client
+from dependencies import es_client
+from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
 
 async def search_products(
-    index_name: str,
+    customer_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -35,132 +14,84 @@ async def search_products(
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Tìm kiếm sản phẩm iPhone trong Elasticsearch dựa trên các tiêu chí lọc.
-
-    Args:
-        model (Optional[str]): Tên model iPhone (ví dụ: "iPhone 15 Pro Max").
-        mau_sac (Optional[str]): Màu sắc của sản phẩm.
-        dung_luong (Optional[str]): Dung lượng lưu trữ (ví dụ: "256GB").
-        tinh_trang_may (Optional[str]): Tình trạng của máy (ví dụ: "trầy xước").
-        loai_thiet_bi (Optional[str]): Loại thiết bị (ví dụ: "Cũ", "Mới").
-        min_gia (Optional[float]): Mức giá tối thiểu.
-        max_gia (Optional[float]): Mức giá tối đa.
-
-    Returns:
-        List[Dict[str, Any]]: Danh sách các sản phẩm phù hợp.
+    Tìm kiếm sản phẩm trong index 'products' chia sẻ, lọc theo customer_id.
     """
-    es = await get_es_client()
-    if not es:
+    if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
-    query = {
-        "bool": {
-            "must": [],
-            "should": [],
-            "filter": []
-        }
-    }
-
-    if model:
-        query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
+    query = {"bool": {"must": [], "should": [], "filter": []}}
     
-    if mau_sac:
-        query["bool"]["filter"].append({"term": {"mau_sac": mau_sac}})
-
-    if loai_thiet_bi:
-        query["bool"]["filter"].append({"match": {"loai_thiet_bi": loai_thiet_bi}})
-        
-    if dung_luong:
-        query["bool"]["filter"].append({"term": {"dung_luong": dung_luong}})
-        
-    if tinh_trang_may:
-        query["bool"]["should"].append({"match": {"tinh_trang_may": tinh_trang_may}})
+    # Bắt buộc lọc theo customer_id
+    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+    query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
+    
+    if model: query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
+    if mau_sac: query["bool"]["should"].append({"match": {"mau_sac": mau_sac}})
+    if loai_thiet_bi: query["bool"]["should"].append({"match": {"loai_thiet_bi": loai_thiet_bi}})
+    if dung_luong: query["bool"]["must"].append({"match": {"dung_luong": dung_luong}})
+    if tinh_trang_may: query["bool"]["should"].append({"match": {"tinh_trang_may": tinh_trang_may}})
     
     price_range = {}
-    if min_gia is not None:
-        price_range["gte"] = min_gia
-    if max_gia is not None:
-        price_range["lte"] = max_gia
-    if price_range:
-        query["bool"]["filter"].append({"range": {"gia": price_range}})
-
-    query["bool"]["filter"].append({"range": {"ton_kho": {"gt": 0}}})
+    if min_gia is not None: price_range["gte"] = min_gia
+    if max_gia is not None: price_range["lte"] = max_gia
+    if price_range: query["bool"]["filter"].append({"range": {"gia": price_range}})
 
     try:
-        response = await es.search(
-            index=index_name,
+        response = await es_client.search(
+            index=PRODUCTS_INDEX,
             query=query,
+            routing=customer_id, # Custom routing để tăng tốc
             size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
-        print(f"Tìm thấy {len(hits)} sản phẩm phù hợp.")
+        print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
         return hits
     except Exception as e:
-        print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
-        return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
+        print(f"Lỗi khi tìm kiếm sản phẩm: {e}")
+        return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 async def search_services(
-    index_name: str,
+    customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
-    hang_san_pham: Optional[str] = None,
-    mau_sac_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Tìm kiếm dịch vụ trong Elasticsearch dựa trên các tiêu chí lọc.
-    Args:
-        ten_dich_vu (Optional[str]): Tên dịch vụ (ví dụ: "Thay pin").
-        ten_san_pham (Optional[str]): Tên sản phẩm đi kèm (ví dụ: "iPhone 15 Pro Max").
-        chi_tiet_dich_vu (Optional[str]): Chi tiết dịch vụ (ví dụ: "Pin Lithium").
+    Tìm kiếm dịch vụ trong index 'services' chia sẻ, lọc theo customer_id.
     """
-    es = await get_es_client()
-    if not es:
+    if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
-    
-    query = {
-        "bool": {
-            "must": [],
-            "should": [],
-            "filter": []
-        }
-    }
-    
-    if ten_dich_vu: 
-        query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
-    
-    if hang_san_pham:
-        query["bool"]["must"].append({"match": {"hang_san_pham": hang_san_pham}})
-    
-    if ten_san_pham:
-        query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
-    
-    if mau_sac_san_pham:
-        query["bool"]["must"].append({"match": {"mau_sac_san_pham": mau_sac_san_pham}})
-    
-    if loai_dich_vu:
-        query["bool"]["must"].append({"match": {"loai_dich_vu": loai_dich_vu}})
-    
-    price_range = {}
-    if min_gia is not None:
-        price_range["gte"] = min_gia
-    if max_gia is not None:
-        price_range["lte"] = max_gia
-    if price_range:
-        query["bool"]["filter"].append({"range": {"gia": price_range}})
-    
-    try:
-        response = await es.search(index=index_name, query=query, size=10)
-        hits = [hit['_source'] for hit in response['hits']['hits']]
-        if hits:
-            print(f"Tìm thấy {len(hits)} dịch vụ phù hợp (theo bộ lọc cụ thể).")
-            return hits
 
+    query = {"bool": {"must": [], "should": [], "filter": []}}
+    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+
+    if ten_dich_vu: query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
+    if ten_san_pham: query["bool"]["must"].append({"match": {"ten_san_pham": ten_san_pham}})
+    if loai_dich_vu: query["bool"]["should"].append({"match": {"loai_dich_vu": loai_dich_vu}})
+
+    price_range = {}
+    if min_gia is not None: price_range["gte"] = min_gia
+    if max_gia is not None: price_range["lte"] = max_gia
+    if price_range: query["bool"]["filter"].append({"range": {"gia": price_range}})
+
+    try:
+        response = await es_client.search(
+            index=SERVICES_INDEX,
+            query=query,
+            routing=customer_id,
+            size=10
+        )
+        hits = [hit['_source'] for hit in response['hits']['hits']]
+        
+        if hits:
+            print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
+            return hits
+        
         # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
         search_terms: List[str] = []
-        for term in [ten_dich_vu, ten_san_pham, hang_san_pham, mau_sac_san_pham, loai_dich_vu]:
+        for term in [ten_dich_vu, ten_san_pham, loai_dich_vu]:
             if term:
                 search_terms.append(str(term))
 
@@ -173,110 +104,95 @@ async def search_services(
                     "fields": [
                         "ten_dich_vu^3",
                         "loai_dich_vu^2",
-                        "hang_san_pham",
-                        "mau_sac_san_pham",
                         "ten_san_pham",
-                        "ghi_chu"
                     ],
                     "fuzziness": "AUTO"
                 }
             }
-            response = await es.search(index=index_name, query=fallback_query, size=10)
+            response = await es_client.search(index=SERVICES_INDEX, query=fallback_query, size=10)
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
             return hits
-
-        # Không có tham số nào để fallback
-        print("Không có tham số tìm kiếm để thực hiện fallback multi_match.")
-        return []
+        else:
+            return [{"error": "Không tìm thấy dịch vụ phù hợp."}]
     except Exception as e:
-        print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
-        return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
-    
+        print(f"Lỗi khi tìm kiếm dịch vụ: {e}")
+        return [{"error": f"Lỗi tìm kiếm: {e}"}]
+
 async def search_accessories(
-    index_name: str,
+    customer_id: str,
     ten_phu_kien: Optional[str] = None,
+    phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
-    loai_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None
 ) -> List[Dict[str, Any]]:
     """
-    Tìm kiếm phụ kiện trong Elasticsearch dựa trên các tiêu chí lọc.
+    Tìm kiếm phụ kiện trong index 'accessories' chia sẻ, lọc theo customer_id.
     """
-    es = await get_es_client()
-    if not es:
+    if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
-    
-    query = {
-        "bool": {
-            "must": [],
-            "should": [],
-            "filter": []
-        }
-    }
-    
-    if ten_phu_kien:
-        query["bool"]["must"].append({"match": {"ten_phu_kien": ten_phu_kien}})
-    
-    if thuoc_tinh_phu_kien:
-        query["bool"]["must"].append({"match": {"thuoc_tinh_phu_kien": thuoc_tinh_phu_kien}})
-    
-    if loai_phu_kien:
-        query["bool"]["must"].append({"match": {"loai_phu_kien": loai_phu_kien}})
-    
+
+    query = {"bool": {"must": [], "should": [], "filter": []}}
+    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+    query["bool"]["filter"].append({"range": {"inventory": {"gt": 0}}})
+
+    if ten_phu_kien: query["bool"]["must"].append({"match": {"accessory_name": ten_phu_kien}})
+    if phan_loai_phu_kien: query["bool"]["should"].append({"match": {"category": phan_loai_phu_kien}})
+    if thuoc_tinh_phu_kien: query["bool"]["should"].append({"match": {"properties": thuoc_tinh_phu_kien}})
+
     price_range = {}
-    if min_gia is not None:
-        price_range["gte"] = min_gia
-    if max_gia is not None:
-        price_range["lte"] = max_gia
-    if price_range:
-        query["bool"]["filter"].append({"range": {"gia": price_range}})
-    
+    if min_gia is not None: price_range["gte"] = min_gia
+    if max_gia is not None: price_range["lte"] = max_gia
+    if price_range: query["bool"]["filter"].append({"range": {"lifecare_price": price_range}})
+
     try:
-        response = await es.search(index=index_name, query=query, size=10)
+        response = await es_client.search(
+            index=ACCESSORIES_INDEX,
+            query=query,
+            routing=customer_id,
+            size=10
+        )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
-            print(f"Tìm thấy {len(hits)} phụ kiện phù hợp (theo bộ lọc cụ thể).")
+            print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
             return hits
-        
-        # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
-        search_terms: List[str] = []
-        for term in [ten_phu_kien, thuoc_tinh_phu_kien, loai_phu_kien]:
-            if term:
-                search_terms.append(str(term))
+        else:
+            # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
+            search_terms: List[str] = []
+            for term in [ten_phu_kien, phan_loai_phu_kien, thuoc_tinh_phu_kien]:
+                if term:
+                    search_terms.append(str(term))
 
-        if search_terms:
-            combined_query = " ".join(search_terms)
-            fallback_query = {
-                "multi_match": {
-                    "query": combined_query,
-                    "type": "most_fields",
-                    "fields": [
-                        "ten_phu_kien^3",
-                        "thuoc_tinh_phu_kien^2",
-                        "loai_phu_kien",
-                    ],
-                    "fuzziness": "AUTO"
+            if search_terms:
+                combined_query = " ".join(search_terms)
+                fallback_query = {
+                    "multi_match": {
+                        "query": combined_query,
+                        "type": "most_fields",
+                        "fields": [
+                            "accessory_name^3",
+                            "category^2",
+                            "properties"
+                        ],
+                        "fuzziness": "AUTO"
+                    }
                 }
-            }
-            response = await es.search(index=index_name, query=fallback_query, size=10)
-            hits = [hit['_source'] for hit in response['hits']['hits']]
-            print(f"Fallback multi_match: tìm thấy {len(hits)} phụ kiện phù hợp.")
-            return hits
-
-        # Không có tham số nào để fallback
-        print("Không có tham số tìm kiếm để thực hiện fallback multi_match.")
-        return []
+                response = await es_client.search(index=ACCESSORIES_INDEX, query=fallback_query, size=10)
+                hits = [hit['_source'] for hit in response['hits']['hits']]
+                print(f"Fallback multi_match: tìm thấy {len(hits)} phụ kiện phù hợp.")
+                return hits
+            else:
+                return [{"error": "Không tìm thấy phụ kiện phù hợp."}]
     except Exception as e:
-        print(f"Lỗi khi tìm kiếm trong Elasticsearch: {e}")
-        return [{"error": f"Lỗi khi tìm kiếm: {e}"}]
+        print(f"Lỗi khi tìm kiếm phụ kiện: {e}")
+        return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 if __name__ == '__main__':
     import asyncio
 
     async def main():
-        results = await search_products(index_name="iphone_products", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+        results = await search_products(customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
         if results:
             for product in results:
                 print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")

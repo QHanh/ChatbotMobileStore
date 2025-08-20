@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from config.settings import APP_CONFIG, CORS_CONFIG
 from api import product_routes, service_routes, accessory_routes, config_routes, chat_routes, document_routes, instruction_routes
 from database.database import init_db
+from dependencies import init_es_client, close_es_client, es_client
+from service.data.data_loader_elastic_search import ensure_shared_indices_exist
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
 
@@ -12,10 +14,14 @@ logging.getLogger("watchfiles").setLevel(logging.ERROR)
 async def lifespan(app: FastAPI):
     # Code to run on startup
     print("Application startup...")
+    await init_es_client()
+    if es_client:
+        await ensure_shared_indices_exist(es_client)
     # init_db()
     yield
     # Code to run on shutdown
     print("Application shutdown.")
+    await close_es_client()
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 
