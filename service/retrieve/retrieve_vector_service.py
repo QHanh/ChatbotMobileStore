@@ -3,19 +3,14 @@ import weaviate
 import asyncio
 from typing import List, Dict, Any
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from service.data.data_loader_vector_db import get_weaviate_client, DOCUMENT_CLASS_NAME
+from service.data.data_loader_vector_db import DOCUMENT_CLASS_NAME
+from dependencies import get_weaviate_client
+from service.utils.helpers import sanitize_for_weaviate
 from weaviate.classes.query import Filter
 
 def _get_sanitized_tenant_id(customer_id: str) -> str:
-    """
-    Làm sạch customer_id để sử dụng làm tenant_id hợp lệ.
-    - Thay thế '-' bằng '_'.
-    - Thêm tiền tố 't_' nếu bắt đầu bằng số.
-    """
-    sanitized = customer_id.replace("-", "_")
-    if sanitized and sanitized[0].isdigit():
-        return f"t_{sanitized}"
-    return sanitized
+    """Sử dụng hàm helper tập trung để làm sạch tenant ID."""
+    return sanitize_for_weaviate(customer_id)
 
 def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[float], top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
     """

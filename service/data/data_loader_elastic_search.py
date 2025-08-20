@@ -4,7 +4,7 @@ from elasticsearch.helpers import async_bulk
 import numpy as np
 import warnings
 import io
-from service.utils.helpers import sanitize_es_id
+from service.utils.helpers import sanitize_for_es
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -135,8 +135,8 @@ async def index_single_document(es_client: Elasticsearch, index_name: str, custo
     Nạp (hoặc ghi đè) một bản ghi duy nhất vào index chia sẻ với routing.
     """
     doc_body['customer_id'] = customer_id # Giữ customer_id gốc trong source
-    sanitized_customer_id = sanitize_es_id(customer_id)
-    sanitized_doc_id = sanitize_es_id(doc_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    sanitized_doc_id = sanitize_for_es(doc_id)
     composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
     
     try:
@@ -155,8 +155,8 @@ async def update_single_document(es_client: Elasticsearch, index_name: str, cust
     """
     Cập nhật một bản ghi duy nhất trong index chia sẻ.
     """
-    sanitized_customer_id = sanitize_es_id(customer_id)
-    sanitized_doc_id = sanitize_es_id(doc_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    sanitized_doc_id = sanitize_for_es(doc_id)
     composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
     try:
         response = await es_client.update(
@@ -174,8 +174,8 @@ async def delete_single_document(es_client: Elasticsearch, index_name: str, cust
     """
     Xóa một bản ghi duy nhất khỏi index chia sẻ.
     """
-    sanitized_customer_id = sanitize_es_id(customer_id)
-    sanitized_doc_id = sanitize_es_id(doc_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    sanitized_doc_id = sanitize_for_es(doc_id)
     composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
     try:
         response = await es_client.delete(
@@ -194,7 +194,7 @@ async def bulk_index_documents(es_client: Elasticsearch, index_name: str, custom
     Hàm này không xóa dữ liệu cũ.
     """
     actions = []
-    sanitized_customer_id = sanitize_es_id(customer_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
     
     for doc in documents:
         doc_id = doc.get(id_field)
@@ -202,7 +202,7 @@ async def bulk_index_documents(es_client: Elasticsearch, index_name: str, custom
             continue 
         
         doc['customer_id'] = customer_id
-        sanitized_doc_id = sanitize_es_id(doc_id)
+        sanitized_doc_id = sanitize_for_es(doc_id)
         composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
         
         action = {

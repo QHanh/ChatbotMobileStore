@@ -7,7 +7,7 @@ from database.database import get_db, Customer
 from dependencies import chat_memory
 from elasticsearch import AsyncElasticsearch
 from dependencies import get_es_client
-
+from service.utils.helpers import sanitize_for_es, sanitize_for_weaviate
 router = APIRouter()
 
 @router.post("/chat/{threadId}")
@@ -22,7 +22,7 @@ async def chat(
     """
     if not threadId:
         raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
-
+    customer_id = sanitize_for_es(request.customer_id)
     try:
         user_input = request.query
         llm_provider = request.llm_provider
@@ -41,9 +41,15 @@ async def chat(
             api_key=api_key
         )
 
-        response = await invoke_agent_with_memory(agent_executor, threadId, user_input, chat_memory)
+        response = await invoke_agent_with_memory(
+            agent_executor, 
+            customer_id,
+            threadId, 
+            user_input, 
+            chat_memory
+        )
 
         return {"response": response['output']}
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except ValueError as ve:
+        raise HTTPException(status_code=500, detail=str(ve))

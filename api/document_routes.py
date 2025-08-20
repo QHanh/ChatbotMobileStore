@@ -10,19 +10,13 @@ from service.data.data_loader_vector_db import (
 from service.models.schemas import DocumentInput
 from weaviate.classes.query import Filter
 from typing import Optional
+from service.utils.helpers import sanitize_for_weaviate
 
 router = APIRouter()
 
 def get_sanitized_tenant_id(customer_id: str) -> str:
-    """
-    Làm sạch customer_id để sử dụng làm tenant_id hợp lệ.
-    - Thay thế '-' bằng '_'.
-    - Thêm tiền tố 't_' nếu bắt đầu bằng số.
-    """
-    sanitized = customer_id.replace("-", "_")
-    if sanitized and sanitized[0].isdigit():
-        return f"t_{sanitized}"
-    return sanitized
+    """Sử dụng hàm helper tập trung để làm sạch tenant ID."""
+    return sanitize_for_weaviate(customer_id)
 
 @router.post("/upload-text/{customer_id}")
 async def upload_text(customer_id: str, doc_input: DocumentInput):

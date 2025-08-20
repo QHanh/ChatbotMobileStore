@@ -1,7 +1,7 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
-from service.utils.helpers import sanitize_es_id
+from service.utils.helpers import sanitize_for_es
 
 async def search_products(
     es_client: AsyncElasticsearch,
@@ -20,7 +20,7 @@ async def search_products(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
-    sanitized_customer_id = sanitize_es_id(customer_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
     
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
@@ -75,7 +75,7 @@ async def search_services(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
-    sanitized_customer_id = sanitize_es_id(customer_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
 
@@ -153,20 +153,11 @@ async def search_accessories(
     if not es_client:
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
-    sanitized_customer_id = sanitize_es_id(customer_id)
+    sanitized_customer_id = sanitize_for_es(customer_id)
     query = {"bool": {"must": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
-    query["bool"]["filter"].append({"range": {"inventory": {"gt": 0}}})
 
-    if ten_phu_kien:
-        query["bool"]["must"].append({
-            "bool": {
-                "must": [
-                    {"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 2.0}}},
-                    {"match": {"accessory_name": ten_phu_kien}}
-                ]
-            }
-        })
+    if ten_phu_kien: query["bool"]["must"].append({"match": {"accessory_name": {"query": ten_phu_kien}}})
 
     if phan_loai_phu_kien:
         query["bool"]["should"].append({

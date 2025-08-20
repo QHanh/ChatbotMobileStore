@@ -4,8 +4,6 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain.chat_models import init_chat_model
-import getpass
-from functools import partial
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
 
@@ -105,16 +103,18 @@ def create_agent_executor(
     
     return agent_executor
 
-def get_session_history(session_id: str, memory: dict):
-    if session_id not in memory:
-        memory[session_id] = []
-    return memory[session_id]
+def get_session_history(customer_id: str, session_id: str, memory: dict):
+    """Lấy lịch sử chat dựa trên key tổng hợp từ customer_id và session_id."""
+    composite_key = f"{customer_id}_{session_id}"
+    if composite_key not in memory:
+        memory[composite_key] = []
+    return memory[composite_key]
 
-async def invoke_agent_with_memory(agent_executor, session_id: str, user_input: str, memory: dict):
+async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, memory: dict):
     """
-    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện.
+    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện theo từng khách hàng.
     """
-    chat_history = get_session_history(session_id, memory)
+    chat_history = get_session_history(customer_id, session_id, memory)
     
     response = await agent_executor.ainvoke({
         "input": user_input,
@@ -141,11 +141,9 @@ if __name__ == '__main__':
             service_feature_enabled=True,
             accessory_feature_enabled=False
         )
-        # Cần mock session DB để test
         from database.database import SessionLocal
         db_session = SessionLocal()
         
-        # Cần mock instructions trong DB để test
         from database.database import SystemInstruction
         mock_instructions = [
             SystemInstruction(key='base_instructions', value="Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, {identity}."),
@@ -156,7 +154,6 @@ if __name__ == '__main__':
             SystemInstruction(key='other_instructions', value="**Các tình huống khác:**")
         ]
         for instr in mock_instructions:
-            # Upsert logic for testing
             existing = db_session.query(SystemInstruction).filter_by(key=instr.key).first()
             if existing:
                 existing.value = instr.value
@@ -164,7 +161,6 @@ if __name__ == '__main__':
                 db_session.add(instr)
         db_session.commit()
 
-        # Mock Elasticsearch client for testing
         es_client = AsyncElasticsearch()
 
         agent_executor = create_agent_executor(
@@ -183,7 +179,13 @@ if __name__ == '__main__':
             user_input = input("You: ")
             if user_input.lower() in ['exit', 'quit']:
                 break
-            response = await invoke_agent_with_memory(agent_executor, session_id, user_input, chat_memory)
+            response = await invoke_agent_with_memory(
+                agent_executor, 
+                mock_customer_config.customer_id,
+                session_id, 
+                user_input, 
+                chat_memory
+            )
             
             print(f"Agent: {response['output']}")
 
