@@ -10,7 +10,6 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-API_EMBED_IMAGE = os.getenv("API_EMBED_IMAGE")
 warnings.filterwarnings("ignore", category=UserWarning)
 
 def create_product_index(es_client: Elasticsearch, index_name: str):
@@ -285,11 +284,7 @@ def create_accessory_index(es_client: Elasticsearch, index_name: str):
             "inventory": {"type": "integer"},
             "specifications": {"type": "text"},
             "avatar_images": {"type": "keyword"},
-            "link_accessory": {"type": "keyword"},
-            "image_embedding": {
-                "type": "dense_vector",
-                "dims": 512 
-            }
+            "link_accessory": {"type": "keyword"}
         }
     }
 
@@ -321,28 +316,7 @@ def process_and_index_accessory_data(es_client: Elasticsearch, index_name: str, 
     for index, row in df.iterrows():
         print(f"Đang xử lý dòng {index + 1}/{total_rows}: {row['accessory_name']}")
         
-        doc = row.to_dict()
-        image_url = row['avatar_images']
-        embedding_vector = None
-
-        if isinstance(image_url, str) and image_url.startswith('http'):
-            try:
-                response = requests.post(API_EMBED_IMAGE, data={"image_url": image_url}, timeout=15)
-                response.raise_for_status()
-                result = response.json()
-
-                # Kiểm tra có lỗi không
-                if "embedding" in result:
-                    embedding_vector = result["embedding"]
-                    print(" -> Tạo embedding cho ảnh thành công.")
-                else:
-                    print(" -> Lỗi từ API:", result.get("error", "Không rõ lỗi"))
-
-            except Exception as e:
-                print(f" -> Lỗi khi gửi ảnh đến API local: {e}")
-        
-        doc['image_embedding'] = embedding_vector
-
+        doc = json.loads(json.dumps(row.to_dict(), default=lambda x: None))
         action = {
             "_index": index_name,
             "_id": doc['accessory_code'],
@@ -369,25 +343,6 @@ def index_single_accessory(es_client: Elasticsearch, index_name: str, accessory_
     """
     try:
         document_id = accessory_data['accessory_code']
-        image_url = accessory_data['avatar_images']
-        embedding_vector = None
-
-        if isinstance(image_url, str) and image_url.startswith('http'):
-            try:
-                response = requests.post(API_EMBED_IMAGE, data={"image_url": image_url}, timeout=15)
-                response.raise_for_status()
-                result = response.json()
-
-                # Kiểm tra có lỗi không
-                if "embedding" in result:
-                    embedding_vector = result["embedding"]
-                    print(" -> Tạo embedding cho ảnh thành công.")
-                else:
-                    print(" -> Lỗi từ API:", result.get("error", "Không rõ lỗi"))
-
-            except Exception as e:
-                print(f" -> Lỗi khi gửi ảnh đến API local: {e}")
-        accessory_data['image_embedding'] = embedding_vector
         response = es_client.index(
             index=index_name,
             id=document_id,

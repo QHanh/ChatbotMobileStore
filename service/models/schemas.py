@@ -138,6 +138,7 @@ class AccessoryRow(BaseModel):
 class DocumentInput(BaseModel):
     """Input model for adding a document."""
     text: str = Field(description="Nội dung văn bản thô cần thêm vào cơ sở dữ liệu vector.")
+    source: Optional[str] = Field(default=None, description="Tên nguồn của văn bản, ví dụ: 'faq.txt'. Nếu không cung cấp, sẽ được gán một tên mặc định.")
 
 class Instruction(BaseModel):
     """Represents a single instruction key-value pair."""

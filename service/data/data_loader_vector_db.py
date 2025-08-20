@@ -1,6 +1,6 @@
 import os
 import weaviate
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, Docx2txtLoader, TextLoader
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -139,24 +139,27 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
         print(f"Lỗi khi tải dữ liệu lên Weaviate: {e}")
         raise
 
-def process_and_load_text(client: weaviate.WeaviateClient, text: str, class_name: str):
+def process_and_load_text(client: weaviate.WeaviateClient, text: str, source_name: str, class_name: str):
     """
     Xử lý văn bản thô, chia nhỏ và tải vào Weaviate.
     """
-    documents = [Document(page_content=text)]
+    metadata = {"source": source_name}
+    documents = [Document(page_content=text, metadata=metadata)]
     chunks = split_documents(documents)
     load_chunks_to_weaviate(client, chunks, class_name)
 
-def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, file_name: str, class_name: str):
+def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, source_name: str, original_filename: str, class_name: str):
     """
     Xử lý tệp, chia nhỏ và tải vào Weaviate.
+    Sử dụng source_name cho metadata và original_filename để xác định loader.
     """
-    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file_name)[1]) as tmp_file:
+    file_ext = os.path.splitext(original_filename)[1].lower()
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_ext) as tmp_file:
         tmp_file.write(file_content)
         tmp_file_path = tmp_file.name
 
     loader_cls = None
-    file_ext = os.path.splitext(file_name)[1].lower()
     if file_ext == ".pdf":
         loader_cls = PyPDFLoader
     elif file_ext == ".docx":
@@ -169,9 +172,14 @@ def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, 
     if loader_cls:
         loader = loader_cls(tmp_file_path)
         documents = loader.load()
+        # Gán source_name vào metadata cho tất cả các document được tải từ file
+        for doc in documents:
+            doc.metadata["source"] = source_name
+            
         chunks = split_documents(documents)
         load_chunks_to_weaviate(client, chunks, class_name)
     else:
+        # Xóa file tạm nếu không có loader phù hợp
         os.remove(tmp_file_path)
         raise ValueError(f"Không hỗ trợ định dạng file: {file_ext}")
     

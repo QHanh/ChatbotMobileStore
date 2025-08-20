@@ -15,7 +15,9 @@ def _retrieve_documents_sync(query: str, class_name: str, query_vector: List[flo
         return [{"error": "Không thể kết nối đến Weaviate."}]
 
     try:
-        customer_id = class_name.split('_')[-1]
+        raw_customer_id = class_name.split('_')[-1]
+        customer_id = raw_customer_id.replace("-", "_")
+        
         class_name_lower = f"document_{customer_id}"
         class_name_upper = f"Document_{customer_id}"
 
