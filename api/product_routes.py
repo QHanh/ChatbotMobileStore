@@ -32,7 +32,7 @@ PRODUCT_COLUMNS_CONFIG = {
     }
 }
 
-@router.post("/upload-products/{customer_id}")
+@router.post("/upload-product/{customer_id}")
 async def upload_product_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm."),
@@ -68,7 +68,7 @@ async def upload_product_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/products/{customer_id}")
+@router.post("/insert-product-row/{customer_id}")
 async def add_product(
     customer_id: str,
     product_data: ProductRow,
@@ -87,7 +87,7 @@ async def add_product(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/products/{customer_id}/{product_id}")
+@router.put("/product/{customer_id}/{product_id}")
 async def update_product(
     customer_id: str,
     product_id: str,
@@ -109,7 +109,7 @@ async def update_product(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/products/{customer_id}/{product_id}")
+@router.delete("/product/{customer_id}/{product_id}")
 async def delete_product(
     customer_id: str,
     product_id: str,
@@ -155,7 +155,7 @@ async def add_products_bulk(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/products/append-file/{customer_id}")
+@router.post("/insert-product/{customer_id}")
 async def append_product_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm để nạp thêm."),

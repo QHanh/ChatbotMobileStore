@@ -15,7 +15,6 @@ from service.models.schemas import AccessoryRow
 
 router = APIRouter()
 
-# Cấu hình cụ thể cho việc xử lý file phụ kiện
 ACCESSORY_COLUMNS_CONFIG = {
     'names': [
         'accessory_code', 'accessory_name', 'category', 'properties',
@@ -30,7 +29,7 @@ ACCESSORY_COLUMNS_CONFIG = {
     }
 }
 
-@router.post("/upload-accessories/{customer_id}")
+@router.post("/upload-accessory/{customer_id}")
 async def upload_accessory_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện."),
@@ -66,7 +65,7 @@ async def upload_accessory_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/accessories/{customer_id}")
+@router.post("/insert-accessory-row/{customer_id}")
 async def add_accessory(
     customer_id: str,
     accessory_data: AccessoryRow,
@@ -85,7 +84,7 @@ async def add_accessory(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/accessories/{customer_id}/{accessory_id}")
+@router.put("/accessory/{customer_id}/{accessory_id}")
 async def update_accessory(
     customer_id: str,
     accessory_id: str,
@@ -107,7 +106,7 @@ async def update_accessory(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/accessories/{customer_id}/{accessory_id}")
+@router.delete("/accessory/{customer_id}/{accessory_id}")
 async def delete_accessory(
     customer_id: str,
     accessory_id: str,
@@ -153,7 +152,7 @@ async def add_accessories_bulk(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/accessories/append-file/{customer_id}")
+@router.post("/insert-accessory/{customer_id}")
 async def append_accessory_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện để nạp thêm."),

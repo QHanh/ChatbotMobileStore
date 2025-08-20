@@ -27,7 +27,7 @@ SERVICE_COLUMNS_CONFIG = {
     }
 }
 
-@router.post("/upload-services/{customer_id}")
+@router.post("/upload-service/{customer_id}")
 async def upload_service_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ."),
@@ -63,7 +63,7 @@ async def upload_service_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/services/{customer_id}")
+@router.post("/insert-service-row/{customer_id}")
 async def add_service(
     customer_id: str,
     service_data: ServiceRow,
@@ -82,7 +82,7 @@ async def add_service(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.put("/services/{customer_id}/{service_id}")
+@router.put("/service/{customer_id}/{service_id}")
 async def update_service(
     customer_id: str,
     service_id: str,
@@ -104,7 +104,7 @@ async def update_service(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/services/{customer_id}/{service_id}")
+@router.delete("/service/{customer_id}/{service_id}")
 async def delete_service(
     customer_id: str,
     service_id: str,
@@ -150,7 +150,7 @@ async def add_services_bulk(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/services/append-file/{customer_id}")
+@router.post("/insert-service/{customer_id}")
 async def append_service_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ để nạp thêm."),

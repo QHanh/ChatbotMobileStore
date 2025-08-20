@@ -1,10 +1,9 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
-# Xóa import es_client toàn cục
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
 
 async def search_products(
-    es_client: AsyncElasticsearch, # Thêm tham số es_client
+    es_client: AsyncElasticsearch,
     customer_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
@@ -22,7 +21,6 @@ async def search_products(
 
     query = {"bool": {"must": [], "should": [], "filter": []}}
     
-    # Bắt buộc lọc theo customer_id
     query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
     
     if model: query["bool"]["must"].append({"match": {"model": {"query": model, "boost": 2}}})
@@ -40,7 +38,7 @@ async def search_products(
         response = await es_client.search(
             index=PRODUCTS_INDEX,
             query=query,
-            routing=customer_id, # Custom routing để tăng tốc
+            routing=customer_id,
             size=10
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
@@ -51,7 +49,7 @@ async def search_products(
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 async def search_services(
-    es_client: AsyncElasticsearch, # Thêm tham số es_client
+    es_client: AsyncElasticsearch,
     customer_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
@@ -90,7 +88,6 @@ async def search_services(
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
             return hits
         
-        # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
         search_terms: List[str] = []
         for term in [ten_dich_vu, ten_san_pham, loai_dich_vu]:
             if term:
@@ -121,7 +118,7 @@ async def search_services(
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
 
 async def search_accessories(
-    es_client: AsyncElasticsearch, # Thêm tham số es_client
+    es_client: AsyncElasticsearch,
     customer_id: str,
     ten_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
@@ -160,7 +157,6 @@ async def search_accessories(
             print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
             return hits
         else:
-            # Fallback: multi_match trên các cột văn bản nếu không tìm thấy kết quả
             search_terms: List[str] = []
             for term in [ten_phu_kien, phan_loai_phu_kien, thuoc_tinh_phu_kien]:
                 if term:
@@ -194,7 +190,6 @@ if __name__ == '__main__':
     import asyncio
 
     async def main():
-        # Tạo một client Elasticsearch mẫu để truyền vào
         es_client_mock = AsyncElasticsearch()
         results = await search_products(es_client_mock, customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
         if results:
