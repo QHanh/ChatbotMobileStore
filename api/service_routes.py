@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Path, HTTPException, File, UploadFile
-from dependencies import es_client
+from fastapi import APIRouter, Path, HTTPException, File, UploadFile, Depends
+from typing import List
+from dependencies import get_es_client
+from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
     process_and_index_data, 
     SERVICES_INDEX,
     index_single_document,
     update_single_document,
-    delete_single_document
+    delete_single_document,
+    bulk_index_documents,
+    process_and_upsert_file_data
 )
 from service.models.schemas import ServiceRow
 
@@ -27,7 +31,8 @@ SERVICE_COLUMNS_CONFIG = {
 @router.post("/upload-services/{customer_id}")
 async def upload_service_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
-    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ.")
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Tải lên file Excel dữ liệu dịch vụ cho một khách hàng.
@@ -62,7 +67,8 @@ async def upload_service_data(
 @router.post("/services/{customer_id}")
 async def add_service(
     customer_id: str,
-    service_data: ServiceRow
+    service_data: ServiceRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Thêm mới hoặc ghi đè một dịch vụ vào index chia sẻ.
@@ -81,7 +87,8 @@ async def add_service(
 async def update_service(
     customer_id: str,
     service_id: str,
-    service_data: ServiceRow
+    service_data: ServiceRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Cập nhật thông tin cho một dịch vụ đã có.
@@ -101,7 +108,8 @@ async def update_service(
 @router.delete("/services/{customer_id}/{service_id}")
 async def delete_service(
     customer_id: str,
-    service_id: str
+    service_id: str,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Xóa một dịch vụ khỏi index.
@@ -113,3 +121,66 @@ async def delete_service(
         return {"message": "Dịch vụ đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/services/bulk/{customer_id}")
+async def add_services_bulk(
+    customer_id: str,
+    services: List[ServiceRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Thêm mới hoặc cập nhật hàng loạt dịch vụ.
+    Hàm này không xóa dữ liệu cũ.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        service_dicts = [s.dict() for s in services]
+        success, failed = await bulk_index_documents(
+            es_client, 
+            SERVICES_INDEX, 
+            customer_id, 
+            service_dicts, 
+            id_field='ma_dich_vu'
+        )
+        return {
+            "message": "Thao tác hàng loạt hoàn tất.",
+            "successfully_indexed": success,
+            "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/services/append-file/{customer_id}")
+async def append_service_data_from_file(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ để nạp thêm."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Tải lên file Excel và nạp thêm (upsert) dữ liệu dịch vụ cho một khách hàng.
+    Dữ liệu cũ sẽ không bị xóa. Nếu dịch vụ đã tồn tại, nó sẽ được cập nhật.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    try:
+        content = await file.read()
+        
+        success, failed_items = await process_and_upsert_file_data(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=SERVICES_INDEX,
+            file_content=content,
+            columns_config=SERVICE_COLUMNS_CONFIG
+        )
+        
+        return {
+            "message": f"Dữ liệu dịch vụ cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "successfully_indexed": success,
+            "failed_items": failed_items
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")

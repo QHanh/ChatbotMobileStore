@@ -32,6 +32,13 @@ async def close_es_client():
         es_client = None
         print("Elasticsearch client closed.")
 
+def get_es_client() -> AsyncElasticsearch:
+    """
+    Dependency provider for the Elasticsearch client.
+    Returns the initialized client instance.
+    """
+    return es_client
+
 def get_weaviate_client() -> weaviate.Client:
     """
     Initializes and returns a single instance of the Weaviate client.

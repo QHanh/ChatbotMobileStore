@@ -1,6 +1,6 @@
 import pandas as pd
 from elasticsearch import Elasticsearch
-from elasticsearch.helpers import bulk
+from elasticsearch.helpers import async_bulk
 import numpy as np
 import json
 import warnings
@@ -129,7 +129,7 @@ async def process_and_index_data(
 
     print(f"🚀 Đang nạp {len(actions)} bản ghi vào index '{index_name}' cho khách hàng '{customer_id}'...")
     try:
-        success, failed = await bulk(es_client, actions, raise_on_error=False, refresh=True)
+        success, failed = await async_bulk(es_client, actions, raise_on_error=False, refresh=True)
         print(f"✅ Thành công: {success} bản ghi.")
         if failed:
             print(f"❌ Thất bại: {len(failed)} bản ghi.")
@@ -188,3 +188,70 @@ async def delete_single_document(es_client: Elasticsearch, index_name: str, cust
         return response
     except Exception as e:
         raise IOError(f"Lỗi khi xóa bản ghi: {e}")
+
+async def bulk_index_documents(es_client: Elasticsearch, index_name: str, customer_id: str, documents: list[dict], id_field: str):
+    """
+    Nạp hàng loạt một danh sách các bản ghi vào index chia sẻ.
+    Hàm này không xóa dữ liệu cũ.
+    """
+    actions = []
+    for doc in documents:
+        doc_id = doc.get(id_field)
+        if not doc_id:
+            continue # Bỏ qua nếu không có ID
+        
+        doc['customer_id'] = customer_id
+        composite_id = f"{customer_id}_{doc_id}"
+        
+        action = {
+            "_index": index_name,
+            "_id": composite_id,
+            "_source": doc,
+            "routing": customer_id
+        }
+        actions.append(action)
+
+    if not actions:
+        return 0, 0
+
+    try:
+        success, failed = await async_bulk(es_client, actions, raise_on_error=False, refresh=True)
+        return success, failed
+    except Exception as e:
+        raise IOError(f"Lỗi trong quá trình bulk indexing hàng loạt: {e}")
+
+async def process_and_upsert_file_data(
+    es_client: Elasticsearch,
+    customer_id: str,
+    index_name: str,
+    file_content: bytes,
+    columns_config: dict
+):
+    """
+    Đọc file Excel, xử lý và NẠP THÊM (upsert) dữ liệu vào index chia sẻ.
+    Hàm này KHÔNG xóa dữ liệu cũ của khách hàng.
+    """
+    try:
+        df = pd.read_excel(io.BytesIO(file_content))
+        df.columns = columns_config['names']
+        df = df.dropna(subset=columns_config['required'])
+
+        for col, dtype in columns_config.get('numerics', {}).items():
+            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(dtype)
+
+        df = df.where(pd.notnull(df), None).replace({np.nan: None})
+    except Exception as e:
+        raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
+
+    documents = df.to_dict('records')
+    if not documents:
+        return 0, 0
+
+    success, failed = await bulk_index_documents(
+        es_client,
+        index_name,
+        customer_id,
+        documents,
+        id_field=columns_config['id_field']
+    )
+    return success, failed

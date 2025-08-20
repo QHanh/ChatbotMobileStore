@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Path, HTTPException, File, UploadFile
-from dependencies import es_client
+from fastapi import APIRouter, Path, HTTPException, File, UploadFile, Depends
+from typing import List
+from dependencies import get_es_client
+from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
     process_and_index_data, 
     ACCESSORIES_INDEX,
     index_single_document,
     update_single_document,
-    delete_single_document
+    delete_single_document,
+    bulk_index_documents,
+    process_and_upsert_file_data
 )
 from service.models.schemas import AccessoryRow
 
@@ -29,7 +33,8 @@ ACCESSORY_COLUMNS_CONFIG = {
 @router.post("/upload-accessories/{customer_id}")
 async def upload_accessory_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
-    file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện.")
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Tải lên file Excel dữ liệu phụ kiện cho một khách hàng.
@@ -64,7 +69,8 @@ async def upload_accessory_data(
 @router.post("/accessories/{customer_id}")
 async def add_accessory(
     customer_id: str,
-    accessory_data: AccessoryRow
+    accessory_data: AccessoryRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Thêm mới hoặc ghi đè một phụ kiện vào index chia sẻ.
@@ -83,7 +89,8 @@ async def add_accessory(
 async def update_accessory(
     customer_id: str,
     accessory_id: str,
-    accessory_data: AccessoryRow
+    accessory_data: AccessoryRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Cập nhật thông tin cho một phụ kiện đã có.
@@ -103,7 +110,8 @@ async def update_accessory(
 @router.delete("/accessories/{customer_id}/{accessory_id}")
 async def delete_accessory(
     customer_id: str,
-    accessory_id: str
+    accessory_id: str,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Xóa một phụ kiện khỏi index.
@@ -115,3 +123,66 @@ async def delete_accessory(
         return {"message": "Phụ kiện đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/accessories/bulk/{customer_id}")
+async def add_accessories_bulk(
+    customer_id: str,
+    accessories: List[AccessoryRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Thêm mới hoặc cập nhật hàng loạt phụ kiện.
+    Hàm này không xóa dữ liệu cũ.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        accessory_dicts = [a.dict() for a in accessories]
+        success, failed = await bulk_index_documents(
+            es_client, 
+            ACCESSORIES_INDEX, 
+            customer_id, 
+            accessory_dicts, 
+            id_field='accessory_code'
+        )
+        return {
+            "message": "Thao tác hàng loạt hoàn tất.",
+            "successfully_indexed": success,
+            "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/accessories/append-file/{customer_id}")
+async def append_accessory_data_from_file(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện để nạp thêm."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Tải lên file Excel và nạp thêm (upsert) dữ liệu phụ kiện cho một khách hàng.
+    Dữ liệu cũ sẽ không bị xóa. Nếu phụ kiện đã tồn tại, nó sẽ được cập nhật.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    try:
+        content = await file.read()
+        
+        success, failed_items = await process_and_upsert_file_data(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=ACCESSORIES_INDEX,
+            file_content=content,
+            columns_config=ACCESSORY_COLUMNS_CONFIG
+        )
+        
+        return {
+            "message": f"Dữ liệu phụ kiện cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "successfully_indexed": success,
+            "failed_items": failed_items
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")

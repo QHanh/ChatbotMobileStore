@@ -1,11 +1,15 @@
-from fastapi import APIRouter, Path, HTTPException, File, UploadFile
-from dependencies import es_client
+from fastapi import APIRouter, Path, HTTPException, File, UploadFile, Depends
+from typing import List
+from dependencies import get_es_client
+from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
     process_and_index_data, 
     PRODUCTS_INDEX,
     index_single_document,
     update_single_document,
-    delete_single_document
+    delete_single_document,
+    bulk_index_documents,
+    process_and_upsert_file_data
 )
 from service.models.schemas import ProductRow
 
@@ -32,7 +36,8 @@ PRODUCT_COLUMNS_CONFIG = {
 @router.post("/upload-products/{customer_id}")
 async def upload_product_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
-    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm.")
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Tải lên file Excel dữ liệu sản phẩm cho một khách hàng.
@@ -67,7 +72,8 @@ async def upload_product_data(
 @router.post("/products/{customer_id}")
 async def add_product(
     customer_id: str,
-    product_data: ProductRow
+    product_data: ProductRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Thêm mới hoặc ghi đè một sản phẩm vào index chia sẻ.
@@ -86,7 +92,8 @@ async def add_product(
 async def update_product(
     customer_id: str,
     product_id: str,
-    product_data: ProductRow
+    product_data: ProductRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Cập nhật thông tin cho một sản phẩm đã có.
@@ -107,7 +114,8 @@ async def update_product(
 @router.delete("/products/{customer_id}/{product_id}")
 async def delete_product(
     customer_id: str,
-    product_id: str
+    product_id: str,
+    es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
     Xóa một sản phẩm khỏi index.
@@ -119,3 +127,66 @@ async def delete_product(
         return {"message": "Sản phẩm đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/products/bulk/{customer_id}")
+async def add_products_bulk(
+    customer_id: str,
+    products: List[ProductRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Thêm mới hoặc cập nhật hàng loạt sản phẩm.
+    Hàm này không xóa dữ liệu cũ.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        product_dicts = [p.dict() for p in products]
+        success, failed = await bulk_index_documents(
+            es_client, 
+            PRODUCTS_INDEX, 
+            customer_id, 
+            product_dicts, 
+            id_field='ma_san_pham'
+        )
+        return {
+            "message": "Thao tác hàng loạt hoàn tất.",
+            "successfully_indexed": success,
+            "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/products/append-file/{customer_id}")
+async def append_product_data_from_file(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm để nạp thêm."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Tải lên file Excel và nạp thêm (upsert) dữ liệu sản phẩm cho một khách hàng.
+    Dữ liệu cũ sẽ không bị xóa. Nếu sản phẩm đã tồn tại, nó sẽ được cập nhật.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    try:
+        content = await file.read()
+        
+        success, failed_items = await process_and_upsert_file_data(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=PRODUCTS_INDEX,
+            file_content=content,
+            columns_config=PRODUCT_COLUMNS_CONFIG
+        )
+        
+        return {
+            "message": f"Dữ liệu sản phẩm cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "successfully_indexed": success,
+            "failed_items": failed_items
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
