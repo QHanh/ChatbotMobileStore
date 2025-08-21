@@ -38,17 +38,17 @@ def get_shared_index_mapping(data_type: str):
         }
     elif data_type == "accessory":
         specific_properties = {
-        "accessory_code": {"type": "keyword"},
-        "accessory_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-        "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-        "properties": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-        "lifecare_price": {"type": "double"},
-        "trademark": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-        "guarantee": {"type": "text"},
-        "inventory": {"type": "integer"},
-        "specifications": {"type": "text"},
-        "avatar_images": {"type": "keyword"},
-        "link_accessory": {"type": "keyword"}
+            "accessory_code": {"type": "keyword"},
+            "accessory_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "properties": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "lifecare_price": {"type": "double"},
+            "trademark": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+            "guarantee": {"type": "text"},
+            "inventory": {"type": "integer"},
+            "specifications": {"type": "text"},
+            "avatar_images": {"type": "keyword"},
+            "link_accessory": {"type": "keyword"}
         }
     else:
         return {}
