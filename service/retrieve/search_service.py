@@ -79,11 +79,14 @@ async def search_services(
     query = {"bool": {"must": [], "should": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
 
-    if ten_dich_vu: query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
+    if ten_dich_vu:
+        query["bool"]["must"].append({"match": {"ten_dich_vu": {"query": ten_dich_vu}}})
+        query["bool"]["should"].append({"match_phrase": {"ten_dich_vu": {"query": ten_dich_vu, "boost": 10.0}}})
     
-    if ten_san_pham: query["bool"]["filter"].append({"term": {"ten_san_pham.keyword": ten_san_pham}})
+    if ten_san_pham: query["bool"]["filter"].append({"term": {"ten_san_pham.keyword": {"value": ten_san_pham}}})
 
-    if loai_dich_vu: query["bool"]["should"].append({"match": {"loai_dich_vu": loai_dich_vu}})
+    if loai_dich_vu:
+        query["bool"]["should"].append({"match": {"loai_dich_vu": {"query": loai_dich_vu, "boost": 5.0}}})
 
     price_range = {}
     if min_gia is not None: price_range["gte"] = min_gia
@@ -157,20 +160,21 @@ async def search_accessories(
     query = {"bool": {"must": [], "should": [], "filter": []}}
     query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
 
-    if ten_phu_kien: query["bool"]["must"].append({"match": {"accessory_name": {"query": ten_phu_kien}}})
+    if ten_phu_kien:
+        query["bool"]["must"].append({"match": {"accessory_name": {"query": ten_phu_kien}}})
+        query["bool"]["should"].append({"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 10.0}}})
 
     if phan_loai_phu_kien:
         query["bool"]["should"].append({
             "bool": {
                 "should": [
-                    {"match_phrase": {"category": {"query": phan_loai_phu_kien, "boost": 2.0}}},
-                    {"match": {"category": phan_loai_phu_kien}}
+                    {"match": {"category": {"query": phan_loai_phu_kien, "boost": 5.0}}}
                 ]
             }
         })
     
     if thuoc_tinh_phu_kien:
-        query["bool"]["should"].append({"match": {"properties": thuoc_tinh_phu_kien}})
+        query["bool"]["should"].append({"match": {"properties": {"query": thuoc_tinh_phu_kien, "operator": "and"}}})
 
     price_range = {}
     if min_gia is not None: price_range["gte"] = min_gia
