@@ -119,10 +119,12 @@ async def create_order_product_tool(
     dia_chi: str
 ) -> Dict[str, Union[str, int]]:
     """
-    Sử dụng công cụ này khi người dùng muốn đặt mua một sản phẩm.
-    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm: mã sản phẩm (ma_san_pham), tên sản phẩm (ten_san_pham), số lượng bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
-    Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
+    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một sản phẩm điện thoại.
+
+    QUAN TRỌNG:
+    1.  Tham số `ma_san_pham` và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_products_tool` đã được gọi trước đó trong cuộc trò chuyện và là sản phẩm khách hàng chốt.
+    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã sản phẩm. Luôn tự động lấy nó từ lịch sử tra cứu.
+    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
     
@@ -161,10 +163,12 @@ async def create_order_service_tool(
     dia_chi: str
 ) -> Dict[str, Union[str, int]]:
     """
-    Sử dụng công cụ này khi người dùng muốn đặt một dịch vụ sửa chữa điện thoại.
-    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm mã dịch vụ (ma_dich_vu), tên dịch vụ (ten_dich_vu), tên sản phẩm điện thoại được sửa chữa (ten_san_pham) bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
-    Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
+    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận đặt một dịch vụ sửa chữa.
+
+    QUAN TRỌNG:
+    1.  Các tham số `ma_dich_vu`, `ten_dich_vu`, và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_services_tool` đã được gọi trước đó và là dịch vụ khách hàng chốt.
+    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã dịch vụ. Luôn tự động lấy nó từ lịch sử tra cứu.
+    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
 
@@ -203,10 +207,12 @@ async def create_order_accessory_tool(
     dia_chi: str
 ) -> Dict[str, Union[str, int]]:
     """
-    Sử dụng công cụ này khi người dùng muốn đặt mua một phụ kiện.
-    Cần thu thập đủ thông tin: tên khách hàng, số điện thoại và địa chỉ khách hàng.
-    Các thông tin gồm: mã phụ kiện (ma_phu_kien), tên phụ kiện (ten_phu_kien), số lượng bạn hãy tự phát hiện và cho vào theo yêu cầu của khách hàng và theo dữ liệu tìm kiếm được.
-    Công cụ sẽ xác nhận việc tạo đơn hàng và trả về mã đơn hàng.
+    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một phụ kiện.
+
+    QUAN TRỌNG:
+    1.  Tham số `ma_phu_kien` và `ten_phu_kien` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_accessories_tool` đã được gọi trước đó trong cuộc trò chuyện và là phụ kiện khách hàng chốt.
+    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã phụ kiện. Luôn tự động lấy nó từ lịch sử tra cứu.
+    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
     """
     print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
 

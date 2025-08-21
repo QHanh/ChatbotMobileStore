@@ -7,7 +7,6 @@ from database.database import get_db, Customer
 from dependencies import chat_memory
 from elasticsearch import AsyncElasticsearch
 from dependencies import get_es_client
-from service.utils.helpers import sanitize_for_es, sanitize_for_weaviate
 router = APIRouter()
 
 @router.post("/chat/{threadId}")

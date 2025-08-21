@@ -3,6 +3,70 @@ from typing import Optional, List, Dict, Any
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
 from service.utils.helpers import sanitize_for_es
 
+def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
+    """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
+    formatted_results = []
+    for item in hits:
+        context = []
+        if 'model' in item: # Product
+            context.append(f"Sản phẩm: {item.get('model', '')} {item.get('dung_luong', '')} {item.get('mau_sac', '')}".strip())
+            if item.get('tinh_trang_may'):
+                context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
+            price = item.get('gia', 0)
+            inventory = item.get('ton_kho', 0)
+            if inventory is not None:
+                context.append(f"  Tình trạng: {'Còn hàng' if inventory > 0 else 'Hết hàng'}")
+            guarantee = item.get('bao_hanh', '')
+            if guarantee:
+                context.append(f"  Bảo hành: {guarantee}")
+            pin_status = item.get('tinh_trang_pin', '')
+            if pin_status:
+                context.append(f"  Tình trạng pin: {pin_status}")
+            chip_ram = item.get('chip_ram', '')
+            if chip_ram:
+                context.append(f"  Chip RAM: {chip_ram}")
+            camera = item.get('camera', '')
+            if camera:
+                context.append(f"  Camera: {camera}")
+            
+        elif 'ten_dich_vu' in item: # Service
+            context.append(f"Dịch vụ: {item.get('ten_dich_vu', '')}")
+            if item.get('ten_san_pham'):
+                context.append(f"  Áp dụng cho sản phẩm: {item.get('ten_san_pham')}")
+            if item.get('loai_dich_vu'):
+                context.append(f"  Loại dịch vụ: {item.get('loai_dich_vu')}")
+            price = item.get('gia', 0)
+            guarantee = item.get('bao_hanh', '')
+            if guarantee:
+                context.append(f"  Bảo hành: {guarantee}")
+            note = item.get('ghi_chu', '')
+            if note:
+                context.append(f"  Ghi chú: {note}")
+
+        elif 'accessory_name' in item: # Accessory
+            context.append(f"Phụ kiện: {item.get('accessory_name', '')}")
+            prop = item.get('properties')
+            if prop and str(prop).strip() and str(prop).strip() != '0':
+                context.append(f"  Thuộc tính: {prop}")
+            price = item.get('lifecare_price', 0)
+            inventory = item.get('inventory')
+            if inventory is not None:
+                context.append(f"  Tình trạng: {'Còn hàng' if inventory > 0 else 'Hết hàng'}")
+            if item.get('specifications'):
+                context.append(f"  Mô tả: {item.get('specifications')}")
+            if item.get('guarantee'):
+                context.append(f"  Bảo hành: {item.get('guarantee')}")
+            if item.get('link_product'):
+                context.append(f"  Link sản phẩm: {item.get('link_product')}")
+            if item.get('avatar_images'):
+                context.append(f"  Link ảnh: {item.get('avatar_images')}")
+        
+        price_str = f"{price:,.0f}đ" if price > 0 else "Liên hệ"
+        context.append(f"  Giá: {price_str}")
+            
+        formatted_results.append("\n".join(context))
+    return formatted_results
+
 async def search_products(
     es_client: AsyncElasticsearch,
     customer_id: str,
@@ -55,7 +119,7 @@ async def search_products(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
-        return hits
+        return _format_results_for_agent(hits)
     except Exception as e:
         print(f"Lỗi khi tìm kiếm sản phẩm: {e}")
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
@@ -103,7 +167,7 @@ async def search_services(
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
-            return hits
+            return _format_results_for_agent(hits)
 
         search_terms: List[str] = []
         for term in [ten_dich_vu, ten_san_pham, loai_dich_vu]:
@@ -134,7 +198,7 @@ async def search_services(
             )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
-            return hits
+            return _format_results_for_agent(hits)
 
         return []
     except Exception as e:
@@ -190,7 +254,7 @@ async def search_accessories(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
-        return hits
+        return _format_results_for_agent(hits)
 
     except Exception as e:
         print(f"Lỗi khi tìm kiếm phụ kiện: {e}")
@@ -204,6 +268,6 @@ if __name__ == '__main__':
         results = await search_products(es_client_mock, customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
         if results:
             for product in results:
-                print(f"- {product.get('model')} {product.get('dung_luong')} {product.get('mau_sac')}, Giá: {product.get('gia'):,.0f}đ")
+                print(product)
 
     asyncio.run(main())
