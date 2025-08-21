@@ -38,10 +38,17 @@ def get_shared_index_mapping(data_type: str):
         }
     elif data_type == "accessory":
         specific_properties = {
-            "accessory_code": {"type": "keyword"},
-            "accessory_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "lifecare_price": {"type": "double"}, "inventory": {"type": "integer"},
+        "accessory_code": {"type": "keyword"},
+        "accessory_name": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+        "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+        "properties": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+        "lifecare_price": {"type": "double"},
+        "trademark": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
+        "guarantee": {"type": "text"},
+        "inventory": {"type": "integer"},
+        "specifications": {"type": "text"},
+        "avatar_images": {"type": "keyword"},
+        "link_accessory": {"type": "keyword"}
         }
     else:
         return {}
@@ -201,7 +208,7 @@ async def bulk_index_documents(es_client: Elasticsearch, index_name: str, custom
         doc_id = doc.get(id_field)
         if not doc_id:
             continue 
-        
+
         sanitized_doc_id = sanitize_for_es(doc_id)
         composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
         doc['customer_id'] = sanitized_customer_id
