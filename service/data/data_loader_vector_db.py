@@ -133,13 +133,8 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             }
 
     try:
-        # Khởi tạo và sử dụng Google Embeddings để tạo vector
         embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
         
-        # Lấy collection và chỉ định tenant để làm việc
-        collection = client.collections.get(DOCUMENT_CLASS_NAME)
-        tenant_collection = collection.with_tenant(tenant_id)
-
         WeaviateVectorStore.from_documents(
             documents=chunks,
             embedding=embeddings,
@@ -192,7 +187,6 @@ def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, 
         chunks = split_documents(documents)
         load_chunks_to_weaviate(client, chunks, tenant_id)
     else:
-        # Xóa file tạm nếu không có loader phù hợp
         os.remove(tmp_file_path)
         raise ValueError(f"Không hỗ trợ định dạng file: {file_ext}")
     
