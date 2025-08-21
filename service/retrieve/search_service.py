@@ -15,7 +15,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             price = item.get('gia', 0)
             inventory = item.get('ton_kho', 0)
             if inventory is not None:
-                context.append(f"  Tình trạng: {'Còn hàng' if inventory > 0 else 'Hết hàng'}")
+                context.append(f"  Tình trạng: {'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             guarantee = item.get('bao_hanh', '')
             if guarantee:
                 context.append(f"  Bảo hành: {guarantee}")
@@ -51,7 +51,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             price = item.get('lifecare_price', 0)
             inventory = item.get('inventory')
             if inventory is not None:
-                context.append(f"  Tình trạng: {'Còn hàng' if inventory > 0 else 'Hết hàng'}")
+                context.append(f"  Tình trạng: {'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             if item.get('specifications'):
                 context.append(f"  Mô tả: {item.get('specifications')}")
             if item.get('guarantee'):

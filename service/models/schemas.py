@@ -68,6 +68,7 @@ class ChatbotRequest(BaseModel):
     customer_id: str = Field(description="The unique identifier for the store owner.")
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
     api_key: Optional[str] = Field(description="The API key for the LLM provider.")
+    access: Optional[int] = Field(default=100, description="The access of the customer, e.g., '100' for test, '0' for not response, '1' for product, '2' for service, '3' for accessory, '12' for product and service, '13' for product and accessory, '23' for service and accessory, '123' for product, service and accessory.")
 
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""

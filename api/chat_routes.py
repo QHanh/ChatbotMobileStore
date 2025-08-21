@@ -26,6 +26,10 @@ async def chat(
     if not customer_id:
         raise HTTPException(status_code=400, detail="Mã khách hàng là bắt buộc.")
 
+    access = request.access
+    if access == 0:
+        raise HTTPException(status_code=403, detail="Bạn không có quyền sử dụng tính năng này.")
+
     try:
         user_input = request.query
         llm_provider = request.llm_provider
@@ -35,6 +39,12 @@ async def chat(
         customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
         if not customer_config:
             customer_config = Customer()
+
+        if access != 100:
+            access_str = str(access)
+            customer_config.service_feature_enabled = '2' in access_str
+            customer_config.accessory_feature_enabled = '3' in access_str
+            
         agent_executor = create_agent_executor(
             es_client=es_client,
             db=db,
