@@ -2,10 +2,12 @@ from elasticsearch import AsyncElasticsearch
 from config.settings import ELASTIC_HOST
 from langchain.memory import ConversationBufferWindowMemory
 import weaviate
+from weaviate.client import WeaviateClient
+from weaviate.connect import ConnectionParams
 
 es_client: AsyncElasticsearch = None
 chat_memory = {}
-weaviate_client: weaviate.Client = None
+weaviate_client: WeaviateClient = None
 
 async def init_es_client():
     """
@@ -39,18 +41,25 @@ def get_es_client() -> AsyncElasticsearch:
     """
     return es_client
 
-def get_weaviate_client() -> weaviate.Client:
+def get_weaviate_client() -> WeaviateClient:
     """
     Initializes and returns a single instance of the Weaviate client.
     """
     global weaviate_client
     if weaviate_client is None:
         try:
-            weaviate_client = weaviate.Client("http://weaviate:8080")
+            weaviate_client = weaviate.connect_to_custom(
+                http_host="localhost",
+                http_port=8080,
+                http_secure=False,
+                grpc_host="localhost",
+                grpc_port=50051,
+                grpc_secure=False,
+            )
             if not weaviate_client.is_ready():
                  raise ConnectionError("Could not connect to Weaviate")
             print("Successfully connected to Weaviate!")
-        except ConnectionError as e:
+        except Exception as e:
             print(f"Error connecting to Weaviate: {e}")
             weaviate_client = None
     return weaviate_client

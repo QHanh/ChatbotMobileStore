@@ -23,10 +23,14 @@ async def chat(
     if not threadId:
         raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
 
+    customer_id = request.customer_id
+    if not customer_id:
+        raise HTTPException(status_code=400, detail="Mã khách hàng là bắt buộc.")
+
     try:
         user_input = request.query
         llm_provider = request.llm_provider
-        customer_id = request.customer_id
+        
         api_key = request.api_key
 
         customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()

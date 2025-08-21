@@ -12,14 +12,12 @@ logging.getLogger("watchfiles").setLevel(logging.ERROR)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Code to run on startup
     print("Application startup...")
     await init_es_client()
     if es_client:
         await ensure_shared_indices_exist(es_client)
     # init_db()
     yield
-    # Code to run on shutdown
     print("Application shutdown.")
     await close_es_client()
 

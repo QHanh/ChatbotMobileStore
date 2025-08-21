@@ -144,9 +144,9 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             documents=chunks,
             embedding=embeddings,
             client=client,
-            index_name=DOCUMENT_CLASS_NAME, # Luôn là tên class chung
+            index_name=DOCUMENT_CLASS_NAME,
             text_key="text",
-            tenant=tenant_id # Chỉ định tenant khi thêm dữ liệu
+            tenant=tenant_id
         )
         print("Tải dữ liệu lên Weaviate thành công!")
     except Exception as e:
@@ -185,7 +185,7 @@ def process_and_load_file(client: weaviate.WeaviateClient, file_content: bytes, 
     if loader_cls:
         loader = loader_cls(tmp_file_path)
         documents = loader.load()
-        # Gán source_name vào metadata cho tất cả các document được tải từ file
+        
         for doc in documents:
             doc.metadata["source"] = source_name
             
