@@ -70,10 +70,11 @@ async def clear_customer_data(es_client: Elasticsearch, index_name: str, custome
     Xóa tất cả dữ liệu của một customer_id cụ thể khỏi một index.
     """
     print(f"🗑️ Đang xóa dữ liệu cũ của khách hàng '{customer_id}' trong index '{index_name}'...")
+    sanitized_customer_id = sanitize_for_es(customer_id)
     try:
         await es_client.delete_by_query(
             index=index_name,
-            query={"term": {"customer_id": customer_id}},
+            query={"term": {"customer_id": sanitized_customer_id}},
             refresh=True,
             wait_for_completion=True
         )
@@ -92,7 +93,7 @@ async def process_and_index_data(
     Hàm tổng quát để đọc, xử lý và nạp dữ liệu vào một index chia sẻ.
     """
     await clear_customer_data(es_client, index_name, customer_id)
-
+    sanitized_customer_id = sanitize_for_es(customer_id)
     try:
         df = pd.read_excel(io.BytesIO(file_content))
         df.columns = columns_config['names']
@@ -101,7 +102,7 @@ async def process_and_index_data(
         for col, dtype in columns_config.get('numerics', {}).items():
             df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(dtype)
             
-        df['customer_id'] = customer_id
+        df['customer_id'] = sanitized_customer_id
         df = df.where(pd.notnull(df), None).replace({np.nan: None})
     except Exception as e:
         raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
@@ -111,9 +112,9 @@ async def process_and_index_data(
         doc = row.to_dict()
         action = {
             "_index": index_name,
-            "_id": f"{customer_id}_{doc[columns_config['id_field']]}",
+            "_id": f"{sanitized_customer_id}_{doc[columns_config['id_field']]}",
             "_source": doc,
-            "routing": customer_id
+            "routing": sanitized_customer_id
         }
         actions.append(action)
 
@@ -134,8 +135,8 @@ async def index_single_document(es_client: Elasticsearch, index_name: str, custo
     """
     Nạp (hoặc ghi đè) một bản ghi duy nhất vào index chia sẻ với routing.
     """
-    doc_body['customer_id'] = customer_id # Giữ customer_id gốc trong source
     sanitized_customer_id = sanitize_for_es(customer_id)
+    doc_body['customer_id'] = sanitized_customer_id
     sanitized_doc_id = sanitize_for_es(doc_id)
     composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
     
@@ -201,9 +202,9 @@ async def bulk_index_documents(es_client: Elasticsearch, index_name: str, custom
         if not doc_id:
             continue 
         
-        doc['customer_id'] = customer_id
         sanitized_doc_id = sanitize_for_es(doc_id)
         composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
+        doc['customer_id'] = sanitized_customer_id
         
         action = {
             "_index": index_name,
