@@ -23,7 +23,7 @@ async def search_products(
     sanitized_customer_id = sanitize_for_es(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
     
-    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+    query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
     
     if model:
         query["bool"]["must"].append({
@@ -77,7 +77,7 @@ async def search_services(
 
     sanitized_customer_id = sanitize_for_es(customer_id)
     query = {"bool": {"must": [], "should": [], "filter": []}}
-    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+    query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
 
     if ten_dich_vu: query["bool"]["must"].append({"match": {"ten_dich_vu": ten_dich_vu}})
     
@@ -154,8 +154,8 @@ async def search_accessories(
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
     sanitized_customer_id = sanitize_for_es(customer_id)
-    query = {"bool": {"must": [], "filter": []}}
-    query["bool"]["filter"].append({"term": {"customer_id": customer_id}})
+    query = {"bool": {"must": [], "should": [], "filter": []}}
+    query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
 
     if ten_phu_kien: query["bool"]["must"].append({"match": {"accessory_name": {"query": ten_phu_kien}}})
 

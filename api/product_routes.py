@@ -12,6 +12,7 @@ from service.data.data_loader_elastic_search import (
     process_and_upsert_file_data
 )
 from service.models.schemas import ProductRow
+from service.utils.helpers import sanitize_for_es
 
 router = APIRouter()
 
@@ -48,10 +49,10 @@ async def upload_product_data(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed = await process_and_index_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=PRODUCTS_INDEX,
             file_content=content,
             columns_config=PRODUCT_COLUMNS_CONFIG
@@ -80,12 +81,13 @@ async def add_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         product_dict = product_data.model_dump()
         doc_id = product_dict.get('ma_san_pham')
         if not doc_id:
             raise HTTPException(status_code=400, detail="Thiếu 'ma_san_pham' trong dữ liệu đầu vào.")
         
-        response = await index_single_document(es_client, PRODUCTS_INDEX, customer_id, doc_id, product_dict)
+        response = await index_single_document(es_client, PRODUCTS_INDEX, sanitized_customer_id, doc_id, product_dict)
         return {"message": "Sản phẩm đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -103,11 +105,12 @@ async def update_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         product_dict = product_data.model_dump(exclude_unset=True)
         if 'ma_san_pham' in product_dict:
             del product_dict['ma_san_pham']
             
-        response = await update_single_document(es_client, PRODUCTS_INDEX, customer_id, product_id, product_dict)
+        response = await update_single_document(es_client, PRODUCTS_INDEX, sanitized_customer_id, product_id, product_dict)
         return {"message": "Sản phẩm đã được cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -124,7 +127,8 @@ async def delete_product(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        response = await delete_single_document(es_client, PRODUCTS_INDEX, customer_id, product_id)
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        response = await delete_single_document(es_client, PRODUCTS_INDEX, sanitized_customer_id, product_id)
         return {"message": "Sản phẩm đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -142,11 +146,12 @@ async def add_products_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         product_dicts = [p.model_dump() for p in products]
         success, failed = await bulk_index_documents(
             es_client, 
             PRODUCTS_INDEX, 
-            customer_id, 
+            sanitized_customer_id, 
             product_dicts, 
             id_field='ma_san_pham'
         )
@@ -173,10 +178,10 @@ async def append_product_data_from_file(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed_items = await process_and_upsert_file_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=PRODUCTS_INDEX,
             file_content=content,
             columns_config=PRODUCT_COLUMNS_CONFIG

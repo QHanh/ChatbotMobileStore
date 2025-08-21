@@ -22,7 +22,7 @@ async def chat(
     """
     if not threadId:
         raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
-    customer_id = sanitize_for_es(request.customer_id)
+
     try:
         user_input = request.query
         llm_provider = request.llm_provider
@@ -31,7 +31,7 @@ async def chat(
 
         customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
         if not customer_config:
-            customer_config = Customer() 
+            customer_config = Customer()
         agent_executor = create_agent_executor(
             es_client=es_client,
             db=db,

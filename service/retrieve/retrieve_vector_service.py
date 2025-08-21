@@ -21,7 +21,6 @@ def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[floa
         return [{"error": "Không thể kết nối đến Weaviate."}]
 
     try:
-        # Tên tenant_id đã được làm sạch từ tool.
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
         
         if not collection.tenants.exists(tenant_id):

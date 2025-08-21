@@ -12,7 +12,7 @@ from service.data.data_loader_elastic_search import (
     process_and_upsert_file_data
 )
 from service.models.schemas import AccessoryRow
-
+from service.utils.helpers import sanitize_for_es
 router = APIRouter()
 
 ACCESSORY_COLUMNS_CONFIG = {
@@ -45,10 +45,10 @@ async def upload_accessory_data(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed = await process_and_index_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=ACCESSORIES_INDEX,
             file_content=content,
             columns_config=ACCESSORY_COLUMNS_CONFIG
@@ -77,12 +77,13 @@ async def add_accessory(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         accessory_dict = accessory_data.model_dump()
         doc_id = accessory_dict.get('accessory_code')
         if not doc_id:
             raise HTTPException(status_code=400, detail="Thiếu 'accessory_code' trong dữ liệu đầu vào.")
 
-        response = await index_single_document(es_client, ACCESSORIES_INDEX, customer_id, doc_id, accessory_dict)
+        response = await index_single_document(es_client, ACCESSORIES_INDEX, sanitized_customer_id, doc_id, accessory_dict)
         return {"message": "Phụ kiện đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -100,11 +101,12 @@ async def update_accessory(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         accessory_dict = accessory_data.model_dump(exclude_unset=True)
         if 'accessory_code' in accessory_dict:
             del accessory_dict['accessory_code']
             
-        response = await update_single_document(es_client, ACCESSORIES_INDEX, customer_id, accessory_id, accessory_dict)
+        response = await update_single_document(es_client, ACCESSORIES_INDEX, sanitized_customer_id, accessory_id, accessory_dict)
         return {"message": "Phụ kiện đã được cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -121,7 +123,8 @@ async def delete_accessory(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        response = await delete_single_document(es_client, ACCESSORIES_INDEX, customer_id, accessory_id)
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        response = await delete_single_document(es_client, ACCESSORIES_INDEX, sanitized_customer_id, accessory_id)
         return {"message": "Phụ kiện đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -139,11 +142,12 @@ async def add_accessories_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         accessory_dicts = [a.model_dump() for a in accessories]
         success, failed = await bulk_index_documents(
             es_client, 
             ACCESSORIES_INDEX, 
-            customer_id, 
+            sanitized_customer_id, 
             accessory_dicts, 
             id_field='accessory_code'
         )
@@ -170,10 +174,10 @@ async def append_accessory_data_from_file(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed_items = await process_and_upsert_file_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=ACCESSORIES_INDEX,
             file_content=content,
             columns_config=ACCESSORY_COLUMNS_CONFIG

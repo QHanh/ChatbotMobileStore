@@ -12,7 +12,7 @@ from service.data.data_loader_elastic_search import (
     process_and_upsert_file_data
 )
 from service.models.schemas import ServiceRow
-
+from service.utils.helpers import sanitize_for_es
 router = APIRouter()
 
 SERVICE_COLUMNS_CONFIG = {
@@ -43,10 +43,10 @@ async def upload_service_data(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed = await process_and_index_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=SERVICES_INDEX,
             file_content=content,
             columns_config=SERVICE_COLUMNS_CONFIG
@@ -75,12 +75,13 @@ async def add_service(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         service_dict = service_data.model_dump()
         doc_id = service_dict.get('ma_dich_vu')
         if not doc_id:
             raise HTTPException(status_code=400, detail="Thiếu 'ma_dich_vu' trong dữ liệu đầu vào.")
 
-        response = await index_single_document(es_client, SERVICES_INDEX, customer_id, doc_id, service_dict)
+        response = await index_single_document(es_client, SERVICES_INDEX, sanitized_customer_id, doc_id, service_dict)
         return {"message": "Dịch vụ đã được thêm/cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -98,11 +99,12 @@ async def update_service(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         service_dict = service_data.model_dump(exclude_unset=True)
         if 'ma_dich_vu' in service_dict:
             del service_dict['ma_dich_vu']
             
-        response = await update_single_document(es_client, SERVICES_INDEX, customer_id, service_id, service_dict)
+        response = await update_single_document(es_client, SERVICES_INDEX, sanitized_customer_id, service_id, service_dict)
         return {"message": "Dịch vụ đã được cập nhật thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -119,7 +121,8 @@ async def delete_service(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
-        response = await delete_single_document(es_client, SERVICES_INDEX, customer_id, service_id)
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        response = await delete_single_document(es_client, SERVICES_INDEX, sanitized_customer_id, service_id)
         return {"message": "Dịch vụ đã được xóa thành công.", "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -137,11 +140,12 @@ async def add_services_bulk(
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
         service_dicts = [s.model_dump() for s in services]
         success, failed = await bulk_index_documents(
             es_client, 
             SERVICES_INDEX, 
-            customer_id, 
+            sanitized_customer_id, 
             service_dicts, 
             id_field='ma_dich_vu'
         )
@@ -168,10 +172,10 @@ async def append_service_data_from_file(
     
     try:
         content = await file.read()
-        
+        sanitized_customer_id = sanitize_for_es(customer_id)
         success, failed_items = await process_and_upsert_file_data(
             es_client=es_client,
-            customer_id=customer_id,
+            customer_id=sanitized_customer_id,
             index_name=SERVICES_INDEX,
             file_content=content,
             columns_config=SERVICE_COLUMNS_CONFIG
