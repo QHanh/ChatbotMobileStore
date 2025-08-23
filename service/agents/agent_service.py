@@ -2,10 +2,12 @@ import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
+from functools import partial
+from typing import List
 
 load_dotenv()
 
@@ -38,7 +40,13 @@ def create_agent_executor(
     service_feature_enabled = customer_config.service_feature_enabled
     accessory_feature_enabled = customer_config.accessory_feature_enabled
 
-    customer_tools = create_customer_tools(es_client, customer_id, service_feature_enabled, accessory_feature_enabled)
+    customer_tools = create_customer_tools(
+        es_client, 
+        customer_id, 
+        service_feature_enabled, 
+        accessory_feature_enabled,
+        llm=llm
+    )
 
     identity = ""
     if persona['ai_role']:
@@ -116,6 +124,21 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
     """
     chat_history = get_session_history(customer_id, session_id, memory)
     
+    def format_history_for_llm(history: List[BaseMessage]) -> List[str]:
+        formatted = []
+        for msg in history:
+            role = "Người dùng" if isinstance(msg, HumanMessage) else "Trợ lý"
+            formatted.append(f"{role}: {msg.content}")
+        return formatted
+
+    formatted_history = format_history_for_llm(chat_history)
+
+    search_tool_names = ["search_products_tool", "search_services_tool", "search_accessories_tool"]
+    for tool in agent_executor.tools:
+        if tool.name in search_tool_names:
+            tool.coroutine.keywords['original_query'] = user_input
+            tool.coroutine.keywords['chat_history'] = formatted_history
+
     response = await agent_executor.ainvoke({
         "input": user_input,
         "chat_history": chat_history

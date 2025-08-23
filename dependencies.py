@@ -1,9 +1,7 @@
 from elasticsearch import AsyncElasticsearch
 from config.settings import ELASTIC_HOST
-from langchain.memory import ConversationBufferWindowMemory
 import weaviate
 from weaviate.client import WeaviateClient
-from weaviate.connect import ConnectionParams
 
 es_client: AsyncElasticsearch = None
 chat_memory = {}

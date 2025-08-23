@@ -13,6 +13,7 @@ from service.models.schemas import (
     RetrieveDocumentInput, SendImageInput
 )
 from service.integrations.sheet_service import insert_order_to_sheet
+from langchain_core.language_models.base import BaseLanguageModel
 
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 
@@ -38,7 +39,10 @@ async def search_products_logic(
     tinh_trang_may: Optional[str] = None,
     loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[BaseLanguageModel] = None,
+    chat_history: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại có trong kho hàng của cửa hàng.
@@ -54,7 +58,10 @@ async def search_products_logic(
         tinh_trang_may=tinh_trang_may,
         loai_thiet_bi=loai_thiet_bi,
         min_gia=min_gia,
-        max_gia=max_gia
+        max_gia=max_gia,
+        original_query=original_query,
+        llm=llm,
+        chat_history=chat_history
     )
     return results
 
@@ -65,7 +72,10 @@ async def search_services_logic(
     ten_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[BaseLanguageModel] = None,
+    chat_history: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
@@ -80,7 +90,10 @@ async def search_services_logic(
         ten_san_pham=ten_san_pham,
         loai_dich_vu=loai_dich_vu,
         min_gia=min_gia,
-        max_gia=max_gia
+        max_gia=max_gia,
+        original_query=original_query,
+        llm=llm,
+        chat_history=chat_history
     )
     return results
 
@@ -91,7 +104,10 @@ async def search_accessories_logic(
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[BaseLanguageModel] = None,
+    chat_history: Optional[List[str]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các phụ kiện có trong dữ liệu của cửa hàng.
@@ -105,7 +121,10 @@ async def search_accessories_logic(
         phan_loai_phu_kien=phan_loai_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         min_gia=min_gia,
-        max_gia=max_gia
+        max_gia=max_gia,
+        original_query=original_query,
+        llm=llm,
+        chat_history=chat_history
     )
     return results
 
@@ -279,12 +298,13 @@ def create_customer_tools(
     es_client: AsyncElasticsearch,
     customer_id: str,
     service_feature_enabled: bool = True, 
-    accessory_feature_enabled: bool = True
+    accessory_feature_enabled: bool = True,
+    llm: Optional[BaseLanguageModel] = None
 ) -> list:
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id)
+    customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id, llm=llm)
     
     search_product_tool = StructuredTool.from_function(
         func=customer_search_product_func,
@@ -316,7 +336,7 @@ def create_customer_tools(
     ]
 
     if service_feature_enabled:
-        customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id)
+        customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id, llm=llm)
         
         search_service_tool = StructuredTool.from_function(
             func=customer_search_service_func,
@@ -332,7 +352,7 @@ def create_customer_tools(
         ])
 
     if accessory_feature_enabled:
-        customer_search_accessory_func = partial(search_accessories_logic, es_client=es_client, customer_id=customer_id)
+        customer_search_accessory_func = partial(search_accessories_logic, es_client=es_client, customer_id=customer_id, llm=llm)
         
         search_accessory_tool = StructuredTool.from_function(
             func=customer_search_accessory_func,

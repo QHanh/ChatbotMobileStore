@@ -21,9 +21,9 @@ class SearchServiceInput(BaseModel):
 
 class SearchAccessoryInput(BaseModel):
     """Input model for the search_accessories_tool."""
-    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, ví dụ: 'Tai nghe', 'Kính'.")
+    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, bạn cứ ghi đầy đủ tên phụ kiện, ví dụ: 'Kính hiển vi KAISI', 'Phản quang Oppo F3'.")
     phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện")
-    thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'model', 'cỡ',....")
+    thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại',....")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
 
