@@ -1,12 +1,9 @@
-import os
-import weaviate
 import asyncio
 from typing import List, Dict, Any
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from service.data.data_loader_vector_db import DOCUMENT_CLASS_NAME
 from dependencies import get_weaviate_client
 from service.utils.helpers import sanitize_for_weaviate
-from weaviate.classes.query import Filter
 
 def _get_sanitized_tenant_id(customer_id: str) -> str:
     """Sử dụng hàm helper tập trung để làm sạch tenant ID."""
@@ -35,28 +32,17 @@ def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[floa
                 limit=top_k,
                 alpha=alpha,
                 return_metadata=None,
-                return_properties=["text", "source"]
+                return_properties=["text"]
             )
         except Exception as e:
-            if "no such prop with name 'source'" in str(e):
-                print("Warning: Thuộc tính 'source' không tồn tại. Fallback về chỉ lấy 'text'.")
-                response = tenant_collection.query.hybrid(
-                    query=query,
-                    vector=query_vector,
-                    limit=top_k,
-                    alpha=alpha,
-                    return_metadata=None,
-                    return_properties=["text"]
-                )
-            else:
-                raise e
+            raise e
 
         formatted_results = [
-            {"content": obj.properties.get('text'), "metadata": {'source': obj.properties.get('source')}}
+            {"content": obj.properties.get('text')}
             for obj in response.objects
         ]
         
-        print(f"Truy xuất lai ghép được {len(formatted_results)} tài liệu từ tenant '{tenant_id}'.")
+        print(f"Truy xuất hybrid được {len(formatted_results)} tài liệu từ tenant '{tenant_id}'.")
         return formatted_results
 
     except Exception as e:

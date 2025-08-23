@@ -9,7 +9,7 @@ from dependencies import init_es_client, close_es_client, es_client
 from service.data.data_loader_elastic_search import ensure_shared_indices_exist
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
-
+logging.getLogger("httpx").setLevel(logging.WARNING)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Application startup...")

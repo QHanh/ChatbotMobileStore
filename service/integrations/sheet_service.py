@@ -1,6 +1,6 @@
 import gspread
 from google.oauth2.service_account import Credentials
-from typing import List, Dict, Any
+from typing import Dict, Any
 import os
 import logging
 from datetime import datetime
@@ -8,11 +8,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Cấu hình logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# --- Cấu hình ---
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive.file"
@@ -20,7 +18,6 @@ SCOPES = [
 
 CREDENTIALS_FILE = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "config/credentials.json")
 
-# --- Khởi tạo ---
 def get_gspread_client():
     """Khởi tạo và trả về một client để tương tác với Google Sheets."""
     if not os.path.exists(CREDENTIALS_FILE):
@@ -53,7 +50,6 @@ def get_worksheet(client, spreadsheet_id: str, worksheet_name: str):
         logger.error(f"Lỗi khi truy cập worksheet: {e}")
         return None
 
-# --- Chức năng ---
 def insert_order_to_sheet(spreadsheet_id: str, worksheet_name: str, order_data: Dict[str, Any]):
     """
     Chèn một dòng dữ liệu đơn hàng vào worksheet.
@@ -66,7 +62,6 @@ def insert_order_to_sheet(spreadsheet_id: str, worksheet_name: str, order_data: 
         return False
 
     try:
-        # Thêm cột 'timestamp'
         order_data_with_ts = order_data.copy()
         order_data_with_ts['timestamp'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -76,13 +71,10 @@ def insert_order_to_sheet(spreadsheet_id: str, worksheet_name: str, order_data: 
             worksheet.append_row(headers, value_input_option='USER_ENTERED')
             logger.info(f"Đã tạo header cho worksheet '{worksheet_name}'.")
 
-        # Đảm bảo tất cả các key trong order_data_with_ts đều có trong header
         new_headers = [h for h in order_data_with_ts.keys() if h not in headers]
         if new_headers:
              worksheet.append_cols([new_headers])
 
-
-        # Tạo list giá trị theo đúng thứ tự của header hiện tại
         current_headers = worksheet.row_values(1)
         row_to_insert = [order_data_with_ts.get(header, "") for header in current_headers]
         

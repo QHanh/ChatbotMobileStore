@@ -59,12 +59,16 @@ def get_weaviate_client():
     """
     Establishes a connection to the Weaviate instance with proper authentication.
     """
+    connection_params = ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051)
     auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
 
-    client = WeaviateClient(
-        connection_params=ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051),
-        auth_client_secret=auth_credentials
-    )
+    if auth_credentials:
+        client = WeaviateClient(
+            connection_params=connection_params,
+            auth_client_secret=auth_credentials
+        )
+    else:
+        client = WeaviateClient(connection_params=connection_params)
     
     client.connect()
 
