@@ -2,6 +2,75 @@ from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
 from service.utils.helpers import sanitize_for_es
+from langchain.chat_models import init_chat_model
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
+import google.generativeai as genai
+
+async def filter_results_with_ai(
+    query: str, 
+    results: List[str],
+    llm,
+    chat_history: Optional[List[str]] = None
+) -> List[str]:
+    """Lọc kết quả tìm kiếm bằng AI để chọn ra những kết quả phù hợp nhất."""
+    if not results:
+        return []
+
+    if not llm:
+        print("LLM chưa được cung cấp, trả về kết quả gốc.")
+        return results
+
+    history_str = "\n".join(chat_history or [])
+    results_str = "\n\n".join(results)
+    prompt_template_str = """
+            Bạn là một trợ lý AI có nhiệm vụ lọc kết quả tìm kiếm một cách nghiêm ngặt. Dựa trên LỊCH SỬ TRÒ CHUYỆN và CÂU HỎI HIỆN TẠI của người dùng, hãy lọc và chỉ giữ lại những kết quả tìm kiếm THỰC SỰ liên quan.
+
+            **QUY TRÌNH LỌC:**
+            1.  **Phân tích câu hỏi:** Xác định các **từ khóa chính** trong câu hỏi của người dùng, đặc biệt chú ý đến **thương hiệu** (ví dụ: KAISI, Apple), **tên model cụ thể** (ví dụ: TX-50S), và các **thuộc tính quan trọng** (ví dụ: "2 mắt", "màu xanh").
+            2.  **Đối chiếu nghiêm ngặt:** So sánh từng kết quả tìm kiếm với các từ khóa chính này. Một kết quả CHỈ được coi là phù hợp nếu nó chứa **TẤT CẢ** các từ khóa chính mà người dùng đã nêu. Ví dụ, nếu người dùng hỏi "kính hiển vi KAISI 2 mắt", kết quả bắt buộc phải chứa cả "KAISI" và "2 mắt".
+            
+            **QUY TẮC XUẤT KẾT QUẢ:**
+            -   Chỉ trả về các kết quả phù hợp sau khi đã đối chiếu nghiêm ngặt.
+            -   Giữ nguyên định dạng ban đầu của các kết quả được chọn.
+            -   Mỗi kết quả phải được phân tách bởi hai dấu xuống dòng.
+            -   Nếu không có kết quả nào phù hợp, trả về một chuỗi rỗng.
+            -   KHÔNG thêm bất kỳ lời giải thích, bình luận, hay tóm tắt nào.
+
+            **DỮ LIỆU ĐẦU VÀO:**
+
+            Lịch sử trò chuyện:
+            {history}
+
+            Câu hỏi của người dùng: "{query}"
+
+            Danh sách kết quả tìm kiếm cần lọc:
+            {results}
+            """
+
+    try:
+        filtered_results_str = ""
+        if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
+            print("Sử dụng Google AI SDK gốc để lọc kết quả.")
+            genai.configure(api_key=llm.google_api_key.get_secret_value())
+            model = genai.GenerativeModel(llm.model)
+            full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
+            response = await model.generate_content_async(full_prompt)
+            filtered_results_str = response.text
+        else:
+            print("Sử dụng LangChain chain để lọc kết quả.")
+            prompt = ChatPromptTemplate.from_template(prompt_template_str)
+            chain = prompt | llm | StrOutputParser()
+            filtered_results_str = await chain.ainvoke({"query": query, "results": results_str, "history": history_str})
+
+        if not filtered_results_str.strip():
+            return []
+            
+        return [res.strip() for res in filtered_results_str.strip().split("\n\n") if res.strip()]
+    except Exception as e:
+        print(f"Lỗi khi lọc kết quả bằng AI: {e}")
+        return results
 
 def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
     """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
@@ -15,7 +84,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             price = item.get('gia', 0)
             inventory = item.get('ton_kho', 0)
             if inventory is not None:
-                context.append(f"  Tình trạng: {'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
+                context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             guarantee = item.get('bao_hanh', '')
             if guarantee:
                 context.append(f"  Bảo hành: {guarantee}")
@@ -51,7 +120,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             price = item.get('lifecare_price', 0)
             inventory = item.get('inventory')
             if inventory is not None:
-                context.append(f"  Tình trạng: {'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
+                context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             if item.get('specifications'):
                 context.append(f"  Mô tả: {item.get('specifications')}")
             if item.get('guarantee'):
@@ -76,7 +145,10 @@ async def search_products(
     tinh_trang_may: Optional[str] = None,
     loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
     Tìm kiếm sản phẩm trong index 'products' chia sẻ, lọc theo customer_id.
@@ -119,7 +191,10 @@ async def search_products(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
-        return _format_results_for_agent(hits)
+        formatted_hits = _format_results_for_agent(hits)
+        if original_query and llm:
+            return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+        return formatted_hits
     except Exception as e:
         print(f"Lỗi khi tìm kiếm sản phẩm: {e}")
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
@@ -131,7 +206,10 @@ async def search_services(
     ten_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
     Tìm kiếm dịch vụ trong index 'services' chia sẻ, lọc theo customer_id.
@@ -167,7 +245,10 @@ async def search_services(
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
-            return _format_results_for_agent(hits)
+            formatted_hits = _format_results_for_agent(hits)
+            if original_query and llm:
+                return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+            return formatted_hits
 
         search_terms: List[str] = []
         for term in [ten_dich_vu, ten_san_pham, loai_dich_vu]:
@@ -198,7 +279,10 @@ async def search_services(
             )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
-            return _format_results_for_agent(hits)
+            formatted_hits = _format_results_for_agent(hits)
+            if original_query and llm:
+                return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+            return formatted_hits
 
         return []
     except Exception as e:
@@ -212,7 +296,10 @@ async def search_accessories(
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
-    max_gia: Optional[float] = None
+    max_gia: Optional[float] = None,
+    original_query: Optional[str] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
     Tìm kiếm phụ kiện trong index 'accessories' chia sẻ, lọc theo customer_id.
@@ -254,7 +341,10 @@ async def search_accessories(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
-        return _format_results_for_agent(hits)
+        formatted_hits = _format_results_for_agent(hits)
+        if original_query and llm:
+            return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+        return formatted_hits
 
     except Exception as e:
         print(f"Lỗi khi tìm kiếm phụ kiện: {e}")
