@@ -27,7 +27,7 @@ def get_shared_index_mapping(data_type: str):
             "dung_luong": {"type": "keyword"},
             "tinh_trang_may": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "loai_thiet_bi": {"type": "keyword"},
-            "gia": {"type": "double"}, "ton_kho": {"type": "integer"},
+            "gia": {"type": "double"}, "gia_buon": {"type": "double"}, "ton_kho": {"type": "integer"}   
         }
     elif data_type == "service":
         specific_properties = {

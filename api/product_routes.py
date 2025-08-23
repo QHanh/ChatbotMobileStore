@@ -19,7 +19,7 @@ router = APIRouter()
 PRODUCT_COLUMNS_CONFIG = {
     'names': [
         'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
-        'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'ton_kho', 'ghi_chu',
+        'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'gia_buon', 'ton_kho', 'ghi_chu',
         'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
         'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
         'kich_thuoc_trong_luong'

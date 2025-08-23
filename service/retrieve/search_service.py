@@ -82,6 +82,9 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if item.get('tinh_trang_may'):
                 context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
             price = item.get('gia', 0)
+            price_buon = item.get('gia_buon', 0)
+            if price_buon > 0:
+                context.append(f"  Giá bán buôn: {price_buon:,.0f}đ")
             inventory = item.get('ton_kho', 0)
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
@@ -225,7 +228,7 @@ async def search_services(
         query["bool"]["must"].append({"match": {"ten_dich_vu": {"query": ten_dich_vu}}})
         query["bool"]["should"].append({"match_phrase": {"ten_dich_vu": {"query": ten_dich_vu, "boost": 10.0}}})
     
-    if ten_san_pham: query["bool"]["filter"].append({"term": {"ten_san_pham.keyword": {"value": ten_san_pham}}})
+    if ten_san_pham: query["bool"]["should"].append({"match_phrase": {"ten_san_pham": {"query": ten_san_pham, "boost": 10.0}}})
 
     if loai_dich_vu:
         query["bool"]["should"].append({"match": {"loai_dich_vu": {"query": loai_dich_vu, "boost": 5.0}}})
@@ -262,12 +265,12 @@ async def search_services(
                     "must": {
                         "multi_match": {
                             "query": combined_query,
-                            "fields": ["ten_dich_vu^3", "ten_san_pham", "loai_dich_vu^2"],
+                            "fields": ["ten_dich_vu^3", "ten_san_pham^2", "loai_dich_vu^2"],
                             "fuzziness": "AUTO"
                         }
                     },
                     "filter": [
-                        {"term": {"customer_id": customer_id}}
+                        {"term": {"customer_id": sanitized_customer_id}}
                     ]
                 }
             }
