@@ -10,6 +10,15 @@ from service.data.data_loader_elastic_search import ensure_shared_indices_exist
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.WARNING)
+from pydantic.warnings import PydanticDeprecatedSince20
+import warnings
+warnings.filterwarnings(
+    "ignore",
+    category=PydanticDeprecatedSince20,
+    module=r"langchain_core\.tools\.base",
+)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Application startup...")

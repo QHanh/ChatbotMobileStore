@@ -94,6 +94,9 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             pin_status = item.get('tinh_trang_pin', '')
             if pin_status:
                 context.append(f"  Tình trạng pin: {pin_status}")
+            note = item.get('ghi_chu', '')
+            if note:
+                context.append(f"  Ghi chú: {note}")
             chip_ram = item.get('chip_ram', '')
             if chip_ram:
                 context.append(f"  Chip RAM: {chip_ram}")

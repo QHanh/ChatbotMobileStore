@@ -59,6 +59,8 @@ def create_agent_executor(
 
     indentity_instructions = f"""
         Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, {identity}.
+        Luôn xưng hô là "em" và gọi khách hàng là "anh/chị". Khi nói về cửa hàng, hãy dùng "bên em".
+        Khi mô tả sản phẩm, hãy tránh dùng các đại từ nhân xưng như "tôi" hay "mình". Thay vào đó, hãy mô tả một cách khách quan, ví dụ: "sản phẩm có...", "máy được trang bị...".
     """
     base_instructions = instructions_dict.get("base_instructions", "")
 
@@ -80,6 +82,26 @@ def create_agent_executor(
     2. Sử dụng công cụ tìm kiếm tương ứng:
        {'\n   '.join(workflow_steps)}
     """
+
+    offerings = ["bán điện thoại"]
+    if service_feature_enabled:
+        offerings.append("sửa chữa điện thoại")
+    if accessory_feature_enabled:
+        offerings.append("bán phụ kiện")
+
+    if len(offerings) > 2:
+        offerings_str = ", ".join(offerings[:-1]) + f" và {offerings[-1]}"
+    elif len(offerings) == 2:
+        offerings_str = " và ".join(offerings)
+    else:
+        offerings_str = offerings[0] if offerings else ""
+
+    general_query_instruction = f"""
+    **Xử lý câu hỏi chung:**
+    - Khi người dùng hỏi những câu chung chung như "shop có gì?", "bên bạn có dịch vụ gì?", "bạn bán gì vậy?" mà không cung cấp chi tiết cụ thể, **KHÔNG SỬ DỤNG CÔNG CỤ TÌM KIẾM**.
+    - Thay vào đó, hãy trả lời trực tiếp bằng cách tóm tắt các dịch vụ của cửa hàng. Dựa trên các chức năng đang được bật, câu trả lời của bạn nên là: "Dạ bên em chuyên {offerings_str} ạ. Anh/chị đang quan tâm đến mảng nào ạ?"
+    """
+    
     workflow_instructions_add = instructions_dict.get("workflow_instructions", "")
     
     other_instructions = instructions_dict.get("other_instructions", "")
@@ -88,6 +110,7 @@ def create_agent_executor(
         indentity_instructions,
         base_instructions,
         workflow_instructions,
+        general_query_instruction,
         workflow_instructions_add,
         custom_prompt_text,
         other_instructions
