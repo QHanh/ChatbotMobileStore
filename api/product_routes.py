@@ -31,6 +31,7 @@ PRODUCT_COLUMNS_CONFIG = {
     'numerics': {
         'ton_kho': int,
         'gia': float,
+        'gia_buon': float,
         'tinh_trang_pin': float
     }
 }

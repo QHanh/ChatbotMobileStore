@@ -36,7 +36,7 @@ def get_shared_index_mapping(data_type: str):
             "ma_dich_vu": {"type": "keyword"},
             "ten_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "ten_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "gia": {"type": "double"},
+            "gia": {"type": "double"}, "gia_buon": {"type": "double"}
         }
     elif data_type == "accessory":
         specific_properties = {
@@ -45,6 +45,7 @@ def get_shared_index_mapping(data_type: str):
             "category": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "properties": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "lifecare_price": {"type": "double"},
+            "sale_price": {"type": "double"},
             "trademark": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "guarantee": {"type": "text"},
             "inventory": {"type": "integer"},

@@ -20,12 +20,13 @@ router = APIRouter()
 SERVICE_COLUMNS_CONFIG = {
     'names': [
         'ma_dich_vu', 'ten_dich_vu', 'hang_san_pham', 'ten_san_pham', 
-        'mau_sac_san_pham', 'loai_dich_vu', 'gia', 'bao_hanh', 'ghi_chu'
+        'mau_sac_san_pham', 'loai_dich_vu', 'gia', 'gia_buon', 'bao_hanh', 'ghi_chu'
     ],
     'required': ['ma_dich_vu', 'ten_dich_vu'],
     'id_field': 'ma_dich_vu',
     'numerics': {
-        'gia': float
+        'gia': float,
+        'gia_buon': float
     }
 }
 
