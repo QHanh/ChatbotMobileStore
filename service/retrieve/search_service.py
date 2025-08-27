@@ -81,8 +81,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if item.get('tinh_trang_may'):
                 context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
             price = item.get('gia', 0)
-            price_buon = item.get('gia_buon', 0)
-            price_buon_str = (f"{price_buon:,.0f}đ" if price_buon > 0 else "Liên hệ")
+            price_buon = item.get('gia_buon')
+            price_buon_str = (f"{price_buon:,.0f}đ" if price_buon and price_buon > 0 else "Liên hệ")
             context.append(f"  Giá bán buôn: {price_buon_str}")
             inventory = item.get('ton_kho', 0)
             if inventory is not None:
@@ -110,8 +110,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if item.get('loai_dich_vu'):
                 context.append(f"  Loại dịch vụ: {item.get('loai_dich_vu')}")
             price = item.get('gia', 0)
-            price_sale = item.get('gia_buon', 0)
-            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale > 0 else "Liên hệ")
+            price_sale = item.get('gia_buon')
+            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
             context.append(f"  Giá bán buôn: {price_sale_str}")
             guarantee = item.get('bao_hanh', '')
             if guarantee:
@@ -126,8 +126,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if prop and str(prop).strip() and str(prop).strip() != '0':
                 context.append(f"  Thuộc tính: {prop}")
             price = item.get('lifecare_price', 0)
-            price_sale = item.get('sale_price', 0)
-            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale > 0 else "Liên hệ")
+            price_sale = item.get('sale_price')
+            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
             context.append(f"  Giá bán buôn: {price_sale_str}")
             inventory = item.get('inventory')
             if inventory is not None:

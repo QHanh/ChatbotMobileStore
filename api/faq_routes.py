@@ -9,8 +9,9 @@ from service.data.data_loader_elastic_search import (
     delete_single_document,
     delete_documents_by_customer
 )
-from service.models.schemas import FaqRow, FaqUpdate
+from service.models.schemas import FaqRow, FaqUpdate, FaqCreate
 from service.utils.helpers import sanitize_for_es
+import hashlib
 
 router = APIRouter()
 
@@ -49,21 +50,24 @@ async def get_all_faqs(
 @router.post("/faq/{customer_id}")
 async def add_faq(
     customer_id: str,
-    faq_data: FaqRow,
+    faq_data: FaqCreate,
     es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
-    """Thêm mới hoặc ghi đè một cặp FAQ."""
+    """Thêm mới một cặp FAQ. ID sẽ được tự động tạo."""
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
         sanitized_customer_id = sanitize_for_es(customer_id)
+        
+        # Tự động tạo ID từ hash của câu hỏi để tránh trùng lặp
+        question_str = faq_data.question.strip().lower()
+        doc_id = hashlib.sha1(question_str.encode('utf-8')).hexdigest()
+
         faq_dict = faq_data.model_dump()
-        doc_id = faq_dict.get('faq_id')
-        if not doc_id:
-            raise HTTPException(status_code=400, detail="Thiếu 'faq_id' trong dữ liệu đầu vào.")
+        faq_dict['faq_id'] = doc_id
         
         response = await index_single_document(es_client, FAQ_INDEX, sanitized_customer_id, doc_id, faq_dict)
-        return {"message": "FAQ đã được thêm/cập nhật thành công.", "result": response.body}
+        return {"message": "FAQ đã được thêm thành công.", "faq_id": doc_id, "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

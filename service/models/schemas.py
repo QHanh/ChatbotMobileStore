@@ -16,6 +16,11 @@ class FaqUpdate(BaseModel):
     question: Optional[str] = None
     answer: Optional[str] = None
 
+class FaqCreate(BaseModel):
+    """Input model for creating a new FAQ entry."""
+    question: str = Field(description="The question.")
+    answer: str = Field(description="The answer to the question.")
+
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
     model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
