@@ -232,7 +232,8 @@ async def delete_services_bulk(
             es_client,
             SERVICES_INDEX,
             sanitized_customer_id,
-            delete_input.ids
+            delete_input.ids,
+            id_field="ma_dich_vu"
         )
         deleted_count = response.get('deleted', 0)
         return {"message": f"Đã xóa thành công {deleted_count} dịch vụ.", "details": response}

@@ -234,7 +234,8 @@ async def delete_accessories_bulk(
             es_client,
             ACCESSORIES_INDEX,
             sanitized_customer_id,
-            delete_input.ids
+            delete_input.ids,
+            id_field="accessory_code"
         )
         deleted_count = response.get('deleted', 0)
         return {"message": f"Đã xóa thành công {deleted_count} phụ kiện.", "details": response}

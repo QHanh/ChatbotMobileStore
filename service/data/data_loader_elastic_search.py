@@ -299,10 +299,11 @@ async def bulk_delete_documents(
     es_client: AsyncElasticsearch,
     index_name: str,
     customer_id: str,
-    doc_ids: List[str]
+    doc_ids: List[str],
+    id_field: str
 ) -> Dict[str, Any]:
     """
-    Xóa hàng loạt các document từ một index dựa trên danh sách ID.
+    Xóa hàng loạt các document từ một index dựa trên danh sách ID và một trường cụ thể.
     """
     if not doc_ids:
         return {"deleted": 0, "failures": []}
@@ -312,7 +313,7 @@ async def bulk_delete_documents(
             "bool": {
                 "filter": [
                     {"term": {"customer_id": customer_id}},
-                    {"ids": {"values": doc_ids}}
+                    {"terms": {id_field: doc_ids}}
                 ]
             }
         }

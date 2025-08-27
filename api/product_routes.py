@@ -238,7 +238,8 @@ async def delete_products_bulk(
             es_client,
             PRODUCTS_INDEX,
             sanitized_customer_id,
-            delete_input.ids
+            delete_input.ids,
+            id_field="ma_san_pham"
         )
         deleted_count = response.get('deleted', 0)
         return {"message": f"Đã xóa thành công {deleted_count} sản phẩm.", "details": response}
