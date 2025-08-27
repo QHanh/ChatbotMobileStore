@@ -9,7 +9,8 @@ from service.data.data_loader_elastic_search import (
     update_single_document,
     delete_single_document,
     bulk_index_documents,
-    process_and_upsert_file_data
+    process_and_upsert_file_data,
+    delete_documents_by_customer
 )
 from service.models.schemas import AccessoryRow
 from service.utils.helpers import sanitize_for_es
@@ -192,3 +193,25 @@ async def append_accessory_data_from_file(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
+
+@router.delete("/accessories/{customer_id}")
+async def delete_all_accessories_by_customer(
+    customer_id: str = Path(..., description="Mã khách hàng để xóa tất cả phụ kiện."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Xóa TẤT CẢ các phụ kiện của một khách hàng khỏi index.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        response = await delete_documents_by_customer(
+            es_client, 
+            ACCESSORIES_INDEX, 
+            sanitized_customer_id
+        )
+        deleted_count = response.get('deleted', 0)
+        return {"message": f"Đã xóa thành công {deleted_count} phụ kiện cho khách hàng '{customer_id}'.", "details": response}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi xóa phụ kiện: {e}")
