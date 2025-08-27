@@ -13,6 +13,7 @@ load_dotenv()
 
 from service.utils.tools import create_customer_tools
 from database.database import Customer, SystemInstruction
+from service.retrieve.search_service import search_faqs
 
 def create_agent_executor(
     es_client: AsyncElasticsearch,
@@ -101,6 +102,14 @@ def create_agent_executor(
     - Khi người dùng hỏi những câu chung chung như "shop có gì?", "bên bạn có dịch vụ gì?", "bạn bán gì vậy?" mà không cung cấp chi tiết cụ thể, **KHÔNG SỬ DỤNG CÔNG CỤ TÌM KIẾM**.
     - Thay vào đó, hãy trả lời trực tiếp bằng cách tóm tắt các dịch vụ của cửa hàng. Dựa trên các chức năng đang được bật, câu trả lời của bạn nên là: "Dạ bên em chuyên {offerings_str} ạ. Anh/chị đang quan tâm đến mảng nào ạ?"
     """
+
+    faq_instruction = """
+    **Quy trình ưu tiên FAQ:**
+    - Hệ thống đã tìm kiếm trước trong kho Câu hỏi thường gặp (FAQ) và có thể đã cung cấp một cặp câu hỏi-trả lời có sẵn trong context.
+    - **Ưu tiên tuyệt đối:** Hãy xem xét kỹ thông tin này trước tiên.
+    - Nếu câu trả lời được gợi ý thực sự phù hợp với câu hỏi của người dùng và ngữ cảnh cuộc trò chuyện, hãy sử dụng nó làm cơ sở để trả lời. Bạn có thể diễn đạt lại cho tự nhiên hơn.
+    - Nếu câu trả lời không phù hợp, hãy bỏ qua nó và sử dụng các công cụ khác để tìm thông tin.
+    """
     
     workflow_instructions_add = instructions_dict.get("workflow_instructions", "")
     
@@ -109,6 +118,7 @@ def create_agent_executor(
     final_system_prompt = "\n".join([
         indentity_instructions,
         base_instructions,
+        faq_instruction,
         workflow_instructions,
         general_query_instruction,
         workflow_instructions_add,
@@ -118,6 +128,7 @@ def create_agent_executor(
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", final_system_prompt),
+        MessagesPlaceholder(variable_name="faq_context", optional=True),
         MessagesPlaceholder(variable_name="chat_history", optional=True),
         ("human", "{input}"),
         MessagesPlaceholder(variable_name="agent_scratchpad"),
@@ -141,10 +152,22 @@ def get_session_history(customer_id: str, session_id: str, memory: dict):
         memory[composite_key] = []
     return memory[composite_key]
 
-async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, memory: dict):
+async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, memory: dict, es_client: AsyncElasticsearch):
     """
     Gọi agent với input của người dùng và quản lý lịch sử trò chuyện theo từng khách hàng.
+    Luôn kiểm tra FAQ trước tiên.
     """
+    faq_context = []
+    faq_results = await search_faqs(es_client=es_client, customer_id=customer_id, query=user_input)
+    
+    if faq_results:
+        found_faq = faq_results[0]
+        faq_prompt = f"""--- GỢI Ý TỪ FAQ ---
+Câu hỏi tương tự đã tìm thấy: "{found_faq['question']}"
+Câu trả lời có sẵn: "{found_faq['answer']}"
+--- HẾT GỢI Ý ---"""
+        faq_context.append(HumanMessage(content=faq_prompt))
+
     chat_history = get_session_history(customer_id, session_id, memory)
     
     def format_history_for_llm(history: List[BaseMessage]) -> List[str]:
@@ -164,7 +187,8 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
 
     response = await agent_executor.ainvoke({
         "input": user_input,
-        "chat_history": chat_history
+        "chat_history": chat_history,
+        "faq_context": faq_context
     })
     
     chat_history.extend([
@@ -230,7 +254,8 @@ if __name__ == '__main__':
                 mock_customer_config.customer_id,
                 session_id, 
                 user_input, 
-                chat_memory
+                chat_memory,
+                es_client
             )
             
             print(f"Agent: {response['output']}")

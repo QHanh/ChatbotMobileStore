@@ -59,7 +59,8 @@ async def chat(
             customer_id,
             threadId, 
             user_input, 
-            chat_memory
+            chat_memory,
+            es_client=es_client
         )
 
         return {"response": response['output']}

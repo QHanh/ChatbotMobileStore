@@ -1,8 +1,7 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
-from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX
+from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
 from service.utils.helpers import sanitize_for_es
-from langchain.chat_models import init_chat_model
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
@@ -361,6 +360,41 @@ async def search_accessories(
     except Exception as e:
         print(f"Lỗi khi tìm kiếm phụ kiện: {e}")
         return [{"error": f"Lỗi tìm kiếm: {e}"}]
+
+async def search_faqs(
+    es_client: AsyncElasticsearch,
+    customer_id: str,
+    query: str,
+) -> List[Dict[str, Any]]:
+    """
+    Tìm kiếm câu hỏi tương tự trong index FAQ.
+    """
+    if not es_client:
+        return []
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    search_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"term": {"customer_id": sanitized_customer_id}},
+                    {"match": {"question": query}}
+                ]
+            }
+        }
+    }
+
+    try:
+        response = await es_client.search(
+            index=FAQ_INDEX,
+            body=search_query,
+            routing=sanitized_customer_id,
+            size=1
+        )
+        return [hit['_source'] for hit in response['hits']['hits']]
+    except Exception as e:
+        print(f"Lỗi khi tìm kiếm FAQ: {e}")
+        return []
 
 if __name__ == '__main__':
     import asyncio

@@ -5,6 +5,17 @@ class BulkDeleteInput(BaseModel):
     """Input model for bulk delete operations."""
     ids: List[str] = Field(description="A list of document IDs to delete.")
 
+class FaqRow(BaseModel):
+    """Input model for a single FAQ entry."""
+    faq_id: str = Field(description="The unique identifier for the FAQ.")
+    question: str = Field(description="The question.")
+    answer: str = Field(description="The answer to the question.")
+
+class FaqUpdate(BaseModel):
+    """Input model for updating an FAQ entry."""
+    question: Optional[str] = None
+    answer: Optional[str] = None
+
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
     model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")

@@ -13,6 +13,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 PRODUCTS_INDEX = "products"
 SERVICES_INDEX = "services"
 ACCESSORIES_INDEX = "accessories"
+FAQ_INDEX = "faqs"
 
 def get_shared_index_mapping(data_type: str):
     """
@@ -53,6 +54,12 @@ def get_shared_index_mapping(data_type: str):
             "avatar_images": {"type": "keyword"},
             "link_accessory": {"type": "keyword"}
         }
+    elif data_type == "faq":
+        specific_properties = {
+            "faq_id": {"type": "keyword"},
+            "question": {"type": "text", "analyzer": "standard"},
+            "answer": {"type": "text", "analyzer": "standard"}
+        }
     else:
         return {}
         
@@ -66,7 +73,8 @@ async def ensure_shared_indices_exist(es_client: Elasticsearch):
     indices_to_create = {
         PRODUCTS_INDEX: "product",
         SERVICES_INDEX: "service",
-        ACCESSORIES_INDEX: "accessory"
+        ACCESSORIES_INDEX: "accessory",
+        FAQ_INDEX: "faq"
     }
     for index_name, data_type in indices_to_create.items():
         if not await es_client.indices.exists(index=index_name):
