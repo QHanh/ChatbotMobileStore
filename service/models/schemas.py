@@ -1,6 +1,10 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
+class BulkDeleteInput(BaseModel):
+    """Input model for bulk delete operations."""
+    ids: List[str] = Field(description="A list of document IDs to delete.")
+
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
     model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
