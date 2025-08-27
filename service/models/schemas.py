@@ -123,6 +123,7 @@ class ServiceRow(BaseModel):
     mau_sac_san_pham: Optional[str] = None
     loai_dich_vu: Optional[str] = None
     gia: Optional[float] = None
+    gia_buon: Optional[float] = None
     bao_hanh: Optional[str] = None
     ghi_chu: Optional[str] = None
 
@@ -132,6 +133,7 @@ class AccessoryRow(BaseModel):
     category: Optional[str] = None
     properties: Optional[str] = None
     lifecare_price: Optional[float] = None
+    sale_price: Optional[float] = None
     trademark: Optional[str] = None
     guarantee: Optional[str] = None
     inventory: Optional[int] = None
