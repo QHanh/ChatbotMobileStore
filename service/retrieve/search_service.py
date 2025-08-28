@@ -132,8 +132,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             inventory = item.get('inventory')
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
-            if item.get('specifications'):
-                context.append(f"  Mô tả: {item.get('specifications')}")
+            # if item.get('specifications'):
+                # context.append(f"  Mô tả: {item.get('specifications')}")
             if item.get('guarantee'):
                 context.append(f"  Bảo hành: {item.get('guarantee')}")
             if item.get('link_product'):

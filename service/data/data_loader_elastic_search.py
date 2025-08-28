@@ -115,10 +115,19 @@ async def process_and_index_data(
     try:
         df = pd.read_excel(io.BytesIO(file_content))
         df.columns = columns_config['names']
+
+        for col in columns_config.get('required', []):
+            if pd.api.types.is_string_dtype(df[col]):
+                df[col] = df[col].str.strip()
+            df[col] = df[col].replace(r'^\s*$', np.nan, regex=True)
+
         df = df.dropna(subset=columns_config['required'])
         
         for col, dtype in columns_config.get('numerics', {}).items():
-            df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(dtype)
+            if dtype == float:
+                df[col] = pd.to_numeric(df[col].astype(str).str.replace(',', ''), errors='coerce').fillna(0).astype(float)
+            elif dtype == int:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
             
         df['customer_id'] = sanitized_customer_id
         df = df.where(pd.notnull(df), None).replace({np.nan: None})
@@ -128,9 +137,14 @@ async def process_and_index_data(
     actions = []
     for _, row in df.iterrows():
         doc = row.to_dict()
+        product_id = doc.get(columns_config['id_field'])
+        if product_id is None:
+            continue
+        sanitized_product_id = sanitize_for_es(str(product_id))
+
         action = {
             "_index": index_name,
-            "_id": f"{sanitized_customer_id}_{doc[columns_config['id_field']]}",
+            "_id": f"{sanitized_customer_id}_{sanitized_product_id}",
             "_source": doc,
             "routing": sanitized_customer_id
         }
@@ -145,6 +159,12 @@ async def process_and_index_data(
         print(f"✅ Thành công: {success} bản ghi.")
         if failed:
             print(f"❌ Thất bại: {len(failed)} bản ghi.")
+            print("--- Chi tiết 5 lỗi đầu tiên ---")
+            for i, fail_info in enumerate(failed[:5]):
+                error_details = fail_info.get('index', {}).get('error', 'Không có chi tiết lỗi.')
+                doc_id = fail_info.get('index', {}).get('_id', 'N/A')
+                print(f"  Lỗi {i+1} (ID: {doc_id}): {error_details}")
+            print("---------------------------------")
         return success, len(failed)
     except Exception as e:
         raise IOError(f"Lỗi trong quá trình bulk indexing: {e}")
