@@ -27,6 +27,14 @@ class SystemInstruction(Base):
     key = Column(String, primary_key=True, index=True)
     value = Column(Text, nullable=False)
 
+class ChatThread(Base):
+    __tablename__ = "chat_threads"
+
+    customer_id = Column(String, primary_key=True, index=True)
+    thread_id = Column(String, primary_key=True, index=True)
+    thread_name = Column(String, nullable=True)
+    status = Column(String, default="active", nullable=False)
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 

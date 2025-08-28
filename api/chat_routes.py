@@ -3,10 +3,11 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory
 from service.models.schemas import ChatbotRequest
-from database.database import get_db, Customer
+from database.database import get_db, Customer, ChatThread
 from dependencies import chat_memory
 from elasticsearch import AsyncElasticsearch
 from dependencies import get_es_client
+
 router = APIRouter()
 
 @router.post("/chat/{threadId}")
@@ -19,6 +20,17 @@ async def chat(
     """
     Endpoint chính để tương tác với chatbot.
     """
+    thread_status = db.query(ChatThread).filter(
+        ChatThread.customer_id == request.customer_id,
+        ChatThread.thread_id == threadId
+    ).first()
+
+    if thread_status and thread_status.status == "stopped":
+        raise HTTPException(
+            status_code=403, 
+            detail="Bot đã bị dừng cho threadId của customer_id này."
+        )
+
     if not threadId:
         raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
 

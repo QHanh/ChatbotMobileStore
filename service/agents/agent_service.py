@@ -164,7 +164,7 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
         found_faq = faq_results[0]
         faq_prompt = f"""--- GỢI Ý TỪ FAQ ---
 Câu hỏi tương tự đã tìm thấy: "{found_faq['question']}"
-Câu trả lời có sẵn: "{found_faq['answer']}"
+Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy phù hợp): "{found_faq['answer']}"
 --- HẾT GỢI Ý ---"""
         faq_context.append(HumanMessage(content=faq_prompt))
 

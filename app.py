@@ -11,7 +11,8 @@ from api import (
     config_routes,
     document_routes,
     instruction_routes,
-    faq_routes
+    faq_routes,
+    control_routes
 )
 from database.database import init_db
 from dependencies import init_es_client, close_es_client, es_client
@@ -50,6 +51,7 @@ app.include_router(document_routes.router, tags=["Documents"])
 app.include_router(config_routes.router, tags=["Configuration"])
 app.include_router(instruction_routes.router, tags=["Instructions"])
 app.include_router(faq_routes.router, tags=["FAQ"])
+app.include_router(control_routes.router, tags=["Control"])
 app.include_router(chat_routes.router, tags=["Chat"])
 
 
