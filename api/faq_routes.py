@@ -5,7 +5,6 @@ from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
     FAQ_INDEX,
     index_single_document,
-    update_single_document,
     delete_single_document,
     delete_documents_by_customer
 )
@@ -75,20 +74,37 @@ async def add_faq(
 async def update_faq(
     customer_id: str,
     faq_id: str,
-    faq_data: FaqUpdate,
+    faq_data: FaqCreate,
     es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
-    """Cập nhật một cặp FAQ đã có."""
+    """
+    Cập nhật hoặc tạo mới một cặp FAQ.
+    Nếu FAQ chưa tồn tại, nó sẽ được tạo mới với ID được cung cấp.
+    """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
         sanitized_customer_id = sanitize_for_es(customer_id)
-        faq_dict = faq_data.model_dump(exclude_unset=True)
-        if not faq_dict:
-            raise HTTPException(status_code=400, detail="Request body không được để trống.")
+        faq_dict = faq_data.model_dump()
+        faq_dict['faq_id'] = faq_id
             
-        response = await update_single_document(es_client, FAQ_INDEX, sanitized_customer_id, faq_id, faq_dict)
-        return {"message": "FAQ đã được cập nhật thành công.", "result": response.body}
+        response = await index_single_document(
+            es_client, 
+            FAQ_INDEX, 
+            sanitized_customer_id, 
+            faq_id, 
+            faq_dict
+        )
+
+        result_status = response.body.get('result')
+        if result_status == 'created':
+            message = "FAQ đã được tạo mới thành công."
+        elif result_status == 'updated':
+            message = "FAQ đã được cập nhật thành công."
+        else:
+            message = "Thao tác hoàn tất."
+
+        return {"message": message, "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

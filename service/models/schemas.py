@@ -11,11 +11,6 @@ class FaqRow(BaseModel):
     question: str = Field(description="The question.")
     answer: str = Field(description="The answer to the question.")
 
-class FaqUpdate(BaseModel):
-    """Input model for updating an FAQ entry."""
-    question: Optional[str] = None
-    answer: Optional[str] = None
-
 class FaqCreate(BaseModel):
     """Input model for creating a new FAQ entry."""
     question: str = Field(description="The question.")

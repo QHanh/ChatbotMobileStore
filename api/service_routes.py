@@ -6,7 +6,6 @@ from service.data.data_loader_elastic_search import (
     process_and_index_data, 
     SERVICES_INDEX,
     index_single_document,
-    update_single_document,
     delete_single_document,
     bulk_index_documents,
     process_and_upsert_file_data,
@@ -97,18 +96,41 @@ async def update_service(
     es_client: AsyncElasticsearch = Depends(get_es_client)
 ):
     """
-    Cập nhật thông tin cho một dịch vụ đã có.
+    Cập nhật hoặc tạo mới thông tin cho một dịch vụ.
+    Nếu dịch vụ chưa tồn tại, nó sẽ được tạo mới.
     """
     if not es_client:
         raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
     try:
         sanitized_customer_id = sanitize_for_es(customer_id)
-        service_dict = service_data.model_dump(exclude_unset=True)
-        if 'ma_dich_vu' in service_dict:
-            del service_dict['ma_dich_vu']
-            
-        response = await update_single_document(es_client, SERVICES_INDEX, sanitized_customer_id, service_id, service_dict)
-        return {"message": "Dịch vụ đã được cập nhật thành công.", "result": response.body}
+        service_dict = service_data.model_dump()
+
+        body_service_id = service_dict.get('ma_dich_vu')
+        if body_service_id and body_service_id != service_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mã dịch vụ trong URL ({service_id}) và trong body ({body_service_id}) không khớp."
+            )
+        
+        service_dict['ma_dich_vu'] = service_id
+        
+        response = await index_single_document(
+            es_client, 
+            SERVICES_INDEX, 
+            sanitized_customer_id, 
+            service_id, 
+            service_dict
+        )
+        
+        result_status = response.body.get('result')
+        if result_status == 'created':
+            message = "Dịch vụ đã được tạo mới thành công."
+        elif result_status == 'updated':
+            message = "Dịch vụ đã được cập nhật thành công."
+        else:
+            message = "Thao tác hoàn tất."
+
+        return {"message": message, "result": response.body}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
