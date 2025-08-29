@@ -297,6 +297,7 @@ async def end_conversation_tool() -> str:
 def create_customer_tools(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    product_feature_enabled: bool = True,
     service_feature_enabled: bool = True, 
     accessory_feature_enabled: bool = True,
     llm: Optional[BaseLanguageModel] = None
@@ -304,15 +305,22 @@ def create_customer_tools(
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
-    customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id, llm=llm)
+    available_tools = []
     
-    search_product_tool = StructuredTool.from_function(
-        func=customer_search_product_func,
-        name="search_products_tool",
-        description=search_products_logic.__doc__,
-        args_schema=SearchProductInput,
-        coroutine=customer_search_product_func
-    )
+    if product_feature_enabled:
+        customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id, llm=llm)
+        
+        search_product_tool = StructuredTool.from_function(
+            func=customer_search_product_func,
+            name="search_products_tool",
+            description=search_products_logic.__doc__,
+            args_schema=SearchProductInput,
+            coroutine=customer_search_product_func
+        )
+        available_tools.extend([
+            search_product_tool,
+            create_order_product_tool,
+        ])
 
     sanitized_tenant_id = customer_id.replace("-", "_")
     if sanitized_tenant_id and sanitized_tenant_id[0].isdigit():
@@ -327,13 +335,11 @@ def create_customer_tools(
         coroutine=customer_retrieve_document_func
     )
 
-    available_tools = [
-        search_product_tool,
+    available_tools.extend([
         retrieve_document_tool,
-        create_order_product_tool,
         escalate_to_human_tool,
         end_conversation_tool
-    ]
+    ])
 
     if service_feature_enabled:
         customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id, llm=llm)

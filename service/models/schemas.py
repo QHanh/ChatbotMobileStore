@@ -102,6 +102,10 @@ class AccessoryFeatureConfig(BaseModel):
     """Input model for enabling or disabling the accessory consultation feature."""
     enabled: bool = Field(description="Bật (true) hoặc tắt (false) chức năng tư vấn phụ kiện.")
 
+class ProductFeatureConfig(BaseModel):
+    """Input model for enabling or disabling the product consultation feature."""
+    enabled: bool = Field(description="Bật (true) hoặc tắt (false) chức năng tư vấn sản phẩm.")
+
 class ProductRow(BaseModel):
     ma_san_pham: str
     model: str

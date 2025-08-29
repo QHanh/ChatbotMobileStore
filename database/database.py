@@ -20,6 +20,7 @@ class Customer(Base):
     custom_prompt = Column(String, nullable=True)
     service_feature_enabled = Column(Boolean, default=False)
     accessory_feature_enabled = Column(Boolean, default=False)
+    product_feature_enabled = Column(Boolean, default=False)
 
 class SystemInstruction(Base):
     __tablename__ = "system_instructions"

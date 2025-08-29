@@ -38,12 +38,14 @@ def create_agent_executor(
 
     persona = {"ai_name": customer_config.ai_name, "ai_role": customer_config.ai_role}
     custom_prompt_text = customer_config.custom_prompt or ""
+    product_feature_enabled = customer_config.product_feature_enabled
     service_feature_enabled = customer_config.service_feature_enabled
     accessory_feature_enabled = customer_config.accessory_feature_enabled
 
     customer_tools = create_customer_tools(
         es_client, 
         customer_id, 
+        product_feature_enabled,
         service_feature_enabled, 
         accessory_feature_enabled,
         llm=llm
@@ -70,7 +72,7 @@ def create_agent_executor(
     accessory_workflow = instructions_dict.get("accessory_workflow", "")
 
     workflow_steps = []
-    if True:
+    if product_feature_enabled:
         workflow_steps.append(product_workflow)
     if service_feature_enabled:
         workflow_steps.append(service_workflow)
@@ -84,7 +86,9 @@ def create_agent_executor(
        {'\n   '.join(workflow_steps)}
     """
 
-    offerings = ["bán điện thoại"]
+    offerings = []
+    if product_feature_enabled:
+        offerings.append("bán điện thoại")
     if service_feature_enabled:
         offerings.append("sửa chữa điện thoại")
     if accessory_feature_enabled:
@@ -208,6 +212,7 @@ if __name__ == '__main__':
             ai_name="TestBot",
             ai_role="trợ lý ảo test",
             custom_prompt="Luôn trả lời bằng tiếng Việt.",
+            product_feature_enabled=True,
             service_feature_enabled=True,
             accessory_feature_enabled=False
         )

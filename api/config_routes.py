@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
-from service.models.schemas import PersonaConfig, PromptConfig, ServiceFeatureConfig, AccessoryFeatureConfig
+from service.models.schemas import PersonaConfig, PromptConfig, ServiceFeatureConfig, AccessoryFeatureConfig, ProductFeatureConfig
 from database.database import get_db, Customer
 
 router = APIRouter()
@@ -132,3 +132,26 @@ async def get_accessory_feature_config(customer_id: str, db: Session = Depends(g
     """
     customer = get_or_create_customer(db, customer_id)
     return {"enabled": customer.accessory_feature_enabled}
+
+@router.put("/config/product-feature/{customer_id}")
+async def set_product_feature_config(
+    customer_id: str,
+    config: ProductFeatureConfig,
+    db: Session = Depends(get_db)
+):
+    """
+    Bật hoặc tắt chức năng tư vấn sản phẩm cho chatbot của khách hàng.
+    """
+    customer = get_or_create_customer(db, customer_id)
+    customer.product_feature_enabled = config.enabled
+    db.commit()
+    status = "bật" if config.enabled else "tắt"
+    return {"message": f"Chức năng tư vấn sản phẩm cho khách hàng '{customer_id}' đã được {status}."}
+
+@router.get("/config/product-feature/{customer_id}")
+async def get_product_feature_config(customer_id: str, db: Session = Depends(get_db)):
+    """
+    Lấy trạng thái bật/tắt chức năng tư vấn sản phẩm của một khách hàng.
+    """
+    customer = get_or_create_customer(db, customer_id)
+    return {"enabled": customer.product_feature_enabled}
