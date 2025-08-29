@@ -8,7 +8,7 @@ from service.data.data_loader_elastic_search import (
     delete_single_document,
     delete_documents_by_customer
 )
-from service.models.schemas import FaqRow, FaqUpdate, FaqCreate
+from service.models.schemas import FaqRow, FaqCreate
 from service.utils.helpers import sanitize_for_es
 import hashlib
 

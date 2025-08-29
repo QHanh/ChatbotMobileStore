@@ -1,10 +1,11 @@
 import asyncio
 from elasticsearch import AsyncElasticsearch
-from service.data.data_loader_elastic_search import get_shared_index_mapping, ACCESSORIES_INDEX, PRODUCTS_INDEX, SERVICES_INDEX
+from service.data.data_loader_elastic_search import SERVICES_INDEX, get_shared_index_mapping, ACCESSORIES_INDEX, PRODUCTS_INDEX
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+index = PRODUCTS_INDEX
 
 async def fix_elasticsearch_mapping():
     """Fix mapping của Elasticsearch index"""
@@ -20,15 +21,15 @@ async def fix_elasticsearch_mapping():
         print("🔧 Bắt đầu fix mapping Elasticsearch...")
         
         # Kiểm tra index có tồn tại không
-        index_exists = await es_client.indices.exists(index=SERVICES_INDEX)
+        index_exists = await es_client.indices.exists(index=index)
         
         if index_exists:
-            print(f"🗑️ Xóa index cũ '{SERVICES_INDEX}'...")
-            await es_client.indices.delete(index=SERVICES_INDEX)
-            print(f"✅ Đã xóa index '{SERVICES_INDEX}'")
+            print(f"🗑️ Xóa index cũ '{index}'...")
+            await es_client.indices.delete(index=index)
+            print(f"✅ Đã xóa index '{index}'")
         
         # Tạo lại index với mapping đúng
-        print(f"🛠️ Tạo lại index '{SERVICES_INDEX}' với mapping đúng...")
+        print(f"🛠️ Tạo lại index '{index}' với mapping đúng...")
         mapping = get_shared_index_mapping("service")
         
         # In ra mapping để kiểm tra
@@ -36,14 +37,14 @@ async def fix_elasticsearch_mapping():
         import json
         print(json.dumps(mapping, indent=2, ensure_ascii=False))
         
-        await es_client.indices.create(index=SERVICES_INDEX, mappings=mapping)
-        print(f"✅ Đã tạo thành công index '{SERVICES_INDEX}' với mapping đúng")
+        await es_client.indices.create(index=index, mappings=mapping)
+        print(f"✅ Đã tạo thành công index '{index}' với mapping đúng")
         
         # Kiểm tra mapping đã được áp dụng
         print("🔍 Kiểm tra mapping đã được áp dụng...")
-        mapping_info = await es_client.indices.get_mapping(index=SERVICES_INDEX)
+        mapping_info = await es_client.indices.get_mapping(index=index)
         print("📋 Mapping hiện tại:")
-        print(json.dumps(mapping_info[SERVICES_INDEX]['mappings'], indent=2, ensure_ascii=False))
+        print(json.dumps(mapping_info[index]['mappings'], indent=2, ensure_ascii=False))
         
         print("✅ Fix mapping thành công!")
         
