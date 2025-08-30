@@ -18,9 +18,9 @@ class Customer(Base):
     ai_name = Column(String, nullable=True)
     ai_role = Column(String, nullable=True)
     custom_prompt = Column(String, nullable=True)
-    service_feature_enabled = Column(Boolean, default=False)
-    accessory_feature_enabled = Column(Boolean, default=False)
-    product_feature_enabled = Column(Boolean, default=False)
+    service_feature_enabled = Column(Boolean, default=True)
+    accessory_feature_enabled = Column(Boolean, default=True)
+    product_feature_enabled = Column(Boolean, default=True)
 
 class SystemInstruction(Base):
     __tablename__ = "system_instructions"
