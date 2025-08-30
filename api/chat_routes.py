@@ -54,6 +54,7 @@ async def chat(
 
         if access != 100:
             access_str = str(access)
+            customer_config.product_feature_enabled = '1' in access_str
             customer_config.service_feature_enabled = '2' in access_str
             customer_config.accessory_feature_enabled = '3' in access_str
             
