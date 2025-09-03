@@ -52,7 +52,7 @@ def ensure_tenant_exists(client: weaviate.WeaviateClient, tenant_id: str):
     collection = client.collections.get(DOCUMENT_CLASS_NAME)
     if not collection.tenants.exists(tenant_id):
         print(f"Tenant '{tenant_id}' chưa tồn tại. Đang tạo...")
-        collection.tenants.create(tenant_id)
+        collection.tenants.create([tenant_id])
         print(f"✅ Đã tạo tenant '{tenant_id}'.")
 
 def get_weaviate_client():
