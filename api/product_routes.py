@@ -19,19 +19,30 @@ router = APIRouter()
 
 PRODUCT_COLUMNS_CONFIG = {
     'names': [
-        'ma_san_pham', 'model', 'mau_sac', 'dung_luong', 'bao_hanh',
-        'tinh_trang_may', 'loai_thiet_bi', 'tinh_trang_pin', 'gia', 'gia_buon', 'ton_kho', 'ghi_chu',
-        'ra_mat', 'man_hinh', 'chip_ram', 'camera', 'pin_mah', 'ket_noi_hdh',
-        'mau_sac_tieng_anh', 'mau_sac_available', 'dung_luong_available',
-        'kich_thuoc_trong_luong'
+        'Mã sản phẩm', 'Tên thiết bị', 'Màu sắc', 'Dung lượng', 'Bảo hành',
+        'Tình trạng máy', 'Loai máy', 'Tình trạng pin', 'Giá', 'Giá bán buôn', 'Tồn kho', 'Ghi chú'
     ],
-    'required': ['ma_san_pham', 'model'],
-    'id_field': 'ma_san_pham',
+    'required': ['Mã sản phẩm', 'Tên thiết bị'],
+    'id_field': 'Mã sản phẩm',
     'numerics': {
-        'ton_kho': int,
-        'gia': float,
-        'gia_buon': float,
-        'tinh_trang_pin': float
+        'Tồn kho': int,
+        'Giá': float,
+        'Giá bán buôn': float,
+        'Tình trạng pin': float
+    },
+    'rename_map': {
+        "Mã sản phẩm": "ma_san_pham",
+        "Tên thiết bị": "model",
+        "Màu sắc": "mau_sac",
+        "Dung lượng": "dung_luong",
+        "Bảo hành": "bao_hanh",
+        "Tình trạng máy": "tinh_trang_may",
+        "Loai máy": "loai_thiet_bi",
+        "Tình trạng pin": "tinh_trang_pin",
+        "Giá": "gia",
+        "Giá bán buôn": "gia_buon",
+        "Tồn kho": "ton_kho",
+        "Ghi chú": "ghi_chu"
     }
 }
 

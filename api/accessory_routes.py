@@ -18,16 +18,30 @@ router = APIRouter()
 
 ACCESSORY_COLUMNS_CONFIG = {
     'names': [
-        'accessory_code', 'accessory_name', 'category', 'properties',
-        'lifecare_price', 'sale_price', 'trademark', 'guarantee', 'inventory',
-        'specifications', 'avatar_images', 'link_accessory'
+        'Product code', 'Product name', 'category', 'PROPERTIES', 'amount',
+        'Giá bán buôn', 'trademark', 'guarantee', 'stock', 'description',
+        'Product photo', 'Product link'
     ],
-    'required': ['accessory_code', 'accessory_name'],
-    'id_field': 'accessory_code',
+    'required': ['Product code', 'Product name'],
+    'id_field': 'Product code',
     'numerics': {
-        'inventory': int,
-        'lifecare_price': float,
-        'sale_price': float
+        'stock': int,
+        'amount': float,
+        'Giá bán buôn': float
+    },
+    'rename_map': {
+        'Product code': 'accessory_code',
+        'Product name': 'accessory_name',
+        'category': 'category',
+        'PROPERTIES': 'properties',
+        'amount': 'lifecare_price',
+        'Giá bán buôn': 'sale_price',
+        'trademark': 'trademark',
+        'guarantee': 'guarantee',
+        'stock': 'inventory',
+        'description': 'specifications',
+        'Product photo': 'avatar_images',
+        'Product link': 'link_accessory'
     }
 }
 
