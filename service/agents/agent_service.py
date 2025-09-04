@@ -119,16 +119,25 @@ def create_agent_executor(
     
     other_instructions = instructions_dict.get("other_instructions", "")
 
-    final_system_prompt = "\n".join([
+    # Tạo một phần riêng biệt và nhấn mạnh cho custom prompt để tăng độ ưu tiên
+    custom_prompt_section = ""
+    if custom_prompt_text:
+        custom_prompt_section = f'''
+**Lưu ý đặc biệt từ chủ cửa hàng (Strictly follow this):**
+{custom_prompt_text}
+'''
+
+    # Sắp xếp lại prompt để có cấu trúc logic hơn và đặt custom prompt ở cuối
+    final_system_prompt = "\n".join(filter(None, [
         indentity_instructions,
         base_instructions,
-        faq_instruction,
         workflow_instructions,
         general_query_instruction,
         workflow_instructions_add,
-        custom_prompt_text,
-        other_instructions
-    ])
+        faq_instruction,
+        other_instructions,
+        custom_prompt_section  # Đặt ở cuối để có độ ưu tiên cao nhất
+    ]))
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", final_system_prompt),
