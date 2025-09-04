@@ -30,7 +30,7 @@ def create_agent_executor(
         raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
 
     if llm_provider == "google_genai":
-        llm = init_chat_model(model="gemini-2.0-flash", model_provider="google_genai", api_key=api_key)
+        llm = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
     elif llm_provider == "openai":
         llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
     else:

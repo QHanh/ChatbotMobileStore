@@ -20,7 +20,7 @@ router = APIRouter()
 PRODUCT_COLUMNS_CONFIG = {
     'names': [
         'Mã sản phẩm', 'Tên thiết bị', 'Màu sắc', 'Dung lượng', 'Bảo hành',
-        'Tình trạng máy', 'Loai máy', 'Tình trạng pin', 'Giá', 'Giá bán buôn', 'Tồn kho', 'Ghi chú'
+        'Tình trạng máy', 'Loại máy', 'Tình trạng pin', 'Giá', 'Giá bán buôn', 'Tồn kho', 'Ghi chú'
     ],
     'required': ['Mã sản phẩm', 'Tên thiết bị'],
     'id_field': 'Mã sản phẩm',
@@ -37,7 +37,7 @@ PRODUCT_COLUMNS_CONFIG = {
         "Dung lượng": "dung_luong",
         "Bảo hành": "bao_hanh",
         "Tình trạng máy": "tinh_trang_may",
-        "Loai máy": "loai_thiet_bi",
+        "Loại máy": "loai_thiet_bi",
         "Tình trạng pin": "tinh_trang_pin",
         "Giá": "gia",
         "Giá bán buôn": "gia_buon",
