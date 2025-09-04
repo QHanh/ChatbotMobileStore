@@ -34,7 +34,7 @@ async def upload_text(customer_id: str, doc_input: DocumentInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass
 
 @router.post("/upload-file/{customer_id}")
 async def upload_file(customer_id: str, file: UploadFile = File(...), source: Optional[str] = Form(None)):
@@ -54,7 +54,7 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass
 
 @router.get("/documents/{customer_id}")
 async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
@@ -62,9 +62,10 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
     try:
         tenant_id = get_sanitized_tenant_id(customer_id)
         client = get_weaviate_client()
+        ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
-        
-        if not collection.tenants.exists(tenant_id):
+        tenants = collection.tenants.get()
+        if tenant_id not in tenants:
             return {"items": [], "count": 0}
             
         tenant_collection = collection.with_tenant(tenant_id)
@@ -76,7 +77,7 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass
 
 @router.get("/sources/{customer_id}")
 async def list_document_sources(customer_id: str):
@@ -84,9 +85,10 @@ async def list_document_sources(customer_id: str):
     try:
         tenant_id = get_sanitized_tenant_id(customer_id)
         client = get_weaviate_client()
+        ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
-
-        if not collection.tenants.exists(tenant_id):
+        tenants = collection.tenants.get()
+        if tenant_id not in tenants:
             return {"sources": []}
         
         tenant_collection = collection.with_tenant(tenant_id)
@@ -97,7 +99,7 @@ async def list_document_sources(customer_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass
 
 @router.delete("/sources/{customer_id}")
 async def delete_document_by_source(customer_id: str, source: str = Query(..., description="Tên 'source' của tài liệu cần xóa.")):
@@ -105,9 +107,10 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
     try:
         tenant_id = get_sanitized_tenant_id(customer_id)
         client = get_weaviate_client()
+        ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
-        
-        if not collection.tenants.exists(tenant_id):
+        tenants = collection.tenants.get()
+        if tenant_id not in tenants:
             raise HTTPException(status_code=404, detail=f"Không tìm thấy tenant: {tenant_id}")
             
         tenant_collection = collection.with_tenant(tenant_id)
@@ -119,7 +122,7 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass
 
 @router.delete("/documents/{customer_id}")
 async def delete_all_documents(customer_id: str):
@@ -127,14 +130,15 @@ async def delete_all_documents(customer_id: str):
     try:
         tenant_id = get_sanitized_tenant_id(customer_id)
         client = get_weaviate_client()
+        ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
-        
-        if collection.tenants.exists(tenant_id):
-            collection.tenants.remove(tenant_id)
+        tenants = collection.tenants.get()
+        if tenant_id in tenants:
+            collection.tenants.remove([tenant_id])
             return {"message": f"Đã xóa thành công toàn bộ dữ liệu (tenant) của khách hàng '{customer_id}'."}
         else:
             return {"message": f"Không tìm thấy dữ liệu (tenant) của khách hàng '{customer_id}' để xóa."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client: client.close()
+        pass

@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, Dict, Any
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
-from service.data.data_loader_vector_db import DOCUMENT_CLASS_NAME
+from service.data.data_loader_vector_db import DOCUMENT_CLASS_NAME, ensure_document_collection_exists
 from dependencies import get_weaviate_client
 from service.utils.helpers import sanitize_for_weaviate
 
@@ -18,9 +18,10 @@ def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[floa
         return [{"error": "Không thể kết nối đến Weaviate."}]
 
     try:
+        ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
-        
-        if not collection.tenants.exists(tenant_id):
+        tenants = collection.tenants.get()
+        if tenant_id not in tenants:
             return [{"message": f"Cơ sở tri thức cho khách hàng '{tenant_id}' chưa được tạo."}]
 
         tenant_collection = collection.with_tenant(tenant_id)
@@ -49,7 +50,7 @@ def _retrieve_documents_sync(query: str, tenant_id: str, query_vector: List[floa
         print(f"Lỗi khi truy xuất tài liệu từ Weaviate: {e}")
         return [{"error": f"Lỗi truy xuất: {e}"}]
     finally:
-        if client: client.close()
+        pass
 
 async def retrieve_documents(query: str, tenant_id: str, top_k: int = 5, alpha: float = 0.5) -> List[Dict[str, Any]]:
     """

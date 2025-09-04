@@ -7,6 +7,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain_core.documents import Document
 from weaviate.classes.config import Configure, Property, DataType
+from weaviate.collections.classes.tenants import Tenant
 import tempfile
 from weaviate.auth import AuthApiKey
 from dotenv import load_dotenv
@@ -50,9 +51,10 @@ def ensure_tenant_exists(client: weaviate.WeaviateClient, tenant_id: str):
     Lưu ý: tenant_id chính là customer_id đã được làm sạch.
     """
     collection = client.collections.get(DOCUMENT_CLASS_NAME)
-    if not collection.tenants.exists(tenant_id):
+    tenants = collection.tenants.get()
+    if tenant_id not in tenants:
         print(f"Tenant '{tenant_id}' chưa tồn tại. Đang tạo...")
-        collection.tenants.create([tenant_id])
+        collection.tenants.create([Tenant(name=tenant_id)])
         print(f"✅ Đã tạo tenant '{tenant_id}'.")
 
 def get_weaviate_client():
