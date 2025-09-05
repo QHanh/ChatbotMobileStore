@@ -7,6 +7,7 @@ import io
 from service.utils.helpers import sanitize_for_es
 from typing import List, Dict, Any
 from elasticsearch import AsyncElasticsearch
+from datetime import datetime
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -58,7 +59,8 @@ def get_shared_index_mapping(data_type: str):
         specific_properties = {
             "faq_id": {"type": "keyword"},
             "question": {"type": "text", "analyzer": "standard"},
-            "answer": {"type": "text", "analyzer": "standard"}
+            "answer": {"type": "text", "analyzer": "standard"},
+            "created_at": {"type": "date"}
         }
     else:
         return {}
@@ -292,6 +294,9 @@ async def process_and_upsert_file_data(
         raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
 
     documents = df.to_dict('records')
+    if index_name == FAQ_INDEX:
+        for document in documents:
+            document['created_at'] = datetime.utcnow()
     if not documents:
         return 0, 0
 
