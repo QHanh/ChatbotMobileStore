@@ -18,13 +18,13 @@ router = APIRouter()
 
 SERVICE_COLUMNS_CONFIG = {
     'names': [
-        'Mã DV', 'Tên dịch vụ', 'loại sản phẩm', 'Hãng điện thoại', 'Loại máy',
-        'Màu sắc', 'Giá', 'Giá bán buôn', 'Bảo hành', 'Ghi chú'
+        'Mã DV', 'Tên dịch vụ', 'Loại sản phẩm', 'Hãng điện thoại', 'Loại máy',
+        'Màu sắc', 'Giá bán lẻ', 'Giá bán buôn', 'Bảo hành', 'Ghi chú'
     ],
     'required': ['Mã DV', 'Tên dịch vụ'],
     'id_field': 'Mã DV',
     'numerics': {
-        'Giá': float,
+        'Giá bán lẻ': float,
         'Giá bán buôn': float
     },
     'rename_map': {
@@ -34,7 +34,7 @@ SERVICE_COLUMNS_CONFIG = {
         'Hãng điện thoại': 'hang_san_pham',
         'Loại máy': 'ten_san_pham',
         'Màu sắc': 'mau_sac_san_pham',
-        'Giá': 'gia',
+        'Giá bán lẻ': 'gia',
         'Giá bán buôn': 'gia_buon',
         'Bảo hành': 'bao_hanh',
         'Ghi chú': 'ghi_chu'
