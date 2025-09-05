@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Path, HTTPException, Depends, File, UploadFile
+from fastapi.responses import StreamingResponse
 from typing import List
 from dependencies import get_es_client
 from elasticsearch import AsyncElasticsearch
@@ -12,6 +13,8 @@ from service.data.data_loader_elastic_search import (
 from service.models.schemas import FaqRow, FaqCreate
 from service.utils.helpers import sanitize_for_es
 import hashlib
+import pandas as pd
+import io
 
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
@@ -189,3 +192,46 @@ async def append_faq_data_from_file(
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
+
+@router.get("/faq-export/{customer_id}")
+async def export_faqs_to_excel(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Lấy tất cả các cặp FAQ của một khách hàng và xuất ra file Excel.
+    Các FAQ được sắp xếp theo thời gian tạo mới nhất đến cũ nhất.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    faqs = await get_all_faqs_by_customer(es_client, FAQ_INDEX, sanitized_customer_id)
+    
+    if not faqs:
+        df = pd.DataFrame(columns=['Mã FAQ', 'Câu hỏi', 'Câu trả lời'])
+    else:
+        df = pd.DataFrame(faqs)
+        required_cols = {'faq_id': 'Mã FAQ', 'question': 'Câu hỏi', 'answer': 'Câu trả lời'}
+        for col in required_cols.keys():
+            if col not in df.columns:
+                df[col] = ''
+        
+        df = df[list(required_cols.keys())]
+        df.rename(columns=required_cols, inplace=True)
+
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='FAQs')
+    
+    output.seek(0)
+    
+    headers = {
+        'Content-Disposition': 'attachment; filename="faq.xlsx"'
+    }
+    
+    return StreamingResponse(
+        output, 
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers
+    )
