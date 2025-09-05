@@ -21,9 +21,9 @@ FAQ_COLUMNS_CONFIG = {
     'required': ['Mã FAQ', 'Câu hỏi', 'Câu trả lời'],
     'id_field': 'Mã FAQ',
     'rename_map': {
-        "Mã FAQ": "ma_faq",
-        "Câu hỏi": "cau_hoi",
-        "Câu trả lời": "cau_tra_loi",
+        "Mã FAQ": "faq_id",
+        "Câu hỏi": "question",
+        "Câu trả lời": "answer",
     }
 }
 
