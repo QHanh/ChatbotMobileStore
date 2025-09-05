@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Path, HTTPException, Depends
+from fastapi import APIRouter, Path, HTTPException, Depends, File, UploadFile
 from typing import List
 from dependencies import get_es_client
 from elasticsearch import AsyncElasticsearch
@@ -6,13 +6,26 @@ from service.data.data_loader_elastic_search import (
     FAQ_INDEX,
     index_single_document,
     delete_single_document,
-    delete_documents_by_customer
+    delete_documents_by_customer,
+    process_and_upsert_file_data
 )
 from service.models.schemas import FaqRow, FaqCreate
 from service.utils.helpers import sanitize_for_es
 import hashlib
 
 router = APIRouter()
+FAQ_COLUMNS_CONFIG = {
+    'names': [
+        'Mã FAQ', 'Câu hỏi', 'Câu trả lời'
+    ],
+    'required': ['Mã FAQ', 'Câu hỏi', 'Câu trả lời'],
+    'id_field': 'Mã FAQ',
+    'rename_map': {
+        "Mã FAQ": "ma_faq",
+        "Câu hỏi": "cau_hoi",
+        "Câu trả lời": "cau_tra_loi",
+    }
+}
 
 async def get_all_faqs_by_customer(es_client: AsyncElasticsearch, index_name: str, customer_id: str):
     """Lấy tất cả các document của một customer_id."""
@@ -25,7 +38,10 @@ async def get_all_faqs_by_customer(es_client: AsyncElasticsearch, index_name: st
                         "customer_id": customer_id
                     }
                 },
-                "size": 1000 
+                "size": 1000,
+                "sort": [
+                    {"created_at": {"order": "desc"}} 
+                ] 
             },
             routing=customer_id
         )
@@ -139,3 +155,37 @@ async def delete_all_faqs(
         return {"message": f"Đã xóa thành công {deleted_count} FAQs cho khách hàng '{customer_id}'.", "details": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa FAQs: {e}")
+
+@router.post("/insert-faq/{customer_id}")
+async def append_faq_data_from_file(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu FAQ để nạp thêm."),
+    es_client: AsyncElasticsearch = Depends(get_es_client)
+):
+    """
+    Tải lên file Excel và nạp thêm (upsert) dữ liệu FAQ cho một khách hàng.
+    Dữ liệu cũ sẽ không bị xóa. Nếu FAQ đã tồn tại, nó sẽ được cập nhật.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    
+    try:
+        content = await file.read()
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        success, failed_items = await process_and_upsert_file_data(
+            es_client=es_client,
+            customer_id=sanitized_customer_id,
+            index_name=FAQ_INDEX,
+            file_content=content,
+            columns_config=FAQ_COLUMNS_CONFIG
+        )
+        
+        return {
+            "message": f"Dữ liệu FAQ cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "successfully_indexed": success,
+            "failed_items": failed_items
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
