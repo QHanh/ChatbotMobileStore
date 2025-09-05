@@ -6,6 +6,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 async def filter_results_with_ai(
     query: str, 
@@ -55,8 +56,26 @@ async def filter_results_with_ai(
             genai.configure(api_key=llm.google_api_key.get_secret_value())
             model = genai.GenerativeModel(llm.model)
             full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
-            response = await model.generate_content_async(full_prompt)
-            filtered_results_str = response.text
+            
+            # Cấu hình an toàn để giảm thiểu khả năng bị chặn
+            safety_settings = {
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
+
+            response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
+            
+            # Safely access the response text to avoid errors with blocked/empty responses
+            if response.parts:
+                filtered_results_str = response.text
+            else:
+                finish_reason = 'N/A'
+                if response.candidates:
+                    finish_reason = response.candidates[0].finish_reason.name
+                print(f"AI response was empty or blocked. Finish reason: {finish_reason}.")
+                filtered_results_str = ""
         else:
             print("Sử dụng LangChain chain để lọc kết quả.")
             prompt = ChatPromptTemplate.from_template(prompt_template_str)
