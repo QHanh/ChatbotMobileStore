@@ -20,15 +20,14 @@ from datetime import datetime
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
     'names': [
-        'Mã FAQ', 'Câu hỏi', 'Câu trả lời'
+        'Câu hỏi', 'Câu trả lời'
     ],
-    'required': ['Mã FAQ', 'Câu hỏi', 'Câu trả lời'],
-    'id_field': 'Mã FAQ',
+    'required': ['Câu hỏi', 'Câu trả lời'],
     'rename_map': {
-        "Mã FAQ": "faq_id",
         "Câu hỏi": "question",
         "Câu trả lời": "answer",
-    }
+    },
+    'id_generation_field': 'Câu hỏi'
 }
 
 async def get_all_faqs_by_customer(es_client: AsyncElasticsearch, index_name: str, customer_id: str):
@@ -78,7 +77,6 @@ async def add_faq(
     try:
         sanitized_customer_id = sanitize_for_es(customer_id)
         
-        # Tự động tạo ID từ hash của câu hỏi để tránh trùng lặp
         question_str = faq_data.question.strip().lower()
         doc_id = hashlib.sha1(question_str.encode('utf-8')).hexdigest()
 
@@ -212,10 +210,10 @@ async def export_faqs_to_excel(
     faqs = await get_all_faqs_by_customer(es_client, FAQ_INDEX, sanitized_customer_id)
     
     if not faqs:
-        df = pd.DataFrame(columns=['Mã FAQ', 'Câu hỏi', 'Câu trả lời'])
+        df = pd.DataFrame(columns=['Câu hỏi', 'Câu trả lời'])
     else:
         df = pd.DataFrame(faqs)
-        required_cols = {'faq_id': 'Mã FAQ', 'question': 'Câu hỏi', 'answer': 'Câu trả lời'}
+        required_cols = {'question': 'Câu hỏi', 'answer': 'Câu trả lời'}
         for col in required_cols.keys():
             if col not in df.columns:
                 df[col] = ''

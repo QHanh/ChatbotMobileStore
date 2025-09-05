@@ -8,6 +8,7 @@ from service.utils.helpers import sanitize_for_es
 from typing import List, Dict, Any
 from elasticsearch import AsyncElasticsearch
 from datetime import datetime
+import hashlib
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -294,14 +295,30 @@ async def process_and_upsert_file_data(
         raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
 
     documents = df.to_dict('records')
+    if not documents:
+        return 0, 0
+    
+    id_generation_field = columns_config.get('id_generation_field')
+    renamed_id_gen_field = rename_map.get(id_generation_field, id_generation_field)
+    renamed_id_field = None
+
+    if id_generation_field and renamed_id_gen_field in documents[0]:
+        if index_name == FAQ_INDEX:
+            for doc in documents:
+                question = doc.get(renamed_id_gen_field, '')
+                if question and isinstance(question, str):
+                    doc['faq_id'] = hashlib.sha1(question.strip().lower().encode('utf-8')).hexdigest()
+                else:
+                    doc['faq_id'] = None
+            renamed_id_field = 'faq_id'
+
+    if not renamed_id_field:
+        original_id_field = columns_config.get('id_field')
+        renamed_id_field = rename_map.get(original_id_field, original_id_field)
+
     if index_name == FAQ_INDEX:
         for document in documents:
             document['created_at'] = datetime.utcnow()
-    if not documents:
-        return 0, 0
-
-    original_id_field = columns_config.get('id_field')
-    renamed_id_field = rename_map.get(original_id_field, original_id_field)
 
     success, failed = await bulk_index_documents(
         es_client,
