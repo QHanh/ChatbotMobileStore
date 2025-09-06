@@ -1,4 +1,3 @@
-import os
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.agents import create_tool_calling_agent, AgentExecutor
@@ -6,7 +5,6 @@ from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
-from functools import partial
 from typing import List
 
 load_dotenv()
@@ -119,7 +117,6 @@ def create_agent_executor(
     
     other_instructions = instructions_dict.get("other_instructions", "")
 
-    # Tạo một phần riêng biệt và nhấn mạnh cho custom prompt để tăng độ ưu tiên
     custom_prompt_section = ""
     if custom_prompt_text:
         custom_prompt_section = f'''
@@ -127,7 +124,6 @@ def create_agent_executor(
 {custom_prompt_text}
 '''
 
-    # Sắp xếp lại prompt để có cấu trúc logic hơn và đặt custom prompt ở cuối
     final_system_prompt = "\n".join(filter(None, [
         indentity_instructions,
         base_instructions,
@@ -136,7 +132,7 @@ def create_agent_executor(
         workflow_instructions_add,
         faq_instruction,
         other_instructions,
-        custom_prompt_section  # Đặt ở cuối để có độ ưu tiên cao nhất
+        custom_prompt_section
     ]))
 
     prompt = ChatPromptTemplate.from_messages([

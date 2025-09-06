@@ -1,13 +1,40 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.database import get_db, ChatThread
+from database.database import get_db, ChatThread, Customer
 from pydantic import BaseModel
 from typing import Optional
 
 router = APIRouter()
 
+class IsSaleCustomerUpdate(BaseModel):
+    is_sale_customer: bool
+
 class ThreadUpdate(BaseModel):
     thread_name: Optional[str] = None
+
+@router.get("/is_sale/{customer_id}")
+async def get_is_sale_customer_status(customer_id: str, db: Session = Depends(get_db)):
+    """
+    Lấy trạng thái khách hàng buôn của một khách hàng.
+    """
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng")
+    return {"customer_id": customer_id, "is_sale_customer": customer.is_sale_customer}
+
+@router.post("/is_sale/{customer_id}")
+async def update_is_sale_customer_status(customer_id: str, update_data: IsSaleCustomerUpdate, db: Session = Depends(get_db)):
+    """
+    Cập nhật trạng thái khách hàng buôn cho một khách hàng.
+    """
+    customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer:
+        customer = Customer(customer_id=customer_id, is_sale_customer=update_data.is_sale_customer)
+        db.add(customer)
+    else:
+        customer.is_sale_customer = update_data.is_sale_customer
+    db.commit()
+    return {"message": f"Đã cập nhật trạng thái khách hàng buôn cho {customer_id} thành {update_data.is_sale_customer}."}
 
 @router.post("/stop/{customer_id}/{thread_id}")
 async def stop_bot(

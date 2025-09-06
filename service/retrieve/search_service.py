@@ -1,12 +1,23 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Session
+from database.database import Customer, SessionLocal
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
 from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+
+def _get_customer_is_sale(customer_id: str) -> bool:
+    """Kiểm tra xem khách hàng có phải là khách hàng mua buôn hay không."""
+    db: Session = SessionLocal()
+    try:
+        customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+        if customer:
+            return customer.is_sale_customer
+    finally:
+        db.close()
+    return False
 
 async def filter_results_with_ai(
     query: str, 
@@ -50,37 +61,10 @@ async def filter_results_with_ai(
             """
 
     try:
-        filtered_results_str = ""
-        if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
-            print("Sử dụng Google AI SDK gốc để lọc kết quả.")
-            genai.configure(api_key=llm.google_api_key.get_secret_value())
-            model = genai.GenerativeModel(llm.model)
-            full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
-            
-            # Cấu hình an toàn để giảm thiểu khả năng bị chặn
-            safety_settings = {
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            }
-
-            response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
-            
-            # Safely access the response text to avoid errors with blocked/empty responses
-            if response.parts:
-                filtered_results_str = response.text
-            else:
-                finish_reason = 'N/A'
-                if response.candidates:
-                    finish_reason = response.candidates[0].finish_reason.name
-                print(f"AI response was empty or blocked. Finish reason: {finish_reason}.")
-                filtered_results_str = ""
-        else:
-            print("Sử dụng LangChain chain để lọc kết quả.")
-            prompt = ChatPromptTemplate.from_template(prompt_template_str)
-            chain = prompt | llm | StrOutputParser()
-            filtered_results_str = await chain.ainvoke({"query": query, "results": results_str, "history": history_str})
+        print("Sử dụng LangChain chain để lọc kết quả.")
+        prompt = ChatPromptTemplate.from_template(prompt_template_str)
+        chain = prompt | llm | StrOutputParser()
+        filtered_results_str = await chain.ainvoke({"query": query, "results": results_str, "history": history_str})
 
         if not filtered_results_str.strip():
             return []
@@ -90,7 +74,7 @@ async def filter_results_with_ai(
         print(f"Lỗi khi lọc kết quả bằng AI: {e}")
         return results
 
-def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
+def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False) -> List[str]:
     """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
     formatted_results = []
     for item in hits:
@@ -100,9 +84,10 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if item.get('tinh_trang_may'):
                 context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
             price = item.get('gia', 0)
-            price_buon = item.get('gia_buon')
-            price_buon_str = (f"{price_buon:,.0f}đ" if price_buon and price_buon > 0 else "Liên hệ")
-            context.append(f"  Giá bán buôn: {price_buon_str}")
+            if is_sale_customer:
+                price_buon = item.get('gia_buon')
+                price_buon_str = (f"{price_buon:,.0f}đ" if price_buon and price_buon > 0 else "Liên hệ")
+                context.append(f"  Giá bán buôn: {price_buon_str}")
             inventory = item.get('ton_kho', 0)
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
@@ -129,9 +114,10 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if item.get('loai_dich_vu'):
                 context.append(f"  Loại dịch vụ: {item.get('loai_dich_vu')}")
             price = item.get('gia', 0)
-            price_sale = item.get('gia_buon')
-            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
-            context.append(f"  Giá bán buôn: {price_sale_str}")
+            if is_sale_customer:
+                price_sale = item.get('gia_buon')
+                price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
+                context.append(f"  Giá bán buôn: {price_sale_str}")
             guarantee = item.get('bao_hanh', '')
             if guarantee:
                 context.append(f"  Bảo hành: {guarantee}")
@@ -145,9 +131,10 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
             if prop and str(prop).strip() and str(prop).strip() != '0':
                 context.append(f"  Thuộc tính: {prop}")
             price = item.get('lifecare_price', 0)
-            price_sale = item.get('sale_price')
-            price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
-            context.append(f"  Giá bán buôn: {price_sale_str}")
+            if is_sale_customer:
+                price_sale = item.get('sale_price')
+                price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
+                context.append(f"  Giá bán buôn: {price_sale_str}")
             inventory = item.get('inventory')
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
@@ -161,7 +148,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]]) -> List[str]:
                 context.append(f"  Link ảnh: {item.get('avatar_images')}")
         
         price_str = f"{price:,.0f}đ" if price > 0 else "Liên hệ"
-        context.append(f"  Giá: {price_str}")
+        price_label = "Giá bán lẻ" if is_sale_customer else "Giá"
+        context.append(f"  {price_label}: {price_str}")
             
         formatted_results.append("\n".join(context))
     return formatted_results
@@ -221,7 +209,7 @@ async def search_products(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
-        formatted_hits = _format_results_for_agent(hits)
+        formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
         if original_query and llm:
             return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
         return formatted_hits
@@ -275,7 +263,7 @@ async def search_services(
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
-            formatted_hits = _format_results_for_agent(hits)
+            formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
             if original_query and llm:
                 return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
             return formatted_hits
@@ -309,7 +297,7 @@ async def search_services(
             )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
-            formatted_hits = _format_results_for_agent(hits)
+            formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
             if original_query and llm:
                 return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
             return formatted_hits
@@ -371,7 +359,7 @@ async def search_accessories(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
-        formatted_hits = _format_results_for_agent(hits)
+        formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
         if original_query and llm:
             return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
         return formatted_hits
