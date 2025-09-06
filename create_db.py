@@ -3,7 +3,8 @@ import psycopg2
 from urllib.parse import urlparse
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from dotenv import load_dotenv
-from database.database import init_db, SessionLocal, SystemInstruction
+from database.database import init_db, SessionLocal, SystemInstruction, Base, engine
+import sys
 
 load_dotenv()
 
@@ -108,6 +109,12 @@ if __name__ == "__main__":
     # Bước 1: Đảm bảo database tồn tại
     create_database_if_not_exists()
     
+    # Kiểm tra xem có argument --recreate không
+    if "--recreate" in sys.argv:
+        print("Phát hiện tùy chọn --recreate. Đang xóa tất cả các bảng...")
+        Base.metadata.drop_all(bind=engine)
+        print("Đã xóa bảng thành công.")
+
     # Bước 2: Tạo các bảng bên trong database đó
     print("Đang khởi tạo các bảng...")
     init_db()
