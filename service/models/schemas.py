@@ -18,6 +18,7 @@ class FaqCreate(BaseModel):
 
 class SearchProductInput(BaseModel):
     """Input model for the search_iphones_tool."""
+    thread_id: Optional[str] = Field(default=None, description="ID luồng chat của người dùng.")
     model: Optional[str] = Field(default=None, description="Model cụ thể của iPhone, ví dụ: 'iPhone 15 Pro Max'.")
     mau_sac: Optional[str] = Field(default=None, description="Màu sắc của sản phẩm, ví dụ: 'Titan Tự nhiên'.")
     dung_luong: Optional[str] = Field(default=None, description="Dung lượng lưu trữ, ví dụ: '256GB'.")
@@ -28,6 +29,7 @@ class SearchProductInput(BaseModel):
 
 class SearchServiceInput(BaseModel):
     """Input model for the search_services_tool."""
+    thread_id: Optional[str] = Field(default=None, description="ID luồng chat của người dùng.")
     ten_dich_vu: Optional[str] = Field(default=None, description="Tên dịch vụ, ví dụ: 'Thay pin'.")
     ten_san_pham: Optional[str] = Field(default=None, description="Tên sản phẩm điện thoại được sửa chữa, ví dụ: 'iPhone 15 Pro Max'.")
     loai_dich_vu: Optional[str] = Field(default=None, description="Loại dịch vụ, ví dụ: 'Pin Lithium', 'fix sọc'.")
@@ -36,6 +38,7 @@ class SearchServiceInput(BaseModel):
 
 class SearchAccessoryInput(BaseModel):
     """Input model for the search_accessories_tool."""
+    thread_id: Optional[str] = Field(default=None, description="ID luồng chat của người dùng.")
     ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, bạn cứ ghi đầy đủ tên phụ kiện, ví dụ: 'Kính hiển vi KAISI', 'Phản quang Oppo F3'.")
     phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện")
     thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại',....")

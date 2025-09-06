@@ -140,7 +140,7 @@ def create_agent_executor(
         MessagesPlaceholder(variable_name="faq_context", optional=True),
         MessagesPlaceholder(variable_name="chat_history", optional=True),
         ("human", "{input}"),
-        MessagesPlaceholder(variable_name="agent_scratchpad"),
+        MessagesPlaceholder(variable_name="agent_scratchpad", optional=True),
     ])
 
     agent = create_tool_calling_agent(llm, customer_tools, prompt)
@@ -197,7 +197,8 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
     response = await agent_executor.ainvoke({
         "input": user_input,
         "chat_history": chat_history,
-        "faq_context": faq_context
+        "faq_context": faq_context,
+        "thread_id": session_id,
     })
     
     chat_history.extend([

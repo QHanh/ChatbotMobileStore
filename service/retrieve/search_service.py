@@ -1,20 +1,25 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 from sqlalchemy.orm import Session
-from database.database import Customer, SessionLocal
+from database.database import CustomerIsSale, SessionLocal
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
 from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 
-def _get_customer_is_sale(customer_id: str) -> bool:
-    """Kiểm tra xem khách hàng có phải là khách hàng mua buôn hay không."""
+def _get_customer_is_sale(customer_id: str, thread_id: str) -> bool:
+    """Kiểm tra xem thread có phải là của khách hàng mua buôn hay không."""
+    if not thread_id:
+        return False
     db: Session = SessionLocal()
     try:
-        customer = db.query(Customer).filter(Customer.customer_id == customer_id).first()
-        if customer:
-            return customer.is_sale_customer
+        sale_status = db.query(CustomerIsSale).filter(
+            CustomerIsSale.customer_id == customer_id,
+            CustomerIsSale.thread_id == thread_id
+        ).first()
+        if sale_status:
+            return sale_status.is_sale_customer
     finally:
         db.close()
     return False
@@ -157,6 +162,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
 async def search_products(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: str,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -209,7 +215,8 @@ async def search_products(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
-        formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
+        is_sale = _get_customer_is_sale(customer_id, thread_id)
+        formatted_hits = _format_results_for_agent(hits, is_sale)
         if original_query and llm:
             return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
         return formatted_hits
@@ -220,6 +227,7 @@ async def search_products(
 async def search_services(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: str,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
@@ -263,7 +271,8 @@ async def search_services(
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
             print(f"Tìm thấy {len(hits)} dịch vụ phù hợp cho khách hàng '{customer_id}'.")
-            formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
+            is_sale = _get_customer_is_sale(customer_id, thread_id)
+            formatted_hits = _format_results_for_agent(hits, is_sale)
             if original_query and llm:
                 return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
             return formatted_hits
@@ -297,7 +306,8 @@ async def search_services(
             )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
-            formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
+            is_sale = _get_customer_is_sale(customer_id, thread_id)
+            formatted_hits = _format_results_for_agent(hits, is_sale)
             if original_query and llm:
                 return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
             return formatted_hits
@@ -310,6 +320,7 @@ async def search_services(
 async def search_accessories(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: str,
     ten_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
@@ -359,7 +370,8 @@ async def search_accessories(
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
-        formatted_hits = _format_results_for_agent(hits, _get_customer_is_sale(customer_id))
+        is_sale = _get_customer_is_sale(customer_id, thread_id)
+        formatted_hits = _format_results_for_agent(hits, is_sale)
         if original_query and llm:
             return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
         return formatted_hits
@@ -408,7 +420,7 @@ if __name__ == '__main__':
 
     async def main():
         es_client_mock = AsyncElasticsearch()
-        results = await search_products(es_client_mock, customer_id="customer123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
+        results = await search_products(es_client_mock, customer_id="customer123", thread_id="thread123", model="iPhone 15 Pro Max", mau_sac="Titan Tự nhiên")
         if results:
             for product in results:
                 print(product)

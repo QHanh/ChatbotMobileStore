@@ -33,6 +33,7 @@ async def retrieve_document_logic(
 async def search_products_logic(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: Optional[str] = None,
     model: Optional[str] = None,
     mau_sac: Optional[str] = None,
     dung_luong: Optional[str] = None,
@@ -52,6 +53,7 @@ async def search_products_logic(
     results = await search_products(
         es_client=es_client,
         customer_id=customer_id,
+        thread_id=thread_id,
         model=model,
         mau_sac=mau_sac,
         dung_luong=dung_luong,
@@ -68,6 +70,7 @@ async def search_products_logic(
 async def search_services_logic(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: Optional[str] = None,
     ten_dich_vu: Optional[str] = None,
     ten_san_pham: Optional[str] = None,
     loai_dich_vu: Optional[str] = None,
@@ -86,6 +89,7 @@ async def search_services_logic(
     results = await search_services(
         es_client=es_client,
         customer_id=customer_id,
+        thread_id=thread_id,
         ten_dich_vu=ten_dich_vu,
         ten_san_pham=ten_san_pham,
         loai_dich_vu=loai_dich_vu,
@@ -100,6 +104,7 @@ async def search_services_logic(
 async def search_accessories_logic(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: Optional[str] = None,
     ten_phu_kien: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
@@ -117,6 +122,7 @@ async def search_accessories_logic(
     results = await search_accessories(
         es_client=es_client,
         customer_id=customer_id,
+        thread_id=thread_id,
         ten_phu_kien=ten_phu_kien,
         phan_loai_phu_kien=phan_loai_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,

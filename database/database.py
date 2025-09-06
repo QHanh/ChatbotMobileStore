@@ -21,8 +21,13 @@ class Customer(Base):
     service_feature_enabled = Column(Boolean, default=True)
     accessory_feature_enabled = Column(Boolean, default=True)
     product_feature_enabled = Column(Boolean, default=True)
-    is_sale_customer = Column(Boolean, default=False, nullable=False)
     
+class CustomerIsSale(Base):
+    __tablename__ = "customer_is_sale"
+    
+    customer_id = Column(String, primary_key=True, index=True)
+    thread_id = Column(String, primary_key=True, index=True)
+    is_sale_customer = Column(Boolean, default=False, nullable=False)
 
 class SystemInstruction(Base):
     __tablename__ = "system_instructions"
