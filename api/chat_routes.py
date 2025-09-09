@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Path, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory
+from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory, clear_chat_history_for_customer
 from service.models.schemas import ChatbotRequest
 from database.database import get_db, Customer, ChatThread
 from dependencies import chat_memory
@@ -80,3 +80,16 @@ async def chat(
 
     except ValueError as ve:
         raise HTTPException(status_code=500, detail=str(ve))
+
+@router.post("/chat-history-clear/{customer_id}")
+async def clear_history(
+    customer_id: str = Path(..., description="Mã khách hàng để xóa lịch sử chat.")
+):
+    """
+    Xóa toàn bộ lịch sử chat của một khách hàng.
+    """
+    try:
+        result = clear_chat_history_for_customer(customer_id, chat_memory)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi xóa lịch sử chat: {str(e)}")

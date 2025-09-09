@@ -208,6 +208,15 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
     
     return response
 
+def clear_chat_history_for_customer(customer_id: str, memory: dict):
+    """Xóa toàn bộ lịch sử chat cho một customer_id cụ thể."""
+    keys_to_delete = [key for key in memory if key.startswith(f"{customer_id}_")]
+    count = len(keys_to_delete)
+    for key in keys_to_delete:
+        del memory[key]
+    print(f"Cleared {count} chat session(s) for customer {customer_id}")
+    return {"status": "success", "message": f"Cleared {count} chat session(s) for customer {customer_id}"}
+
 if __name__ == '__main__':
     import asyncio
 
