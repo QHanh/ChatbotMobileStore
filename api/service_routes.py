@@ -30,7 +30,7 @@ SERVICE_COLUMNS_CONFIG = {
     'rename_map': {
         'Mã DV': 'ma_dich_vu',
         'Tên dịch vụ': 'ten_dich_vu',
-        'loại sản phẩm': 'loai_dich_vu',
+        'Loại sản phẩm': 'loai_dich_vu',
         'Hãng điện thoại': 'hang_san_pham',
         'Loại máy': 'ten_san_pham',
         'Màu sắc': 'mau_sac_san_pham',

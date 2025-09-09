@@ -51,7 +51,6 @@ def create_database_if_not_exists():
         # Dừng lại nếu không thể đảm bảo DB tồn tại
         exit(1)
 
-
 DEFAULT_INSTRUCTIONS = {
     "base_instructions": """
 Nhiệm vụ của bạn là tra cứu thông tin sản phẩm, dịch vụ và linh kiện **CHỈ** từ kho dữ liệu của cửa hàng bằng các công cụ được cung cấp.
