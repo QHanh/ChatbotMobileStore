@@ -1,7 +1,8 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer
+from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -52,6 +53,18 @@ class ChatHistory(Base):
     thread_name = Column(String, nullable=True)
     role = Column(String, nullable=False)
     message = Column(Text, nullable=False)
+
+class Document(Base):
+    __tablename__ = "documents"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, index=True, nullable=False)
+    source_name = Column(String, nullable=False)
+    file_name = Column(String, nullable=True)
+    content_type = Column(String, nullable=True)
+    full_content = Column(Text, nullable=True)
+    file_content = Column(LargeBinary, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
 
 def init_db():
     Base.metadata.create_all(bind=engine)
