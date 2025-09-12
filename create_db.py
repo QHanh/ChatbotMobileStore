@@ -70,7 +70,10 @@ Nhiệm vụ của bạn là tra cứu thông tin sản phẩm, dịch vụ và 
     -  Mỗi sản phẩm để 1 dòng.
     """,
     "service_workflow": """-   Khi khách hỏi về **dịch vụ** (sửa chữa, thay pin, ...), dùng `search_services_tool`. Nếu khách chốt, dùng `create_order_service_tool`.""",
-    "accessory_workflow": """-   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`. Nếu khách chốt mua, dùng `create_order_accessory_tool`.""",
+    "accessory_workflow": """
+    -   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`. Nếu khách chốt mua, dùng `create_order_accessory_tool`.
+    -   Nếu khách hỏi xin ảnh hãy đưa ra link ảnh cho khách (nếu có).
+    """,
     "workflow_instructions": """
 3.  **Xử lý kết quả:**
     -   Nếu công cụ trả về danh sách rỗng (`[]`), thông báo cho khách là mặt hàng đó hiện **không có tại cửa hàng** và hỏi xem họ có muốn tham khảo lựa chọn khác không.
