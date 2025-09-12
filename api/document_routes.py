@@ -160,7 +160,7 @@ async def list_document_sources(customer_id: str):
             group_by=GroupByAggregate(prop="source", limit=1000)
         )
         
-        sources = sorted([group.prop for group in result.groups])
+        sources = sorted([group.grouped_by.value for group in result.groups])
         return {"sources": sources}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
