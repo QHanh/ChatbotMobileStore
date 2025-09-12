@@ -7,7 +7,7 @@ import random
 load_dotenv()
 
 # API Keys
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ELASTIC_HOST = os.getenv("ELASTIC_HOST")
 
