@@ -10,9 +10,10 @@ import os
 from weaviate.auth import AuthApiKey
 from sqlalchemy.orm import Session
 from database.database import SessionLocal
+from fastapi import HTTPException
 
 es_client: AsyncElasticsearch = None
-weaviate_client: WeaviateClient = None
+_weaviate_client: Optional[WeaviateClient] = None
 
 async def init_es_client():
     """
@@ -46,43 +47,24 @@ def get_es_client() -> AsyncElasticsearch:
     """
     return es_client
 
-# Global variable to hold the Weaviate client instance
-_weaviate_client: Optional[WeaviateClient] = None
-
 def get_weaviate_client() -> WeaviateClient:
     """
-    Establishes and returns a singleton Weaviate client instance.
+    Returns the existing singleton Weaviate client instance.
+    The client is expected to be initialized and closed by the application's lifespan manager.
     """
-    global _weaviate_client
-    if _weaviate_client and _weaviate_client.is_connected():
-        return _weaviate_client
-
-    WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
-    WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
-    
-    connection_params = ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051)
-    auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
-
-    client_config = {
-        "connection_params": connection_params
-    }
-    if auth_credentials:
-        client_config["auth_client_secret"] = auth_credentials
-
-    _weaviate_client = WeaviateClient(**client_config)
-    
-    try:
-        _weaviate_client.connect()
-        if not _weaviate_client.is_ready():
-            raise ConnectionError("Failed to connect to Weaviate, client is not ready.")
-        print("Successfully connected to Weaviate!")
-    except Exception as e:
-        print(f"Error connecting to Weaviate: {e}")
-        # Reset client on failure to allow retries
-        _weaviate_client = None
-        raise ConnectionError(f"Could not connect to Weaviate: {e}")
-
+    if _weaviate_client is None or not _weaviate_client.is_connected():
+        raise RuntimeError("Weaviate client is not initialized or connected. Please check the application's lifespan management.")
     return _weaviate_client
 
 def get_db():
     db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+def get_gspread_client_dep():
+    try:
+        return get_gspread_client()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not initialize Google Sheets client: {e}")

@@ -14,15 +14,11 @@ from service.utils.helpers import sanitize_for_weaviate
 
 router = APIRouter()
 
-def get_sanitized_tenant_id(customer_id: str) -> str:
-    """Sử dụng hàm helper tập trung để làm sạch tenant ID."""
-    return sanitize_for_weaviate(customer_id)
-
 @router.post("/upload-text/{customer_id}")
 async def upload_text(customer_id: str, doc_input: DocumentInput):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         ensure_tenant_exists(client, tenant_id)
@@ -40,7 +36,7 @@ async def upload_text(customer_id: str, doc_input: DocumentInput):
 async def upload_file(customer_id: str, file: UploadFile = File(...), source: Optional[str] = Form(None)):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         ensure_tenant_exists(client, tenant_id)
@@ -60,7 +56,7 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
 async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
@@ -70,7 +66,8 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
             
         tenant_collection = collection.with_tenant(tenant_id)
         
-        result = tenant_collection.query.fetch_objects(limit=limit, offset=offset, return_properties=["text", "source"])
+        # Bỏ return_properties để đảm bảo tất cả thuộc tính được trả về
+        result = tenant_collection.query.fetch_objects(limit=limit, offset=offset)
         
         items = [{"id": obj.uuid, "text": obj.properties.get("text"), "source": obj.properties.get("source")} for obj in result.objects]
         return {"items": items, "count": len(items)}
@@ -83,7 +80,7 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
 async def list_document_sources(customer_id: str):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
@@ -92,7 +89,9 @@ async def list_document_sources(customer_id: str):
             return {"sources": []}
         
         tenant_collection = collection.with_tenant(tenant_id)
-        result = tenant_collection.query.fetch_objects(return_properties=["source"])
+        
+        # Bỏ return_properties để đảm bảo tất cả thuộc tính được trả về
+        result = tenant_collection.query.fetch_objects()
         
         sources = sorted(list(set(obj.properties.get("source") for obj in result.objects if obj.properties and obj.properties.get("source"))))
         return {"sources": sources}
@@ -105,7 +104,7 @@ async def list_document_sources(customer_id: str):
 async def delete_document_by_source(customer_id: str, source: str = Query(..., description="Tên 'source' của tài liệu cần xóa.")):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)
@@ -128,7 +127,7 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
 async def delete_all_documents(customer_id: str):
     client = None
     try:
-        tenant_id = get_sanitized_tenant_id(customer_id)
+        tenant_id = sanitize_for_weaviate(customer_id)
         client = get_weaviate_client()
         ensure_document_collection_exists(client)
         collection = client.collections.get(DOCUMENT_CLASS_NAME)

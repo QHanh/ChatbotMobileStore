@@ -27,7 +27,15 @@ warnings.filterwarnings(
     category=PydanticDeprecatedSince20,
     module=r"langchain_core\.tools\.base",
 )
+import os
+from dotenv import load_dotenv
+from weaviate.auth import AuthApiKey
+from weaviate.client import WeaviateClient
+from weaviate.connect import ConnectionParams
+from dependencies import _weaviate_client, init_es_client, es_client, get_weaviate_client
 
+
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -35,10 +43,35 @@ async def lifespan(app: FastAPI):
     await init_es_client()
     if es_client:
         await ensure_shared_indices_exist(es_client)
-    # init_db()
+    
+    # Initialize Weaviate client on startup
+    WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
+    WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
+    connection_params = ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051)
+    auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
+    
+    global _weaviate_client
+    client_config = {"connection_params": connection_params}
+    if auth_credentials:
+        client_config["auth_client_secret"] = auth_credentials
+        
+    _weaviate_client = WeaviateClient(**client_config)
+    try:
+        _weaviate_client.connect()
+        print("Successfully connected to Weaviate!")
+    except Exception as e:
+        print(f"Error connecting to Weaviate on startup: {e}")
+        _weaviate_client = None
+
     yield
     print("Application shutdown.")
     await close_es_client()
+    if es_client:
+        await es_client.close()
+        print("Elasticsearch client closed.")
+    if _weaviate_client and _weaviate_client.is_connected():
+        _weaviate_client.close()
+        print("Weaviate client closed.")
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 
