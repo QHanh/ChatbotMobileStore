@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean, Text
+from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 
@@ -42,6 +42,16 @@ class ChatThread(Base):
     thread_id = Column(String, primary_key=True, index=True)
     thread_name = Column(String, nullable=True)
     status = Column(String, default="active", nullable=False)
+
+class ChatHistory(Base):
+    __tablename__ = "chat_history"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, index=True, nullable=False)
+    thread_id = Column(String, index=True, nullable=False)
+    thread_name = Column(String, nullable=True)
+    role = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
 
 def init_db():
     Base.metadata.create_all(bind=engine)

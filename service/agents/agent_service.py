@@ -10,7 +10,7 @@ from typing import List
 load_dotenv()
 
 from service.utils.tools import create_customer_tools
-from database.database import Customer, SystemInstruction
+from database.database import Customer, SystemInstruction, ChatHistory, ChatThread
 from service.retrieve.search_service import search_faqs
 
 def create_agent_executor(
@@ -154,16 +154,24 @@ def create_agent_executor(
     
     return agent_executor
 
-def get_session_history(customer_id: str, session_id: str, memory: dict):
-    """Lấy lịch sử chat dựa trên key tổng hợp từ customer_id và session_id."""
-    composite_key = f"{customer_id}_{session_id}"
-    if composite_key not in memory:
-        memory[composite_key] = []
-    return memory[composite_key]
+def get_session_history(customer_id: str, session_id: str, db: Session) -> List[BaseMessage]:
+    """Lấy lịch sử chat từ database."""
+    history_records = db.query(ChatHistory).filter(
+        ChatHistory.customer_id == customer_id,
+        ChatHistory.thread_id == session_id
+    ).order_by(ChatHistory.id).all()
 
-async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, memory: dict, es_client: AsyncElasticsearch):
+    messages: List[BaseMessage] = []
+    for record in history_records:
+        if record.role == 'human':
+            messages.append(HumanMessage(content=record.message))
+        elif record.role == 'bot':
+            messages.append(AIMessage(content=record.message))
+    return messages
+
+async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, db: Session, es_client: AsyncElasticsearch):
     """
-    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện theo từng khách hàng.
+    Gọi agent với input của người dùng và quản lý lịch sử trò chuyện trong database.
     Luôn kiểm tra FAQ trước tiên.
     """
     faq_context = []
@@ -177,7 +185,7 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
 --- HẾT GỢI Ý ---"""
         faq_context.append(HumanMessage(content=faq_prompt))
 
-    chat_history = get_session_history(customer_id, session_id, memory)
+    chat_history = get_session_history(customer_id, session_id, db)
     
     def format_history_for_llm(history: List[BaseMessage]) -> List[str]:
         formatted = []
@@ -201,21 +209,45 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         "thread_id": session_id,
     })
     
-    chat_history.extend([
-        HumanMessage(content=user_input),
-        AIMessage(content=response["output"]),
-    ])
+    chat_thread = db.query(ChatThread).filter(
+        ChatThread.customer_id == customer_id,
+        ChatThread.thread_id == session_id
+    ).first()
+    thread_name = chat_thread.thread_name if chat_thread else None
+
+    human_message = ChatHistory(
+        customer_id=customer_id,
+        thread_id=session_id,
+        thread_name=thread_name,
+        role="human",
+        message=user_input
+    )
+    db.add(human_message)
+
+    ai_message = ChatHistory(
+        customer_id=customer_id,
+        thread_id=session_id,
+        thread_name=thread_name,
+        role="bot",
+        message=response["output"]
+    )
+    db.add(ai_message)
+    
+    db.commit()
     
     return response
 
-def clear_chat_history_for_customer(customer_id: str, memory: dict):
-    """Xóa toàn bộ lịch sử chat cho một customer_id cụ thể."""
-    keys_to_delete = [key for key in memory if key.startswith(f"{customer_id}_")]
-    count = len(keys_to_delete)
-    for key in keys_to_delete:
-        del memory[key]
-    print(f"Cleared {count} chat session(s) for customer {customer_id}")
-    return {"status": "success", "message": f"Cleared {count} chat session(s) for customer {customer_id}"}
+def clear_chat_history_for_customer(customer_id: str, db: Session):
+    """Xóa toàn bộ lịch sử chat cho một customer_id cụ thể từ DB."""
+    try:
+        num_deleted = db.query(ChatHistory).filter(ChatHistory.customer_id == customer_id).delete(synchronize_session=False)
+        db.commit()
+        print(f"Cleared {num_deleted} chat message(s) for customer {customer_id}")
+        return {"status": "success", "message": f"Cleared {num_deleted} chat message(s) for customer {customer_id}"}
+    except Exception as e:
+        db.rollback()
+        print(f"Error clearing chat history for {customer_id}: {e}")
+        raise
 
 if __name__ == '__main__':
     import asyncio
@@ -260,7 +292,6 @@ if __name__ == '__main__':
             customer_config=mock_customer_config
         )
         
-        chat_memory = {}
         session_id = "user123"
 
         print("\nAgent đã sẵn sàng. Bắt đầu cuộc trò chuyện.")
@@ -274,7 +305,7 @@ if __name__ == '__main__':
                 mock_customer_config.customer_id,
                 session_id, 
                 user_input, 
-                chat_memory,
+                db_session,
                 es_client
             )
             

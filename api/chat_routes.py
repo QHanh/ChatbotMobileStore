@@ -2,11 +2,11 @@ from fastapi import APIRouter, Path, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory, clear_chat_history_for_customer
-from service.models.schemas import ChatbotRequest
-from database.database import get_db, Customer, ChatThread
-from dependencies import chat_memory
+from service.models.schemas import ChatbotRequest, ChatHistoryResponse
+from database.database import get_db, Customer, ChatThread, ChatHistory
 from elasticsearch import AsyncElasticsearch
 from dependencies import get_es_client
+from typing import List
 
 router = APIRouter()
 
@@ -72,7 +72,7 @@ async def chat(
             customer_id,
             threadId, 
             user_input, 
-            chat_memory,
+            db,
             es_client=es_client
         )
 
@@ -81,15 +81,35 @@ async def chat(
     except ValueError as ve:
         raise HTTPException(status_code=500, detail=str(ve))
 
+@router.get("/chat-history/{customer_id}/{thread_id}", response_model=List[ChatHistoryResponse])
+async def get_chat_history(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    thread_id: str = Path(..., description="Mã phiên chat."),
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy toàn bộ lịch sử chat của một thread_id của customer_id theo thứ tự mới nhất đến cũ nhất.
+    """
+    history = db.query(ChatHistory).filter(
+        ChatHistory.customer_id == customer_id,
+        ChatHistory.thread_id == thread_id
+    ).order_by(ChatHistory.id.desc()).all()
+
+    if not history:
+        raise HTTPException(status_code=404, detail="Không tìm thấy lịch sử chat.")
+        
+    return history
+
 @router.post("/chat-history-clear/{customer_id}")
 async def clear_history(
-    customer_id: str = Path(..., description="Mã khách hàng để xóa lịch sử chat.")
+    customer_id: str = Path(..., description="Mã khách hàng để xóa lịch sử chat."),
+    db: Session = Depends(get_db)
 ):
     """
     Xóa toàn bộ lịch sử chat của một khách hàng.
     """
     try:
-        result = clear_chat_history_for_customer(customer_id, chat_memory)
+        result = clear_chat_history_for_customer(customer_id, db)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa lịch sử chat: {str(e)}")

@@ -173,3 +173,14 @@ class InstructionsUpdate(BaseModel):
     """Input model for updating system instructions."""
     instructions: List[Instruction]
     
+class ChatHistoryResponse(BaseModel):
+    id: int
+    customer_id: str
+    thread_id: str
+    thread_name: Optional[str] = None
+    role: str
+    message: str
+
+    class Config:
+        orm_mode = True
+    

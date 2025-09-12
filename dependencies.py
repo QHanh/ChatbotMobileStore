@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 from database.database import SessionLocal
 
 es_client: AsyncElasticsearch = None
-chat_memory = {}
 weaviate_client: WeaviateClient = None
 
 async def init_es_client():
