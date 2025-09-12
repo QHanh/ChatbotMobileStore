@@ -14,6 +14,7 @@ from service.data.data_loader_vector_db import (
 from service.models.schemas import DocumentInput
 from database.database import get_db, Document
 from weaviate.classes.query import Filter
+from weaviate.classes.aggregate import GroupByAggregate
 from typing import Optional
 from service.utils.helpers import sanitize_for_weaviate
 
@@ -154,10 +155,12 @@ async def list_document_sources(customer_id: str):
         
         tenant_collection = collection.with_tenant(tenant_id)
         
-        # Bỏ return_properties để đảm bảo tất cả thuộc tính được trả về
-        result = tenant_collection.query.fetch_objects()
+        # Sử dụng aggregation để lấy các source duy nhất một cách hiệu quả
+        result = tenant_collection.aggregate.over_all(
+            group_by=GroupByAggregate(prop="source", limit=1000)
+        )
         
-        sources = sorted(list(set(obj.properties.get("source") for obj in result.objects if obj.properties and obj.properties.get("source"))))
+        sources = sorted([group.prop for group in result.groups])
         return {"sources": sources}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
