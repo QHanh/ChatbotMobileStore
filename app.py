@@ -15,8 +15,7 @@ from api import (
     control_routes
 )
 from database.database import init_db
-from dependencies import init_es_client, close_es_client, es_client
-from service.data.data_loader_elastic_search import ensure_shared_indices_exist
+import dependencies
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -32,7 +31,6 @@ from dotenv import load_dotenv
 from weaviate.auth import AuthApiKey
 from weaviate.client import WeaviateClient
 from weaviate.connect import ConnectionParams
-from dependencies import _weaviate_client, init_es_client, es_client, get_weaviate_client
 
 
 load_dotenv()
@@ -40,9 +38,8 @@ load_dotenv()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Application startup...")
-    await init_es_client()
-    if es_client:
-        await ensure_shared_indices_exist(es_client)
+    # Startup logic
+    await dependencies.init_es_client()
     
     # Initialize Weaviate client on startup
     WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
@@ -50,27 +47,27 @@ async def lifespan(app: FastAPI):
     connection_params = ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051)
     auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
     
-    global _weaviate_client
+    # Modify the variable within the dependencies module
     client_config = {"connection_params": connection_params}
     if auth_credentials:
         client_config["auth_client_secret"] = auth_credentials
         
-    _weaviate_client = WeaviateClient(**client_config)
+    dependencies._weaviate_client = WeaviateClient(**client_config)
     try:
-        _weaviate_client.connect()
+        dependencies._weaviate_client.connect()
         print("Successfully connected to Weaviate!")
     except Exception as e:
         print(f"Error connecting to Weaviate on startup: {e}")
-        _weaviate_client = None
+        dependencies._weaviate_client = None
 
     yield
-    print("Application shutdown.")
-    await close_es_client()
-    if es_client:
-        await es_client.close()
+
+    # Shutdown logic
+    if dependencies.es_client:
+        await dependencies.es_client.close()
         print("Elasticsearch client closed.")
-    if _weaviate_client and _weaviate_client.is_connected():
-        _weaviate_client.close()
+    if dependencies._weaviate_client and dependencies._weaviate_client.is_connected():
+        dependencies._weaviate_client.close()
         print("Weaviate client closed.")
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
