@@ -26,8 +26,8 @@ async def retrieve_document_logic(
     Ví dụ: "chính sách công ty", "hướng dẫn đổi trả", "địa chỉ cửa hàng".
     Công cụ này sẽ truy xuất thông tin từ cơ sở tri thức, thông tin của cửa hàng.
     """
-    print(f"--- Agent đã gọi công cụ truy xuất tài liệu cho tenant: {tenant_id} ---")
-    results = await retrieve_documents(query=query, tenant_id=tenant_id)
+    print(f"\n--- Agent đã gọi công cụ truy xuất tài liệu cho tenant: {tenant_id} ---")
+    results = await retrieve_documents(query=query, customer_id=tenant_id)
     return results
 
 async def search_products_logic(
