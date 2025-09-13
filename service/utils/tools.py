@@ -41,6 +41,7 @@ async def search_products_logic(
     loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: Optional[int] = 0,
     original_query: Optional[str] = None,
     llm: Optional[BaseLanguageModel] = None,
     chat_history: Optional[List[str]] = None,
@@ -61,6 +62,7 @@ async def search_products_logic(
         loai_thiet_bi=loai_thiet_bi,
         min_gia=min_gia,
         max_gia=max_gia,
+        offset=offset,
         original_query=original_query,
         llm=llm,
         chat_history=chat_history
@@ -76,6 +78,7 @@ async def search_services_logic(
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: Optional[int] = 0,
     original_query: Optional[str] = None,
     llm: Optional[BaseLanguageModel] = None,
     chat_history: Optional[List[str]] = None,
@@ -95,6 +98,7 @@ async def search_services_logic(
         loai_dich_vu=loai_dich_vu,
         min_gia=min_gia,
         max_gia=max_gia,
+        offset=offset,
         original_query=original_query,
         llm=llm,
         chat_history=chat_history
@@ -110,6 +114,7 @@ async def search_accessories_logic(
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: Optional[int] = 0,
     original_query: Optional[str] = None,
     llm: Optional[BaseLanguageModel] = None,
     chat_history: Optional[List[str]] = None,
@@ -128,6 +133,7 @@ async def search_accessories_logic(
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         min_gia=min_gia,
         max_gia=max_gia,
+        offset=offset,
         original_query=original_query,
         llm=llm,
         chat_history=chat_history

@@ -26,6 +26,7 @@ class SearchProductInput(BaseModel):
     loai_thiet_bi: Optional[str] = Field(default=None, description="Loại thiết bị, ví dụ: 'Cũ', 'Mới'.")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
+    offset: Optional[int] = Field(default=0, description="Số lượng kết quả bỏ qua, dùng để xem các trang kết quả tiếp theo. Ví dụ offset=10 để xem trang 2.")
 
 class SearchServiceInput(BaseModel):
     """Input model for the search_services_tool."""
@@ -35,6 +36,7 @@ class SearchServiceInput(BaseModel):
     loai_dich_vu: Optional[str] = Field(default=None, description="Loại dịch vụ, ví dụ: 'Pin Lithium', 'fix sọc'.")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
+    offset: Optional[int] = Field(default=0, description="Số lượng kết quả bỏ qua, dùng để xem các trang kết quả tiếp theo. Ví dụ offset=10 để xem trang 2.")
 
 class SearchAccessoryInput(BaseModel):
     """Input model for the search_accessories_tool."""
@@ -44,6 +46,7 @@ class SearchAccessoryInput(BaseModel):
     thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại',....")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
+    offset: Optional[int] = Field(default=0, description="Số lượng kết quả bỏ qua, dùng để xem các trang kết quả tiếp theo. Ví dụ offset=10 để xem trang 2.")
 
 class RetrieveDocumentInput(BaseModel):
     """Input model for the retrieve_document_tool."""

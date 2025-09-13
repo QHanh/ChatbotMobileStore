@@ -84,6 +84,14 @@ def create_agent_executor(
        {'\n   '.join(workflow_steps)}
     """
 
+    pagination_instruction = """
+    **Phân trang kết quả (Pagination):**
+    - Mỗi lần tìm kiếm, công cụ chỉ trả về tối đa 10 kết quả.
+    - Nếu người dùng muốn xem thêm (ví dụ: "còn gì nữa không?", "xem thêm các sản phẩm khác"), bạn BẮT BUỘC phải gọi lại đúng công cụ tìm kiếm đó với các tham số y hệt lần trước, nhưng TĂNG giá trị của tham số `offset` lên 10.
+    - Ví dụ: Lần đầu tìm kiếm `search_products_tool` với `offset` mặc định là 0. Nếu khách muốn xem thêm, lần gọi `search_products_tool` tiếp theo phải có `offset=10`, lần sau nữa là `offset=20`, và cứ thế.
+    - Nếu công cụ trả về một danh sách rỗng, điều đó có nghĩa là đã hết kết quả để hiển thị. Hãy thông báo cho khách hàng biết điều này.
+    """
+
     offerings = []
     if product_feature_enabled:
         offerings.append("bán điện thoại")
@@ -128,6 +136,7 @@ def create_agent_executor(
         indentity_instructions,
         base_instructions,
         workflow_instructions,
+        pagination_instruction,
         general_query_instruction,
         workflow_instructions_add,
         faq_instruction,
@@ -271,7 +280,7 @@ if __name__ == '__main__':
             SystemInstruction(key='base_instructions', value="Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, {identity}."),
             SystemInstruction(key='product_workflow', value="-   Khi khách hỏi về **sản phẩm** (điện thoại, máy tính bảng, ...), dùng `search_products_tool`."),
             SystemInstruction(key='service_workflow', value="-   Khi khách hỏi về **dịch vụ** (sửa chữa, thay pin, ...), dùng `search_services_tool`."),
-            SystemInstruction(key='accessory_workflow', value="-   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`."),
+            SystemInstruction(key='accessory_workflow', value="-   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`. Nếu khách chốt mua, dùng `create_order_accessory_tool`."),
             SystemInstruction(key='workflow_instructions', value="**Quy trình làm việc:**\n{workflow_steps}"),
             SystemInstruction(key='other_instructions', value="**Các tình huống khác:**")
         ]

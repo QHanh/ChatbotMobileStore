@@ -170,6 +170,7 @@ async def search_products(
     loai_thiet_bi: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: int = 0,
     original_query: Optional[str] = None,
     llm: Optional[Any] = None,
     chat_history: Optional[List[str]] = None
@@ -211,7 +212,8 @@ async def search_products(
             index=PRODUCTS_INDEX,
             query=query,
             routing=sanitized_customer_id,
-            size=10
+            size=10,
+            from_=offset
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} sản phẩm phù hợp cho khách hàng '{customer_id}'.")
@@ -233,6 +235,7 @@ async def search_services(
     loai_dich_vu: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: int = 0,
     original_query: Optional[str] = None,
     llm: Optional[Any] = None,
     chat_history: Optional[List[str]] = None
@@ -266,7 +269,8 @@ async def search_services(
             index=SERVICES_INDEX,
             query=query,
             routing=sanitized_customer_id,
-            size=10
+            size=10,
+            from_=offset
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         if hits:
@@ -302,7 +306,8 @@ async def search_services(
                 index=SERVICES_INDEX,
                 query=fallback_query,
                 routing=sanitized_customer_id,
-                size=10
+                size=10,
+                from_=offset
             )
             hits = [hit['_source'] for hit in response['hits']['hits']]
             print(f"Fallback multi_match: tìm thấy {len(hits)} dịch vụ phù hợp.")
@@ -326,6 +331,7 @@ async def search_accessories(
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
+    offset: int = 0,
     original_query: Optional[str] = None,
     llm: Optional[Any] = None,
     chat_history: Optional[List[str]] = None
@@ -366,7 +372,8 @@ async def search_accessories(
             index=ACCESSORIES_INDEX,
             query=query,
             routing=sanitized_customer_id,
-            size=10
+            size=10,
+            from_=offset
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
