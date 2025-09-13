@@ -66,6 +66,14 @@ class Document(Base):
     file_content = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class ChatbotSettings(Base):
+    __tablename__ = "chatbot_settings"
+
+    customer_id = Column(String, primary_key=True, index=True)
+    chatbot_icon_url = Column(String, nullable=True)
+    chatbot_message_default = Column(String, nullable=True)
+    chatbot_callout = Column(String, nullable=True)
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 

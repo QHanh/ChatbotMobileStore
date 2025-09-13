@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from contextlib import asynccontextmanager
@@ -12,7 +13,8 @@ from api import (
     document_routes,
     instruction_routes,
     faq_routes,
-    control_routes
+    control_routes,
+    settings_routes
 )
 from database.database import init_db
 import dependencies
@@ -72,6 +74,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 
+app.mount("/images", StaticFiles(directory="JS_Chatbot/images"), name="images")
+
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
 
 app.include_router(product_routes.router, tags=["Products"])
@@ -83,6 +87,7 @@ app.include_router(instruction_routes.router, tags=["Instructions"])
 app.include_router(faq_routes.router, tags=["FAQ"])
 app.include_router(control_routes.router, tags=["Control"])
 app.include_router(chat_routes.router, tags=["Chat"])
+app.include_router(settings_routes.router, tags=["Settings"])
 
 
 if __name__ == "__main__":

@@ -186,4 +186,20 @@ class ChatHistoryResponse(BaseModel):
 
     class Config:
         orm_mode = True
-    
+
+class ChatbotSettingsBase(BaseModel):
+    chatbot_icon_url: Optional[str] = None
+    chatbot_message_default: Optional[str] = None
+    chatbot_callout: Optional[str] = None
+
+class ChatbotSettingsCreate(ChatbotSettingsBase):
+    customer_id: str
+
+class ChatbotSettingsUpdate(ChatbotSettingsBase):
+    pass
+
+class ChatbotSettings(ChatbotSettingsBase):
+    customer_id: str
+
+    class Config:
+        orm_mode = True
