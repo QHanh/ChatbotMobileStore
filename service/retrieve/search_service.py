@@ -7,6 +7,8 @@ from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
+import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 
 def _get_customer_is_sale(customer_id: str, thread_id: str) -> bool:
     """Kiểm tra xem thread có phải là của khách hàng mua buôn hay không."""
@@ -66,10 +68,35 @@ async def filter_results_with_ai(
             """
 
     try:
-        print("Sử dụng LangChain chain để lọc kết quả.")
-        prompt = ChatPromptTemplate.from_template(prompt_template_str)
-        chain = prompt | llm | StrOutputParser()
-        filtered_results_str = await chain.ainvoke({"query": query, "results": results_str, "history": history_str})
+        filtered_results_str = ""
+        if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
+            print("Sử dụng Google AI SDK gốc để lọc kết quả.")
+            genai.configure(api_key=llm.google_api_key.get_secret_value())
+            model = genai.GenerativeModel(llm.model)
+            full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
+            
+            safety_settings = {
+                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+            }
+
+            response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
+            
+            if response.parts:
+                filtered_results_str = response.text
+            else:
+                finish_reason = 'N/A'
+                if response.candidates:
+                    finish_reason = response.candidates[0].finish_reason.name
+                print(f"AI response was empty or blocked. Finish reason: {finish_reason}.")
+                filtered_results_str = ""
+        else:
+            print("Sử dụng LangChain chain để lọc kết quả.")
+            prompt = ChatPromptTemplate.from_template(prompt_template_str)
+            chain = prompt | llm | StrOutputParser()
+            filtered_results_str = await chain.ainvoke({"query": query, "results": results_str, "history": history_str})
 
         if not filtered_results_str.strip():
             return []
@@ -144,7 +171,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             # if item.get('specifications'):
-                # context.append(f"  Mô tả: {item.get('specifications')}")
+            #     context.append(f"  Mô tả: {item.get('specifications')}")
             if item.get('guarantee'):
                 context.append(f"  Bảo hành: {item.get('guarantee')}")
             if item.get('link_product'):
