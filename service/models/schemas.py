@@ -196,6 +196,7 @@ class ChatbotSettingsBase(BaseModel):
     chatbot_icon_url: Optional[str] = None
     chatbot_message_default: Optional[str] = None
     chatbot_callout: Optional[str] = None
+    chatbot_name: Optional[str] = None
 
 class ChatbotSettingsCreate(ChatbotSettingsBase):
     customer_id: str
