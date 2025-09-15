@@ -167,6 +167,11 @@ class DocumentInput(BaseModel):
     text: str = Field(description="Nội dung văn bản thô cần thêm vào cơ sở dữ liệu vector.")
     source: Optional[str] = Field(default=None, description="Tên nguồn của văn bản, ví dụ: 'faq.txt'. Nếu không cung cấp, sẽ được gán một tên mặc định.")
 
+class DocumentUrlInput(BaseModel):
+    """Input model for adding a document from a URL."""
+    url: str = Field(description="The URL of the document to add.")
+    source: Optional[str] = Field(default=None, description="The source name for the document. If not provided, the URL will be used as the source.")
+
 class Instruction(BaseModel):
     """Represents a single instruction key-value pair."""
     key: str

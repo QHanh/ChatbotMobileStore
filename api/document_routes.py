@@ -11,12 +11,12 @@ from service.data.data_loader_vector_db import (
     ensure_tenant_exists,
     DOCUMENT_CLASS_NAME
 )
-from service.models.schemas import DocumentInput
+from service.models.schemas import DocumentInput, DocumentUrlInput
 from database.database import get_db, Document
 from weaviate.classes.query import Filter
 from weaviate.classes.aggregate import GroupByAggregate
 from typing import Optional
-from service.utils.helpers import sanitize_for_weaviate
+from service.utils.helpers import sanitize_for_weaviate, get_text_from_url
 
 router = APIRouter()
 
@@ -75,6 +75,41 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
         process_and_load_file(client, file_content, source_name, file.filename, tenant_id)
         
         return {"message": f"Tệp '{file.filename}' đã được xử lý và thêm vào tenant '{tenant_id}' với nguồn là '{source_name}'."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        pass
+
+@router.post("/upload-url/{customer_id}")
+async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session = Depends(get_db)):
+    client = None
+    try:
+        # Fetch text content from the URL
+        try:
+            text_content = get_text_from_url(doc_input.url)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+        tenant_id = sanitize_for_weaviate(customer_id)
+        client = get_weaviate_client()
+        ensure_document_collection_exists(client)
+        ensure_tenant_exists(client, tenant_id)
+        
+        source_name = doc_input.source if doc_input.source else doc_input.url
+
+        # Save the original content to PostgreSQL
+        new_document = Document(
+            customer_id=customer_id,
+            source_name=source_name,
+            full_content=text_content,
+            content_type="text/plain"
+        )
+        db.add(new_document)
+        db.commit()
+
+        process_and_load_text(client, text_content, source_name, tenant_id)
+        
+        return {"message": f"Content from URL '{doc_input.url}' has been processed and added to tenant '{tenant_id}' as source '{source_name}'."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
