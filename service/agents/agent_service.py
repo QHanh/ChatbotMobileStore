@@ -128,7 +128,7 @@ def create_agent_executor(
     custom_prompt_section = ""
     if custom_prompt_text:
         custom_prompt_section = f'''
-**Lưu ý đặc biệt từ chủ cửa hàng (Strictly follow this):**
+**Lưu ý đặc biệt cần ưu tiên tuân thủ (Strictly follow this):**
 {custom_prompt_text}
 '''
 
@@ -136,12 +136,12 @@ def create_agent_executor(
         indentity_instructions,
         base_instructions,
         workflow_instructions,
+        custom_prompt_section,
         pagination_instruction,
         general_query_instruction,
         workflow_instructions_add,
         faq_instruction,
-        other_instructions,
-        custom_prompt_section
+        other_instructions
     ]))
 
     prompt = ChatPromptTemplate.from_messages([

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Query, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
+from urllib.parse import quote
 from sqlalchemy.orm import Session
 from io import BytesIO
 
@@ -60,19 +61,20 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
 
         file_content = await file.read()
         source_name = source if source else file.filename
+        file_name = quote(file.filename)
         
         # Lưu file gốc vào PostgreSQL
         new_document = Document(
             customer_id=customer_id,
             source_name=source_name,
-            file_name=file.filename,
+            file_name=file_name,
             content_type=file.content_type,
             file_content=file_content
         )
         db.add(new_document)
         db.commit()
 
-        process_and_load_file(client, file_content, source_name, file.filename, tenant_id)
+        process_and_load_file(client, file_content, source_name, file_name, tenant_id)
         
         return {"message": f"Tệp '{file.filename}' đã được xử lý và thêm vào tenant '{tenant_id}' với nguồn là '{source_name}'."}
     except Exception as e:

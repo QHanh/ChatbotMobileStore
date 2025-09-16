@@ -18,6 +18,8 @@ from api import (
 )
 from database.database import init_db
 import dependencies
+import tracemalloc
+tracemalloc.start()
 import logging
 logging.getLogger("watchfiles").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.WARNING)
