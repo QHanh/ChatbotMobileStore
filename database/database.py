@@ -2,7 +2,7 @@ import os
 from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timezone
 
 load_dotenv()
 
@@ -64,7 +64,7 @@ class Document(Base):
     content_type = Column(String, nullable=True)
     full_content = Column(Text, nullable=True)
     file_content = Column(LargeBinary, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class ChatbotSettings(Base):
     __tablename__ = "chatbot_settings"

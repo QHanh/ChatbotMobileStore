@@ -51,3 +51,6 @@ async def retrieve_documents(
     except Exception as e:
         print(f"Lỗi khi truy xuất tài liệu từ Weaviate: {e}")
         return [{"error": f"Lỗi truy xuất: {e}"}]
+    finally:
+        if client:
+            client.close()

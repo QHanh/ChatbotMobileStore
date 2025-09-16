@@ -7,7 +7,7 @@ import io
 from service.utils.helpers import sanitize_for_es
 from typing import List, Dict, Any
 from elasticsearch import AsyncElasticsearch
-from datetime import datetime
+from datetime import datetime, timezone
 import hashlib
 
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -318,7 +318,7 @@ async def process_and_upsert_file_data(
 
     if index_name == FAQ_INDEX:
         for document in documents:
-            document['created_at'] = datetime.utcnow()
+            document['created_at'] = datetime.now(timezone.utc)
 
     success, failed = await bulk_index_documents(
         es_client,

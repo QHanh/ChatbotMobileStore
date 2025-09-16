@@ -15,7 +15,7 @@ from service.utils.helpers import sanitize_for_es
 import hashlib
 import pandas as pd
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
@@ -82,7 +82,7 @@ async def add_faq(
 
         faq_dict = faq_data.model_dump()
         faq_dict['faq_id'] = doc_id
-        faq_dict['created_at'] = datetime.utcnow()
+        faq_dict['created_at'] = datetime.now(timezone.utc)
         
         response = await index_single_document(es_client, FAQ_INDEX, sanitized_customer_id, doc_id, faq_dict)
         return {"message": "FAQ đã được thêm thành công.", "faq_id": doc_id, "result": response.body}
@@ -106,7 +106,7 @@ async def update_faq(
         sanitized_customer_id = sanitize_for_es(customer_id)
         faq_dict = faq_data.model_dump()
         faq_dict['faq_id'] = faq_id
-        faq_dict['created_at'] = datetime.utcnow()
+        faq_dict['created_at'] = datetime.now(timezone.utc)
             
         response = await index_single_document(
             es_client, 

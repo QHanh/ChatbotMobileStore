@@ -31,7 +31,7 @@ def ensure_document_collection_exists(client: weaviate.WeaviateClient):
         try:
             client.collections.create(
                 name=DOCUMENT_CLASS_NAME,
-                vectorizer_config=Configure.Vectorizer.none(),
+                vector_config=Configure.VectorIndex.none(),
                 properties=[
                     Property(name="text", data_type=DataType.TEXT),
                     Property(name="source", data_type=DataType.TEXT),

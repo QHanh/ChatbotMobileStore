@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 class BulkDeleteInput(BaseModel):
@@ -182,15 +182,14 @@ class InstructionsUpdate(BaseModel):
     instructions: List[Instruction]
     
 class ChatHistoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     customer_id: str
     thread_id: str
     thread_name: Optional[str] = None
     role: str
     message: str
-
-    class Config:
-        orm_mode = True
 
 class ChatbotSettingsBase(BaseModel):
     chatbot_icon_url: Optional[str] = None
@@ -205,7 +204,6 @@ class ChatbotSettingsUpdate(ChatbotSettingsBase):
     pass
 
 class ChatbotSettings(ChatbotSettingsBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     customer_id: str
-
-    class Config:
-        orm_mode = True
