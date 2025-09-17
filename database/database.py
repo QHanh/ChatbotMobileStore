@@ -75,6 +75,48 @@ class ChatbotSettings(Base):
     chatbot_callout = Column(String, nullable=True)
     chatbot_name = Column(String, nullable=True)
 
+class ProductOrder(Base):
+    __tablename__ = "product_orders"
+
+    order_id = Column(String, primary_key=True, index=True)
+    customer_id = Column(String, index=True, nullable=False)
+    thread_id = Column(String, index=True, nullable=False)
+    thread_name = Column(String, nullable=True)
+    product_id = Column(String, nullable=False)
+    product_name = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    number_phone = Column(String, nullable=False)
+    address = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class ServiceOrder(Base):
+    __tablename__ = "service_orders"
+
+    order_id = Column(String, primary_key=True, index=True)
+    customer_id = Column(String, index=True, nullable=False)
+    thread_id = Column(String, index=True, nullable=False)
+    thread_name = Column(String, nullable=True)
+    service_id = Column(String, nullable=False)
+    service_name = Column(String, nullable=False)
+    product_name = Column(String, nullable=False)
+    number_phone = Column(String, nullable=False)
+    address = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class AccessoryOrder(Base):
+    __tablename__ = "accessory_orders"
+
+    order_id = Column(String, primary_key=True, index=True)
+    customer_id = Column(String, index=True, nullable=False)
+    thread_id = Column(String, index=True, nullable=False)
+    thread_name = Column(String, nullable=True)
+    accessory_id = Column(String, nullable=False)
+    accessory_name = Column(String, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    number_phone = Column(String, nullable=False)
+    address = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 def init_db():
     Base.metadata.create_all(bind=engine)
 
