@@ -69,30 +69,41 @@ async def filter_results_with_ai(
 
     try:
         filtered_results_str = ""
+        use_langchain_fallback = False
+        
         if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
             print("Sử dụng Google AI SDK gốc để lọc kết quả.")
-            genai.configure(api_key=llm.google_api_key.get_secret_value())
-            model = genai.GenerativeModel(llm.model)
-            full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
-            
-            safety_settings = {
-                HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-            }
+            try:
+                genai.configure(api_key=llm.google_api_key.get_secret_value())
+                model = genai.GenerativeModel(llm.model)
+                full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
+                
+                safety_settings = {
+                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+                }
 
-            response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
-            
-            if response.parts:
-                filtered_results_str = response.text
-            else:
-                finish_reason = 'N/A'
-                if response.candidates:
-                    finish_reason = response.candidates[0].finish_reason.name
-                print(f"AI response was empty or blocked. Finish reason: {finish_reason}.")
-                filtered_results_str = ""
+                response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
+                
+                if response.parts and response.text.strip():
+                    filtered_results_str = response.text
+                else:
+                    finish_reason = 'N/A'
+                    if response.candidates and len(response.candidates) > 0:
+                        finish_reason = response.candidates[0].finish_reason.name
+                    print(f"AI response was empty or blocked. Finish reason: {finish_reason}. Fallback to LangChain.")
+                    use_langchain_fallback = True
+                    
+            except Exception as genai_error:
+                print(f"Google AI SDK error: {genai_error}. Fallback to LangChain.")
+                use_langchain_fallback = True
         else:
+            use_langchain_fallback = True
+            
+        # Use LangChain if Google AI failed or not available
+        if use_langchain_fallback:
             print("Sử dụng LangChain chain để lọc kết quả.")
             prompt = ChatPromptTemplate.from_template(prompt_template_str)
             chain = prompt | llm | StrOutputParser()
