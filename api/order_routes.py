@@ -243,7 +243,7 @@ async def get_orders_summary_by_customer(
 class UpdateIsCalledRequest(BaseModel):
     is_called: bool = Field(description="Trạng thái đã gọi điện hay chưa")
 
-@router.put("/orders/{customer_id}/{thread_id}/{order_id}/is-called")
+@router.put("/orders/{customer_id}/{thread_id}/{order_id}")
 async def update_order_is_called(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: str = Path(..., description="ID luồng chat"),
