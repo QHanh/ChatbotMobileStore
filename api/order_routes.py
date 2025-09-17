@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder
 
@@ -19,6 +19,7 @@ class BaseOrderResponse(BaseModel):
     so_dien_thoai: str
     dia_chi: str
     loai_don_hang: str
+    is_called: bool
     created_at: datetime
 
 class ProductOrderResponse(BaseOrderResponse):
@@ -237,3 +238,83 @@ async def get_orders_summary_by_customer(
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy tóm tắt đơn hàng: {str(e)}")
+
+# Request model for updating is_called status
+class UpdateIsCalledRequest(BaseModel):
+    is_called: bool = Field(description="Trạng thái đã gọi điện hay chưa")
+
+@router.put("/orders/{customer_id}/{thread_id}/{order_id}/is-called")
+async def update_order_is_called(
+    customer_id: str = Path(..., description="Mã khách hàng"),
+    thread_id: str = Path(..., description="ID luồng chat"),
+    order_id: str = Path(..., description="Mã đơn hàng"),
+    request: UpdateIsCalledRequest = ...,
+    db: Session = Depends(get_db)
+):
+    """
+    Cập nhật trạng thái is_called của đơn hàng dựa theo customer_id, thread_id và order_id.
+    """
+    try:
+        # Try to find the order in all three tables
+        order = None
+        order_type = None
+        
+        # Check ProductOrder first
+        product_order = db.query(ProductOrder).filter(
+            ProductOrder.customer_id == customer_id,
+            ProductOrder.thread_id == thread_id,
+            ProductOrder.order_id == order_id
+        ).first()
+        
+        if product_order:
+            order = product_order
+            order_type = "product"
+        else:
+            # Check ServiceOrder
+            service_order = db.query(ServiceOrder).filter(
+                ServiceOrder.customer_id == customer_id,
+                ServiceOrder.thread_id == thread_id,
+                ServiceOrder.order_id == order_id
+            ).first()
+            
+            if service_order:
+                order = service_order
+                order_type = "service"
+            else:
+                # Check AccessoryOrder
+                accessory_order = db.query(AccessoryOrder).filter(
+                    AccessoryOrder.customer_id == customer_id,
+                    AccessoryOrder.thread_id == thread_id,
+                    AccessoryOrder.order_id == order_id
+                ).first()
+                
+                if accessory_order:
+                    order = accessory_order
+                    order_type = "accessory"
+        
+        if not order:
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Không tìm thấy đơn hàng với customer_id={customer_id}, thread_id={thread_id}, order_id={order_id}"
+            )
+        
+        # Update is_called status
+        order.is_called = request.is_called
+        db.commit()
+        db.refresh(order)
+        
+        return {
+            "message": "Cập nhật trạng thái is_called thành công",
+            "customer_id": customer_id,
+            "thread_id": thread_id,
+            "order_id": order_id,
+            "order_type": order_type,
+            "is_called": order.is_called,
+            "updated_at": datetime.now().isoformat()
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Lỗi khi cập nhật trạng thái is_called: {str(e)}")
