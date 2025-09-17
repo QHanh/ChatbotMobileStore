@@ -478,7 +478,8 @@ def create_customer_tools(
         func=partial(retrieve_document_logic, tenant_id=customer_id),
         name="retrieve_document_tool",
         description="Tìm kiếm thông tin chung, chính sách, hướng dẫn từ cơ sở tri thức",
-        args_schema=RetrieveDocumentInput
+        args_schema=RetrieveDocumentInput,
+        coroutine=partial(retrieve_document_logic, tenant_id=customer_id)
     )
     tools.append(retrieve_document_tool)
     
