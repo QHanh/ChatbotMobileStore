@@ -440,21 +440,18 @@ async def search_faqs(
         return []
 
     sanitized_customer_id = sanitize_for_es(customer_id)
-    search_query = {
-        "query": {
-            "bool": {
-                "must": [
-                    {"term": {"customer_id": sanitized_customer_id}},
-                    {"match": {"question": query}}
-                ]
-            }
-        }
-    }
 
     try:
         response = await es_client.search(
             index=FAQ_INDEX,
-            body=search_query,
+            query={
+                "bool": {
+                    "must": [
+                        {"term": {"customer_id": sanitized_customer_id}},
+                        {"match": {"question": query}}
+                    ]
+                }
+            },
             routing=sanitized_customer_id,
             size=1
         )
