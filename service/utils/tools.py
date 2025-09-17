@@ -244,7 +244,9 @@ def create_order_product_tool_with_db(customer_id: str, thread_id: str):
         """
         print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
 
-        order_id = f"DHSP_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
+        import time
+        timestamp = str(int(time.time()))[-6:]  # Lấy 6 chữ số cuối của timestamp
+        order_id = f"DHSP_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}_{timestamp}"
         
         # Lưu vào database
         db = next(get_db())
@@ -316,7 +318,9 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
         """
         print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
 
-        order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
+        import time
+        timestamp = str(int(time.time()))[-6:]  # Lấy 6 chữ số cuối của timestamp
+        order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}_{timestamp}"
         
         # Lưu vào database
         db = next(get_db())
@@ -389,7 +393,9 @@ def create_order_accessory_tool_with_db(customer_id: str, thread_id: str):
         """
         print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
 
-        order_id = f"DHPK_{so_dien_thoai[-4:]}_{ma_phu_kien.split('-')[-1]}"
+        import time
+        timestamp = str(int(time.time()))[-6:]  # Lấy 6 chữ số cuối của timestamp
+        order_id = f"DHPK_{so_dien_thoai[-4:]}_{ma_phu_kien.split('-')[-1]}_{timestamp}"
         
         # Lưu vào database
         db = next(get_db())
