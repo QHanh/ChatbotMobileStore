@@ -88,9 +88,9 @@ async def get_all_orders_by_customer(
         total_orders = len(product_orders) + len(service_orders) + len(accessory_orders)
 
         # Convert to response models
-        product_responses = [ProductOrderResponse.from_orm(order) for order in product_orders]
-        service_responses = [ServiceOrderResponse.from_orm(order) for order in service_orders]
-        accessory_responses = [AccessoryOrderResponse.from_orm(order) for order in accessory_orders]
+        product_responses = [ProductOrderResponse.model_validate(order) for order in product_orders]
+        service_responses = [ServiceOrderResponse.model_validate(order) for order in service_orders]
+        accessory_responses = [AccessoryOrderResponse.model_validate(order) for order in accessory_orders]
 
         return AllOrdersResponse(
             customer_id=customer_id,
@@ -130,7 +130,7 @@ async def get_product_orders_by_customer(
         if not orders:
             return []
         
-        return [ProductOrderResponse.from_orm(order) for order in orders]
+        return [ProductOrderResponse.model_validate(order) for order in orders]
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng sản phẩm: {str(e)}")
@@ -162,7 +162,7 @@ async def get_service_orders_by_customer(
         if not orders:
             return []
         
-        return [ServiceOrderResponse.from_orm(order) for order in orders]
+        return [ServiceOrderResponse.model_validate(order) for order in orders]
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng dịch vụ: {str(e)}")
@@ -194,7 +194,7 @@ async def get_accessory_orders_by_customer(
         if not orders:
             return []
         
-        return [AccessoryOrderResponse.from_orm(order) for order in orders]
+        return [AccessoryOrderResponse.model_validate(order) for order in orders]
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng phụ kiện: {str(e)}")
