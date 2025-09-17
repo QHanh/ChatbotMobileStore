@@ -41,7 +41,7 @@ class SearchServiceInput(BaseModel):
 class SearchAccessoryInput(BaseModel):
     """Input model for the search_accessories_tool."""
     thread_id: Optional[str] = Field(default=None, description="ID luồng chat của người dùng.")
-    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, bạn cứ ghi đầy đủ tên phụ kiện, ví dụ: 'Kính hiển vi KAISI', 'Phản quang Oppo F3'.")
+    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, ghi đầy đủ tên phụ kiện kèm cả hãng, ví dụ: 'Kính hiển vi KAISI', 'Phản quang Oppo F3'.")
     phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện")
     thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại',....")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")

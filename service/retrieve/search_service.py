@@ -123,6 +123,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
     for item in hits:
         context = []
         if 'model' in item: # Product
+            context.append(f"Mã sản phẩm: {item.get('ma_san_pham', '')}")
             context.append(f"Sản phẩm: {item.get('model', '')} {item.get('dung_luong', '')} {item.get('mau_sac', '')}".strip())
             if item.get('tinh_trang_may'):
                 context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
@@ -151,6 +152,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
                 context.append(f"  Camera: {camera}")
             
         elif 'ten_dich_vu' in item: # Service
+            context.append(f"Mã dịch vụ: {item.get('ma_dich_vu', '')}")
             context.append(f"Dịch vụ: {item.get('ten_dich_vu', '')}")
             if item.get('ten_san_pham'):
                 context.append(f"  Áp dụng cho sản phẩm: {item.get('ten_san_pham')}")
@@ -169,6 +171,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
                 context.append(f"  Ghi chú: {note}")
 
         elif 'accessory_name' in item: # Accessory
+            context.append(f"Mã phụ kiện: {item.get('accessory_code', '')}")
             context.append(f"Phụ kiện: {item.get('accessory_name', '')}")
             prop = item.get('properties')
             if prop and str(prop).strip() and str(prop).strip() != '0':
