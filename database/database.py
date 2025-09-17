@@ -78,44 +78,53 @@ class ChatbotSettings(Base):
 class ProductOrder(Base):
     __tablename__ = "product_orders"
 
-    order_id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    order_id = Column(String, unique=True, index=True, nullable=False)
     customer_id = Column(String, index=True, nullable=False)
     thread_id = Column(String, index=True, nullable=False)
-    thread_name = Column(String, nullable=True)
-    product_id = Column(String, nullable=False)
-    product_name = Column(String, nullable=False)
-    quantity = Column(Integer, nullable=False)
-    number_phone = Column(String, nullable=False)
-    address = Column(Text, nullable=False)
+    ma_san_pham = Column(String, nullable=False)
+    ten_san_pham = Column(String, nullable=False)
+    so_luong = Column(Integer, nullable=False)
+    ten_khach_hang = Column(String, nullable=False)
+    so_dien_thoai = Column(String, nullable=False)
+    dia_chi = Column(Text, nullable=False)
+    loai_don_hang = Column(String, default="Sản phẩm", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class ServiceOrder(Base):
     __tablename__ = "service_orders"
 
-    order_id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    order_id = Column(String, unique=True, index=True, nullable=False)
     customer_id = Column(String, index=True, nullable=False)
     thread_id = Column(String, index=True, nullable=False)
-    thread_name = Column(String, nullable=True)
-    service_id = Column(String, nullable=False)
-    service_name = Column(String, nullable=False)
-    product_name = Column(String, nullable=False)
-    number_phone = Column(String, nullable=False)
-    address = Column(Text, nullable=False)
+    ma_dich_vu = Column(String, nullable=False)
+    ten_dich_vu = Column(String, nullable=False)
+    loai_dich_vu = Column(String, nullable=True)
+    ten_san_pham_sua_chua = Column(String, nullable=False)
+    ten_khach_hang = Column(String, nullable=False)
+    so_dien_thoai = Column(String, nullable=False)
+    dia_chi = Column(Text, nullable=False)
+    loai_don_hang = Column(String, default="Dịch vụ", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class AccessoryOrder(Base):
     __tablename__ = "accessory_orders"
 
-    order_id = Column(String, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    order_id = Column(String, unique=True, index=True, nullable=False)
     customer_id = Column(String, index=True, nullable=False)
     thread_id = Column(String, index=True, nullable=False)
-    thread_name = Column(String, nullable=True)
-    accessory_id = Column(String, nullable=False)
-    accessory_name = Column(String, nullable=False)
-    quantity = Column(Integer, nullable=False)
-    number_phone = Column(String, nullable=False)
-    address = Column(Text, nullable=False)
+    ma_phu_kien = Column(String, nullable=False)
+    ten_phu_kien = Column(String, nullable=False)
+    so_luong = Column(Integer, nullable=False)
+    ten_khach_hang = Column(String, nullable=False)
+    so_dien_thoai = Column(String, nullable=False)
+    dia_chi = Column(Text, nullable=False)
+    loai_don_hang = Column(String, default="Phụ kiện", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)

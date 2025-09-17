@@ -18,6 +18,7 @@ def create_agent_executor(
     db: Session,
     customer_id: str,
     customer_config: Customer,
+    thread_id: str = None,
     llm_provider: str = "google_genai",
     api_key: str = None
 ):
@@ -43,6 +44,7 @@ def create_agent_executor(
     customer_tools = create_customer_tools(
         es_client, 
         customer_id, 
+        thread_id,
         product_feature_enabled,
         service_feature_enabled, 
         accessory_feature_enabled,

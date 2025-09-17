@@ -14,7 +14,8 @@ from api import (
     instruction_routes,
     faq_routes,
     control_routes,
-    setting_routes
+    setting_routes,
+    order_routes
 )
 from database.database import init_db
 import dependencies
@@ -90,6 +91,7 @@ app.include_router(faq_routes.router, tags=["FAQ"])
 app.include_router(control_routes.router, tags=["Control"])
 app.include_router(chat_routes.router, tags=["Chat"])
 app.include_router(setting_routes.router, tags=["Settings"])
+app.include_router(order_routes.router, tags=["Orders"])
 
 
 if __name__ == "__main__":

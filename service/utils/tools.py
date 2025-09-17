@@ -1,21 +1,106 @@
 from langchain_core.tools import tool
 from langchain.tools import StructuredTool
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any
 from functools import partial
-import os
 from elasticsearch import AsyncElasticsearch
 
 from service.retrieve.search_service import search_products, search_services, search_accessories
 from service.retrieve.retrieve_vector_service import retrieve_documents
 from service.models.schemas import (
-    SearchProductInput, SearchServiceInput, OrderProductInput, 
-    OrderServiceInput, SearchAccessoryInput, OrderAccessoryInput,
-    RetrieveDocumentInput, SendImageInput
+    SearchProductInput, SearchServiceInput, SearchAccessoryInput,
+    RetrieveDocumentInput, 
+    OrderProductInput, 
+    OrderServiceInput, 
+    OrderAccessoryInput
 )
-from service.integrations.sheet_service import insert_order_to_sheet
+from pydantic import BaseModel, Field
 from langchain_core.language_models.base import BaseLanguageModel
+from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder
 
-SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+# Schema for checking existing customer info
+class CheckCustomerInfoInput(BaseModel):
+    """Schema for checking existing customer information"""
+    pass  # No input needed as customer_id and thread_id are bound
+
+def create_check_customer_info_tool(customer_id: str, thread_id: str):
+    def check_existing_customer_info():
+        """
+        Kiểm tra xem khách hàng đã có đơn hàng nào trong thread này chưa để lấy thông tin cá nhân.
+        
+        Sử dụng công cụ này TRƯỚC KHI tạo đơn hàng để:
+        1. Kiểm tra xem khách hàng đã có đơn hàng nào trong cuộc trò chuyện này chưa
+        2. Nếu có, lấy thông tin cá nhân từ đơn hàng gần nhất
+        3. Đưa thông tin cho khách hàng xem và hỏi có muốn thay đổi không
+        4. Nếu không có đơn hàng nào, yêu cầu khách hàng cung cấp đầy đủ thông tin cá nhân
+        """
+        print("--- Agent đã gọi công cụ kiểm tra thông tin khách hàng ---")
+        
+        db = next(get_db())
+        try:
+            # Tìm đơn hàng gần nhất của customer trong thread này
+            existing_product_order = db.query(ProductOrder).filter(
+                ProductOrder.customer_id == customer_id,
+                ProductOrder.thread_id == thread_id
+            ).order_by(ProductOrder.created_at.desc()).first()
+            
+            existing_service_order = db.query(ServiceOrder).filter(
+                ServiceOrder.customer_id == customer_id,
+                ServiceOrder.thread_id == thread_id
+            ).order_by(ServiceOrder.created_at.desc()).first()
+            
+            existing_accessory_order = db.query(AccessoryOrder).filter(
+                AccessoryOrder.customer_id == customer_id,
+                AccessoryOrder.thread_id == thread_id
+            ).order_by(AccessoryOrder.created_at.desc()).first()
+            
+            # Tìm đơn hàng gần nhất trong tất cả các loại
+            all_orders = []
+            if existing_product_order:
+                all_orders.append(existing_product_order)
+            if existing_service_order:
+                all_orders.append(existing_service_order)
+            if existing_accessory_order:
+                all_orders.append(existing_accessory_order)
+            
+            if not all_orders:
+                return {
+                    "status": "no_existing_info",
+                    "message": "Không tìm thấy đơn hàng nào trong cuộc trò chuyện này. Vui lòng cung cấp đầy đủ thông tin cá nhân: tên, số điện thoại và địa chỉ."
+                }
+            
+            # Lấy đơn hàng gần nhất
+            latest_order = max(all_orders, key=lambda x: x.created_at)
+            
+            existing_info = {
+                "ten_khach_hang": latest_order.ten_khach_hang,
+                "so_dien_thoai": latest_order.so_dien_thoai,
+                "dia_chi": latest_order.dia_chi
+            }
+            
+            return {
+                "status": "found_existing_info",
+                "message": f"Tôi thấy anh/chị đã có thông tin từ đơn hàng trước trong cuộc trò chuyện này:\n"
+                         f"- Tên: {existing_info['ten_khach_hang']}\n"
+                         f"- Số điện thoại: {existing_info['so_dien_thoai']}\n"
+                         f"- Địa chỉ: {existing_info['dia_chi']}\n\n"
+                         f"Anh/chị có muốn sử dụng thông tin này không? Nếu có thay đổi gì, vui lòng cho tôi biết.",
+                "existing_info": existing_info
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Lỗi khi kiểm tra thông tin khách hàng: {str(e)}"
+            }
+        finally:
+            db.close()
+    
+    return StructuredTool.from_function(
+        func=check_existing_customer_info,
+        name="check_customer_info_tool",
+        description="Kiểm tra thông tin khách hàng từ đơn hàng trước đó trong thread này",
+        args_schema=CheckCustomerInfoInput
+    )
 
 async def retrieve_document_logic(
     tenant_id: str,
@@ -140,152 +225,221 @@ async def search_accessories_logic(
     )
     return results
 
-@tool("create_order_product_tool", args_schema=OrderProductInput)
-async def create_order_product_tool(
-    ma_san_pham: str,
-    ten_san_pham: str,
-    so_luong: int,
-    ten_khach_hang: str,
-    so_dien_thoai: str,
-    dia_chi: str
-) -> Dict[str, Union[str, int]]:
-    """
-    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một sản phẩm điện thoại.
+def create_order_product_tool_with_db(customer_id: str, thread_id: str):
+    def create_order_product(
+        ma_san_pham: str = Field(description="Mã sản phẩm"),
+        ten_san_pham: str = Field(description="Tên sản phẩm"),
+        so_luong: int = Field(description="Số lượng sản phẩm"),
+        ten_khach_hang: str = Field(description="Tên khách hàng"),
+        so_dien_thoai: str = Field(description="Số điện thoại khách hàng"),
+        dia_chi: str = Field(description="Địa chỉ giao hàng")
+    ) -> dict:
+        """
+        Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một sản phẩm điện thoại.
 
-    QUAN TRỌNG:
-    1.  Tham số `ma_san_pham` và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_products_tool` đã được gọi trước đó trong cuộc trò chuyện và là sản phẩm khách hàng chốt.
-    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã sản phẩm. Luôn tự động lấy nó từ lịch sử tra cứu.
-    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
-    """
-    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
+        QUAN TRỌNG:
+        1.  Tham số `ma_san_pham` và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_products_tool` đã được gọi trước đó trong cuộc trò chuyện và là sản phẩm khách hàng chốt.
+        2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã sản phẩm. Luôn tự động lấy nó từ lịch sử tra cứu.
+        3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
+        """
+        print("--- LangChain Agent đã gọi công cụ tạo đơn hàng sản phẩm ---")
+
+        order_id = f"DHSP_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
+        
+        # Lưu vào database
+        db = next(get_db())
+        try:
+            new_order = ProductOrder(
+                order_id=order_id,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ma_san_pham=ma_san_pham,
+                ten_san_pham=ten_san_pham,
+                so_luong=so_luong,
+                ten_khach_hang=ten_khach_hang,
+                so_dien_thoai=so_dien_thoai,
+                dia_chi=dia_chi,
+                loai_don_hang="Sản phẩm"
+            )
+            db.add(new_order)
+            db.commit()
+            
+            order_detail = {
+                "order_id": order_id,
+                "ma_san_pham": ma_san_pham,
+                "ten_san_pham": ten_san_pham,
+                "so_luong": so_luong,
+                "ten_khach_hang": ten_khach_hang,
+                "so_dien_thoai": so_dien_thoai,
+                "dia_chi": dia_chi,
+                "loai_don_hang": "Sản phẩm"
+            }
+            
+            return {
+                "status": "success",
+                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
+                "order_detail": order_detail
+            }
+        except Exception as e:
+            db.rollback()
+            return {
+                "status": "error",
+                "message": f"Lỗi khi tạo đơn hàng: {str(e)}"
+            }
+        finally:
+            db.close()
     
-    order_id = f"DHSP_{so_dien_thoai[-4:]}_{ma_san_pham.split('-')[-1]}"
-    order_detail = {
-        "order_id": order_id,
-        "ma_san_pham": ma_san_pham,
-        "ten_san_pham": ten_san_pham,
-        "so_luong": so_luong,
-        "ten_khach_hang": ten_khach_hang,
-        "so_dien_thoai": so_dien_thoai,
-        "dia_chi": dia_chi,
-        "loai_don_hang": "Sản phẩm"
-    }
+    return StructuredTool.from_function(
+        func=create_order_product,
+        name="create_order_product_tool",
+        description="Tạo đơn hàng sản phẩm điện thoại",
+        args_schema=OrderProductInput
+    )
 
-    if SPREADSHEET_ID:
-        insert_order_to_sheet(
-            spreadsheet_id=SPREADSHEET_ID,
-            worksheet_name="DonHangSanPham",
-            order_data=order_detail
-        )
+def create_order_service_tool_with_db(customer_id: str, thread_id: str):
+    def create_order_service(
+        ma_dich_vu: str = Field(description="Mã dịch vụ"),
+        ten_dich_vu: str = Field(description="Tên dịch vụ"),
+        loai_dich_vu: Optional[str] = Field(description="Loại dịch vụ"),
+        ten_san_pham: str = Field(description="Tên sản phẩm cần sửa chữa"),
+        ten_khach_hang: str = Field(description="Tên khách hàng"),
+        so_dien_thoai: str = Field(description="Số điện thoại khách hàng"),
+        dia_chi: str = Field(description="Địa chỉ khách hàng")
+    ) -> dict:
+        """
+        Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận đặt một dịch vụ sửa chữa.
+
+        QUAN TRỌNG:
+        1.  Các tham số `ma_dich_vu`, `ten_dich_vu`, và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_services_tool` đã được gọi trước đó và là dịch vụ khách hàng chốt.
+        2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã dịch vụ. Luôn tự động lấy nó từ lịch sử tra cứu.
+        3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
+        """
+        print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
+
+        order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
+        
+        # Lưu vào database
+        db = next(get_db())
+        try:
+            new_order = ServiceOrder(
+                order_id=order_id,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ma_dich_vu=ma_dich_vu,
+                ten_dich_vu=ten_dich_vu,
+                loai_dich_vu=loai_dich_vu,
+                ten_san_pham_sua_chua=ten_san_pham,
+                ten_khach_hang=ten_khach_hang,
+                so_dien_thoai=so_dien_thoai,
+                dia_chi=dia_chi,
+                loai_don_hang="Dịch vụ"
+            )
+            db.add(new_order)
+            db.commit()
+            
+            order_detail = {
+                "order_id": order_id,
+                "ma_dich_vu": ma_dich_vu,
+                "ten_dich_vu": ten_dich_vu,
+                "loai_dich_vu": loai_dich_vu,
+                "ten_san_pham_sua_chua": ten_san_pham,
+                "ten_khach_hang": ten_khach_hang,
+                "so_dien_thoai": so_dien_thoai,
+                "dia_chi": dia_chi,
+                "loai_don_hang": "Dịch vụ"
+            }
+
+            return {
+                "status": "success",
+                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
+                "order_detail": order_detail
+            }
+        except Exception as e:
+            db.rollback()
+            return {
+                "status": "error",
+                "message": f"Lỗi khi tạo đơn hàng: {str(e)}"
+            }
+        finally:
+            db.close()
     
-    return {
-        "status": "success",
-        "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-        "order_detail": order_detail
-    }
+    return StructuredTool.from_function(
+        func=create_order_service,
+        name="create_order_service_tool",
+        description="Tạo đơn hàng dịch vụ sửa chữa",
+        args_schema=OrderServiceInput
+    )
 
-@tool("create_order_service_tool", args_schema=OrderServiceInput)
-async def create_order_service_tool(
-    ma_dich_vu: str,
-    ten_dich_vu: str,
-    ten_san_pham: str,
-    ten_khach_hang: str,
-    so_dien_thoai: str,
-    dia_chi: str
-) -> Dict[str, Union[str, int]]:
-    """
-    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận đặt một dịch vụ sửa chữa.
+def create_order_accessory_tool_with_db(customer_id: str, thread_id: str):
+    def create_order_accessory(
+        ma_phu_kien: str = Field(description="Mã phụ kiện"),
+        ten_phu_kien: str = Field(description="Tên phụ kiện"),
+        so_luong: int = Field(description="Số lượng phụ kiện"),
+        ten_khach_hang: str = Field(description="Tên khách hàng"),
+        so_dien_thoai: str = Field(description="Số điện thoại khách hàng"),
+        dia_chi: str = Field(description="Địa chỉ giao hàng")
+    ) -> dict:
+        """
+        Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một phụ kiện.
 
-    QUAN TRỌNG:
-    1.  Các tham số `ma_dich_vu`, `ten_dich_vu`, và `ten_san_pham` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_services_tool` đã được gọi trước đó và là dịch vụ khách hàng chốt.
-    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã dịch vụ. Luôn tự động lấy nó từ lịch sử tra cứu.
-    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
-    """
-    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
+        QUAN TRỌNG:
+        1.  Tham số `ma_phu_kien` và `ten_phu_kien` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_accessories_tool` đã được gọi trước đó trong cuộc trò chuyện và là phụ kiện khách hàng chốt.
+        2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã phụ kiện. Luôn tự động lấy nó từ lịch sử tra cứu.
+        3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
+        """
+        print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
 
-    order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}"
-    order_detail = {
-        "order_id": order_id,
-        "ma_dich_vu": ma_dich_vu,
-        "ten_dich_vu": ten_dich_vu,
-        "ten_san_pham_sua_chua": ten_san_pham,
-        "ten_khach_hang": ten_khach_hang,
-        "so_dien_thoai": so_dien_thoai,
-        "dia_chi": dia_chi,
-        "loai_don_hang": "Dịch vụ"
-    }
-
-    if SPREADSHEET_ID:
-        insert_order_to_sheet(
-            spreadsheet_id=SPREADSHEET_ID,
-            worksheet_name="DonHangDichVu",
-            order_data=order_detail
-        )
-
-    return {
-        "status": "success",
-        "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-        "order_detail": order_detail
-    }
-
-@tool("create_order_accessory_tool", args_schema=OrderAccessoryInput)
-async def create_order_accessory_tool(
-    ma_phu_kien: str,
-    ten_phu_kien: str,
-    so_luong: int,
-    ten_khach_hang: str,
-    so_dien_thoai: str,
-    dia_chi: str
-) -> Dict[str, Union[str, int]]:
-    """
-    Sử dụng công cụ này KHI VÀ CHỈ KHI khách hàng đã xác nhận chốt đơn mua một phụ kiện.
-
-    QUAN TRỌNG:
-    1.  Tham số `ma_phu_kien` và `ten_phu_kien` BẮT BUỘC phải được lấy từ kết quả của công cụ `search_accessories_tool` đã được gọi trước đó trong cuộc trò chuyện và là phụ kiện khách hàng chốt.
-    2.  TUYỆT ĐỐI KHÔNG được hỏi khách hàng mã phụ kiện. Luôn tự động lấy nó từ lịch sử tra cứu.
-    3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
-    """
-    print("--- LangChain Agent đã gọi công cụ tạo đơn hàng phụ kiện ---")
-
-    order_id = f"DHPK_{so_dien_thoai[-4:]}_{ma_phu_kien.split('-')[-1]}"
-    order_detail = {
-        "order_id": order_id,
-        "ma_phu_kien": ma_phu_kien,
-        "ten_phu_kien": ten_phu_kien,
-        "so_luong": so_luong,
-        "ten_khach_hang": ten_khach_hang,
-        "so_dien_thoai": so_dien_thoai,
-        "dia_chi": dia_chi,
-        "loai_don_hang": "Phụ kiện"
-    }
-
-    if SPREADSHEET_ID:
-        insert_order_to_sheet(
-            spreadsheet_id=SPREADSHEET_ID,
-            worksheet_name="DonHangPhuKien",
-            order_data=order_detail
-        )
+        order_id = f"DHPK_{so_dien_thoai[-4:]}_{ma_phu_kien.split('-')[-1]}"
+        
+        # Lưu vào database
+        db = next(get_db())
+        try:
+            new_order = AccessoryOrder(
+                order_id=order_id,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ma_phu_kien=ma_phu_kien,
+                ten_phu_kien=ten_phu_kien,
+                so_luong=so_luong,
+                ten_khach_hang=ten_khach_hang,
+                so_dien_thoai=so_dien_thoai,
+                dia_chi=dia_chi,
+                loai_don_hang="Phụ kiện"
+            )
+            db.add(new_order)
+            db.commit()
+            
+            order_detail = {
+                "order_id": order_id,
+                "ma_phu_kien": ma_phu_kien,
+                "ten_phu_kien": ten_phu_kien,
+                "so_luong": so_luong,
+                "ten_khach_hang": ten_khach_hang,
+                "so_dien_thoai": so_dien_thoai,
+                "dia_chi": dia_chi,
+                "loai_don_hang": "Phụ kiện"
+            }
+        
+            return {
+                "status": "success",
+                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
+                "order_detail": order_detail
+            }
+        except Exception as e:
+            db.rollback()
+            return {
+                "status": "error",
+                "message": f"Lỗi khi tạo đơn hàng: {str(e)}"
+            }
+        finally:
+            db.close()
     
-    return {
-        "status": "success",
-        "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-        "order_detail": order_detail
-    }
-
-@tool("send_image_tool", args_schema=SendImageInput)
-async def send_image_tool(
-    image_urls: List[str],
-    image_url_holder: List[str]
-) -> str:
-    """
-    Sử dụng công cụ này khi người dùng muốn xem hình ảnh của một sản phẩm, dịch vụ hoặc phụ kiện.
-    Công cụ này sẽ chuẩn bị hình ảnh để gửi cho người dùng.
-    """
-    print(f"--- Agent đã gọi công cụ gửi hình ảnh với các URL: {image_urls} ---")
-    
-    image_url_holder.extend(image_urls)
-    
-    return "Hình ảnh đã được chuẩn bị để gửi tới người dùng."
+    return StructuredTool.from_function(
+        func=create_order_accessory,
+        name="create_order_accessory_tool",
+        description="Tạo đơn hàng phụ kiện",
+        args_schema=OrderAccessoryInput
+    )
 
 @tool
 async def escalate_to_human_tool() -> str:
@@ -305,10 +459,10 @@ async def end_conversation_tool() -> str:
     print("--- Agent đã gọi công cụ kết thúc trò chuyện ---")
     return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
 
-
 def create_customer_tools(
     es_client: AsyncElasticsearch,
     customer_id: str,
+    thread_id: str,
     product_feature_enabled: bool = True,
     service_feature_enabled: bool = True, 
     accessory_feature_enabled: bool = True,
@@ -317,6 +471,21 @@ def create_customer_tools(
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
+    tools = []
+    
+    # Always include document retrieval tool
+    retrieve_document_tool = StructuredTool.from_function(
+        func=partial(retrieve_document_logic, tenant_id=customer_id),
+        name="retrieve_document_tool",
+        description="Tìm kiếm thông tin chung, chính sách, hướng dẫn từ cơ sở tri thức",
+        args_schema=RetrieveDocumentInput
+    )
+    tools.append(retrieve_document_tool)
+    
+    # Always include customer info checking tool
+    check_customer_info_tool = create_check_customer_info_tool(customer_id, thread_id)
+    tools.append(check_customer_info_tool)
+    
     available_tools = []
     
     if product_feature_enabled:
@@ -329,29 +498,13 @@ def create_customer_tools(
             args_schema=SearchProductInput,
             coroutine=customer_search_product_func
         )
+        # Tạo order tool với customer_id và thread_id được bind sẵn
+        order_product_tool = create_order_product_tool_with_db(customer_id=customer_id, thread_id=thread_id)
+        
         available_tools.extend([
             search_product_tool,
-            create_order_product_tool,
+            order_product_tool,
         ])
-
-    sanitized_tenant_id = customer_id.replace("-", "_")
-    if sanitized_tenant_id and sanitized_tenant_id[0].isdigit():
-        sanitized_tenant_id = f"t_{sanitized_tenant_id}"
-        
-    customer_retrieve_document_func = partial(retrieve_document_logic, tenant_id=sanitized_tenant_id)
-    retrieve_document_tool = StructuredTool.from_function(
-        func=customer_retrieve_document_func,
-        name="retrieve_document_tool",
-        description=retrieve_document_logic.__doc__,
-        args_schema=RetrieveDocumentInput,
-        coroutine=customer_retrieve_document_func
-    )
-
-    available_tools.extend([
-        retrieve_document_tool,
-        escalate_to_human_tool,
-        end_conversation_tool
-    ])
 
     if service_feature_enabled:
         customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id, llm=llm)
@@ -364,9 +517,12 @@ def create_customer_tools(
             coroutine=customer_search_service_func
         )
         
+        # Tạo order tool với customer_id và thread_id được bind sẵn
+        order_service_tool = create_order_service_tool_with_db(customer_id=customer_id, thread_id=thread_id)
+        
         available_tools.extend([
             search_service_tool,
-            create_order_service_tool,
+            order_service_tool,
         ])
 
     if accessory_feature_enabled:
@@ -380,9 +536,14 @@ def create_customer_tools(
             coroutine=customer_search_accessory_func
         )
 
+        # Tạo order tool với customer_id và thread_id được bind sẵn
+        order_accessory_tool = create_order_accessory_tool_with_db(customer_id=customer_id, thread_id=thread_id)
+
         available_tools.extend([
             search_accessory_tool,
-            create_order_accessory_tool,
+            order_accessory_tool,
         ])
 
-    return available_tools
+    # Combine all tools
+    tools.extend(available_tools)
+    return tools

@@ -63,6 +63,7 @@ async def chat(
             db=db,
             customer_id=customer_id,
             customer_config=customer_config,
+            thread_id=threadId,
             llm_provider=llm_provider,
             api_key=api_key
         )

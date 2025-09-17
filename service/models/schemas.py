@@ -52,10 +52,6 @@ class RetrieveDocumentInput(BaseModel):
     """Input model for the retrieve_document_tool."""
     query: str = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, bạn nên dựa vào lịch sử hội thoại để viết lại câu hỏi của khách hàng đầy đủ ngữ nghĩa nhất để truy xuất dữ liệu, ví dụ: 'iPhone màu xanh giá rẻ'.")
 
-class SendImageInput(BaseModel):
-    """Input model for the send_image_tool."""
-    image_urls: List[str] = Field(description="Một danh sách các đường dẫn (URL) đến hình ảnh cần gửi cho người dùng.")
-
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
     ma_san_pham: str = Field(description="Mã sản phẩm khách hàng đặt.")
@@ -69,6 +65,7 @@ class OrderServiceInput(BaseModel):
     """Input model for the create_order_service_tool."""
     ma_dich_vu: str = Field(description="Mã dịch vụ khách hàng đặt.")
     ten_dich_vu: str = Field(description="Tên dịch vụ khách hàng đặt.")
+    loai_dich_vu: Optional[str] = Field(default=None, description="Loại dịch vụ, ví dụ: 'Pin Lithium', 'Thay màn hình'.")
     ten_san_pham: str = Field(description="Tên sản phẩm điện thoại được sửa chữa.")
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
@@ -82,6 +79,7 @@ class OrderAccessoryInput(BaseModel):
     ten_khach_hang: str = Field(description="Họ và tên đầy đủ của người mua.")
     so_dien_thoai: str = Field(description="Số điện thoại liên lạc của người mua.")
     dia_chi: str = Field(description="Địa chỉ người mua.")
+
 
 class ChatbotRequest(BaseModel):
     """Input model for the chatbot."""
