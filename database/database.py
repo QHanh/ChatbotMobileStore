@@ -127,6 +127,12 @@ class AccessoryOrder(Base):
     is_called = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class ChatCustomer(Base):
+    __tablename__ = "chat_customers"
+    
+    customer_id = Column(String, primary_key=True, index=True)
+    status = Column(String, default="active", nullable=False)  # active, stopped
+
 
 
 def init_db():

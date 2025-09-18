@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database.database import get_db, ChatThread, CustomerIsSale
+from database.database import get_db, ChatThread, CustomerIsSale, ChatCustomer
 from pydantic import BaseModel
 from typing import Optional
 
@@ -119,3 +119,61 @@ async def get_bot_status(
     
     status = thread.status if thread else "active"
     return {"customer_id": customer_id, "thread_id": thread_id, "status": status}
+
+# Customer-level bot control endpoints
+@router.post("/customer/stop/{customer_id}")
+async def stop_customer_bot(
+    customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Dừng hoạt động của bot cho toàn bộ customer_id.
+    """
+    chat_customer = db.query(ChatCustomer).filter(
+        ChatCustomer.customer_id == customer_id
+    ).first()
+    
+    if chat_customer:
+        chat_customer.status = "stopped"
+    else:
+        chat_customer = ChatCustomer(
+            customer_id=customer_id,
+            status="stopped"
+        )
+        db.add(chat_customer)
+    
+    db.commit()
+    return {"message": f"Bot đã được dừng cho customer_id {customer_id}."}
+
+@router.post("/customer/start/{customer_id}")
+async def start_customer_bot(
+    customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Khởi động lại hoạt động của bot cho toàn bộ customer_id.
+    """
+    chat_customer = db.query(ChatCustomer).filter(
+        ChatCustomer.customer_id == customer_id
+    ).first()
+    
+    if chat_customer:
+        chat_customer.status = "active"
+        db.commit()
+    
+    return {"message": f"Bot đã được khởi động cho customer_id {customer_id}."}
+
+@router.get("/customer/status/{customer_id}")
+async def get_customer_bot_status(
+    customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Lấy trạng thái hoạt động của bot cho toàn bộ customer_id.
+    """
+    chat_customer = db.query(ChatCustomer).filter(
+        ChatCustomer.customer_id == customer_id
+    ).first()
+    
+    status = chat_customer.status if chat_customer else "active"
+    return {"customer_id": customer_id, "status": status}
