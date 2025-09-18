@@ -75,7 +75,7 @@ async def filter_results_with_ai(
             print("Sử dụng Google AI SDK gốc để lọc kết quả.")
             try:
                 genai.configure(api_key=llm.google_api_key.get_secret_value())
-                model = genai.GenerativeModel(llm.model)
+                model = genai.GenerativeModel(model_name="gemini-2.0-flash")
                 full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
                 
                 safety_settings = {
