@@ -19,7 +19,7 @@ class BaseOrderResponse(BaseModel):
     so_dien_thoai: str
     dia_chi: str
     loai_don_hang: str
-    is_called: bool
+    status: str
     created_at: datetime
 
 class ProductOrderResponse(BaseOrderResponse):
@@ -239,20 +239,20 @@ async def get_orders_summary_by_customer(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy tóm tắt đơn hàng: {str(e)}")
 
-# Request model for updating is_called status
-class UpdateIsCalledRequest(BaseModel):
-    is_called: bool = Field(description="Trạng thái đã gọi điện hay chưa")
+# Request model for updating status
+class UpdateStatusRequest(BaseModel):
+    status: str = Field(description="Trạng thái mới của đơn hàng")
 
-@router.put("/orders/{customer_id}/{thread_id}/{order_id}")
-async def update_order_is_called(
+@router.put("/orders/{customer_id}/{thread_id}/{order_id}/status")
+async def update_order_status(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: str = Path(..., description="ID luồng chat"),
     order_id: str = Path(..., description="Mã đơn hàng"),
-    request: UpdateIsCalledRequest = ...,
+    request: UpdateStatusRequest = ...,
     db: Session = Depends(get_db)
 ):
     """
-    Cập nhật trạng thái is_called của đơn hàng dựa theo customer_id, thread_id và order_id.
+    Cập nhật trạng thái của đơn hàng dựa theo customer_id, thread_id và order_id.
     """
     try:
         # Try to find the order in all three tables
@@ -298,18 +298,18 @@ async def update_order_is_called(
                 detail=f"Không tìm thấy đơn hàng với customer_id={customer_id}, thread_id={thread_id}, order_id={order_id}"
             )
         
-        # Update is_called status
-        order.is_called = request.is_called
+        # Update status
+        order.status = request.status
         db.commit()
         db.refresh(order)
         
         return {
-            "message": "Cập nhật trạng thái is_called thành công",
+            "message": "Cập nhật trạng thái thành công",
             "customer_id": customer_id,
             "thread_id": thread_id,
             "order_id": order_id,
             "order_type": order_type,
-            "is_called": order.is_called,
+            "status": order.status,
             "updated_at": datetime.now().isoformat()
         }
         
@@ -317,4 +317,4 @@ async def update_order_is_called(
         raise
     except Exception as e:
         db.rollback()
-        raise HTTPException(status_code=500, detail=f"Lỗi khi cập nhật trạng thái is_called: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi cập nhật trạng thái: {str(e)}")

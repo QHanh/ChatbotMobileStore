@@ -89,7 +89,7 @@ class ProductOrder(Base):
     so_dien_thoai = Column(String, nullable=False)
     dia_chi = Column(Text, nullable=False)
     loai_don_hang = Column(String, default="Sản phẩm", nullable=False)
-    is_called = Column(Boolean, default=False, nullable=False)
+    status = Column(String, default="Chưa gọi", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class ServiceOrder(Base):
@@ -107,7 +107,7 @@ class ServiceOrder(Base):
     so_dien_thoai = Column(String, nullable=False)
     dia_chi = Column(Text, nullable=False)
     loai_don_hang = Column(String, default="Dịch vụ", nullable=False)
-    is_called = Column(Boolean, default=False, nullable=False)
+    status = Column(String, default="Chưa gọi", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class AccessoryOrder(Base):
@@ -124,7 +124,7 @@ class AccessoryOrder(Base):
     so_dien_thoai = Column(String, nullable=False)
     dia_chi = Column(Text, nullable=False)
     loai_don_hang = Column(String, default="Phụ kiện", nullable=False)
-    is_called = Column(Boolean, default=False, nullable=False)
+    status = Column(String, default="Chưa gọi", nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class ChatCustomer(Base):
