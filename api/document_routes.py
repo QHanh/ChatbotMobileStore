@@ -48,8 +48,8 @@ async def upload_text(customer_id: str, doc_input: DocumentInput, db: Session = 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.post("/upload-file/{customer_id}")
 async def upload_file(customer_id: str, file: UploadFile = File(...), source: Optional[str] = Form(None), db: Session = Depends(get_db)):
@@ -81,8 +81,8 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.post("/upload-url/{customer_id}")
 async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session = Depends(get_db)):
@@ -117,8 +117,8 @@ async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.get("/document-original/{customer_id}")
 async def get_original_document(
@@ -138,11 +138,14 @@ async def get_original_document(
         raise HTTPException(status_code=404, detail=f"Không tìm thấy tài liệu với source '{source}' cho khách hàng '{customer_id}'.")
 
     if document.file_content:
-        # Trả về file
+        # Trả về file với header hỗ trợ Unicode theo RFC 5987
+        filename = document.file_name or "download"
+        encoded = quote(filename)
+        content_disposition = f"attachment; filename*=UTF-8''{encoded}"
         return StreamingResponse(
             BytesIO(document.file_content),
             media_type=document.content_type,
-            headers={"Content-Disposition": f"attachment; filename={document.file_name}"}
+            headers={"Content-Disposition": content_disposition}
         )
     elif document.full_content:
         # Trả về text
@@ -179,8 +182,8 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.get("/sources/{customer_id}")
 async def list_document_sources(customer_id: str):
@@ -206,8 +209,8 @@ async def list_document_sources(customer_id: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.delete("/sources/{customer_id}")
 async def delete_document_by_source(customer_id: str, source: str = Query(..., description="Tên 'source' của tài liệu cần xóa.")):
@@ -230,8 +233,8 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     finally:
-        if client:
-            client.close()
+        # Weaviate client is managed by app lifespan; do not close here
+        pass
 
 @router.delete("/documents/{customer_id}")
 async def delete_all_documents(customer_id: str, db: Session = Depends(get_db)):

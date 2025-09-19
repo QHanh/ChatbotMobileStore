@@ -52,5 +52,5 @@ async def retrieve_documents(
         print(f"Lỗi khi truy xuất tài liệu từ Weaviate: {e}")
         return [{"error": f"Lỗi truy xuất: {e}"}]
     finally:
-        if client:
-            client.close()
+        # Do not close the shared Weaviate client here; it's managed by app lifespan
+        pass
