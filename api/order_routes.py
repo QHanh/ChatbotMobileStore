@@ -243,7 +243,7 @@ async def get_orders_summary_by_customer(
 class UpdateStatusRequest(BaseModel):
     status: str = Field(description="Trạng thái mới của đơn hàng")
 
-@router.put("/orders/{customer_id}/{thread_id}/{order_id}/status")
+@router.put("/orders/{customer_id}/{thread_id}/{order_id}")
 async def update_order_status(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: str = Path(..., description="ID luồng chat"),
