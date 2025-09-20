@@ -33,47 +33,26 @@ warnings.filterwarnings(
 )
 import os
 from dotenv import load_dotenv
-from weaviate.auth import AuthApiKey
-from weaviate.client import WeaviateClient
-from weaviate.connect import ConnectionParams
-
-
 load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Manages the application's startup and shutdown events.
+    Initializes and closes necessary client connections.
+    """
     print("Application startup...")
-    # Startup logic
+    # Initialize all clients on startup
     await dependencies.init_es_client()
+    await dependencies.init_weaviate_client()
     
-    # Initialize Weaviate client on startup
-    WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
-    WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
-    connection_params = ConnectionParams.from_url(url=WEAVIATE_URL, grpc_port=50051)
-    auth_credentials = AuthApiKey(WEAVIATE_API_KEY) if WEAVIATE_API_KEY else None
-    
-    # Modify the variable within the dependencies module
-    client_config = {"connection_params": connection_params}
-    if auth_credentials:
-        client_config["auth_client_secret"] = auth_credentials
-        
-    dependencies._weaviate_client = WeaviateClient(**client_config)
-    try:
-        dependencies._weaviate_client.connect()
-        print("Successfully connected to Weaviate!")
-    except Exception as e:
-        print(f"Error connecting to Weaviate on startup: {e}")
-        dependencies._weaviate_client = None
-
     yield
-
-    # Shutdown logic
-    if dependencies.es_client:
-        await dependencies.es_client.close()
-        print("Elasticsearch client closed.")
-    if dependencies._weaviate_client and dependencies._weaviate_client.is_connected():
-        dependencies._weaviate_client.close()
-        print("Weaviate client closed.")
+    
+    # Close all clients on shutdown
+    print("Application shutdown...")
+    await dependencies.close_es_client()
+    await dependencies.close_weaviate_client()
+    print("All clients closed. Shutdown complete.")
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 
