@@ -104,7 +104,7 @@ def load_documents_from_directory(path: str) -> List[Dict[str, Any]]:
     print(f"Đã tải thành công {len(documents)} tài liệu.")
     return documents
 
-def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 500, chunk_overlap: int = 50) -> List[Dict[str, Any]]:
+def split_documents(documents: List[Dict[str, Any]], chunk_size: int = 800, chunk_overlap: int = 50) -> List[Dict[str, Any]]:
     """
     Chia nhỏ tài liệu thành các chunk văn bản bằng RecursiveCharacterTextSplitter.
     """

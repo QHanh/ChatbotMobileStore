@@ -8,8 +8,8 @@ from service.utils.helpers import sanitize_for_weaviate
 async def retrieve_documents(
     query: str, 
     customer_id: str, 
-    top_k: int = 5, 
-    alpha: float = 0.5
+    top_k: int = 10, 
+    alpha: float = 0.7
 ) -> List[Dict[str, Any]]:
     """
     Truy xuất tài liệu từ một tenant cụ thể.
