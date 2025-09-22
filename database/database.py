@@ -22,6 +22,19 @@ class Customer(Base):
     service_feature_enabled = Column(Boolean, default=True)
     accessory_feature_enabled = Column(Boolean, default=True)
     product_feature_enabled = Column(Boolean, default=True)
+
+class StoreInfo(Base):
+    __tablename__ = "store_info"
+
+    customer_id = Column(String, primary_key=True, index=True)
+    store_name = Column(String, nullable=True)
+    store_address = Column(String, nullable=True)
+    store_phone = Column(String, nullable=True)
+    store_email = Column(String, nullable=True)
+    store_website = Column(String, nullable=True)
+    store_facebook = Column(String, nullable=True)
+    store_address_map = Column(String, nullable=True)
+    store_image_url = Column(String, nullable=True)
     
 class CustomerIsSale(Base):
     __tablename__ = "customer_is_sale"

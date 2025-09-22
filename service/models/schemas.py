@@ -205,3 +205,27 @@ class ChatbotSettings(ChatbotSettingsBase):
     model_config = ConfigDict(from_attributes=True)
     
     customer_id: str
+
+class StoreInfoBase(BaseModel):
+    """Base model for store information."""
+    store_name: Optional[str] = None
+    store_address: Optional[str] = None
+    store_phone: Optional[str] = None
+    store_email: Optional[str] = None
+    store_website: Optional[str] = None
+    store_facebook: Optional[str] = None
+    store_address_map: Optional[str] = None
+    store_image_url: Optional[str] = None
+
+class StoreInfoCreate(StoreInfoBase):
+    """Input model for creating store information."""
+    customer_id: str
+
+class StoreInfoUpdate(StoreInfoBase):
+    """Input model for updating store information."""
+    pass
+
+class StoreInfo(StoreInfoBase):
+    """Response model for store information."""
+    model_config = ConfigDict(from_attributes=True)
+    customer_id: str

@@ -15,7 +15,8 @@ from api import (
     faq_routes,
     control_routes,
     setting_routes,
-    order_routes
+    order_routes,
+    info_store_routes
 )
 from database.database import init_db
 import dependencies
@@ -71,7 +72,7 @@ app.include_router(control_routes.router, tags=["Control"])
 app.include_router(chat_routes.router, tags=["Chat"])
 app.include_router(setting_routes.router, tags=["Settings"])
 app.include_router(order_routes.router, tags=["Orders"])
-
+app.include_router(info_store_routes.router, tags=["Store Info"])
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="127.0.0.1", port=8010, reload=True)

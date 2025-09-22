@@ -15,12 +15,17 @@ from service.models.schemas import (
 )
 from pydantic import BaseModel, Field
 from langchain_core.language_models.base import BaseLanguageModel
-from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder
+from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder, StoreInfo
 
 # Schema for checking existing customer info
 class CheckCustomerInfoInput(BaseModel):
     """Schema for checking existing customer information"""
     pass  # No input needed as customer_id and thread_id are bound
+
+# Schema for getting store info
+class GetStoreInfoInput(BaseModel):
+    """Schema for getting store information"""
+    pass  # No input needed as customer_id is bound
 
 def create_check_customer_info_tool(customer_id: str, thread_id: str):
     def check_existing_customer_info():
@@ -100,6 +105,97 @@ def create_check_customer_info_tool(customer_id: str, thread_id: str):
         name="check_customer_info_tool",
         description="Kiểm tra thông tin khách hàng từ đơn hàng trước đó trong thread này",
         args_schema=CheckCustomerInfoInput
+    )
+
+def create_get_store_info_tool(customer_id: str):
+    def get_store_info():
+        """
+        Lấy thông tin cửa hàng bao gồm tên, địa chỉ, số điện thoại, email, website, Facebook, bản đồ và hình ảnh.
+        
+        Sử dụng công cụ này khi khách hàng hỏi về:
+        - Địa chỉ cửa hàng
+        - Thông tin liên hệ của cửa hàng
+        - Số điện thoại cửa hàng
+        - Email cửa hàng
+        - Website hoặc Facebook của cửa hàng
+        - Vị trí cửa hàng trên bản đồ
+        - Hình ảnh cửa hàng
+        """
+        print("--- Agent đã gọi công cụ lấy thông tin cửa hàng ---")
+        
+        db = next(get_db())
+        try:
+            store_info = db.query(StoreInfo).filter(StoreInfo.customer_id == customer_id).first()
+            
+            if not store_info:
+                return {
+                    "status": "no_info",
+                    "message": "Chưa có thông tin cửa hàng được cấu hình. Vui lòng liên hệ quản trị viên để cập nhật thông tin."
+                }
+            
+            # Tạo thông tin cửa hàng để trả về
+            store_data = {}
+            info_parts = []
+            
+            if store_info.store_name:
+                store_data["ten_cua_hang"] = store_info.store_name
+                info_parts.append(f"🏪 **Tên cửa hàng**: {store_info.store_name}")
+            
+            if store_info.store_address:
+                store_data["dia_chi"] = store_info.store_address
+                info_parts.append(f"📍 **Địa chỉ**: {store_info.store_address}")
+            
+            if store_info.store_phone:
+                store_data["so_dien_thoai"] = store_info.store_phone
+                info_parts.append(f"📞 **Số điện thoại**: {store_info.store_phone}")
+            
+            if store_info.store_email:
+                store_data["email"] = store_info.store_email
+                info_parts.append(f"📧 **Email**: {store_info.store_email}")
+            
+            if store_info.store_website:
+                store_data["website"] = store_info.store_website
+                info_parts.append(f"🌐 **Website**: {store_info.store_website}")
+            
+            if store_info.store_facebook:
+                store_data["facebook"] = store_info.store_facebook
+                info_parts.append(f"📘 **Facebook**: {store_info.store_facebook}")
+            
+            if store_info.store_address_map:
+                store_data["ban_do"] = store_info.store_address_map
+                info_parts.append(f"🗺️ **Bản đồ**: {store_info.store_address_map}")
+            
+            if store_info.store_image_url:
+                store_data["hinh_anh"] = store_info.store_image_url
+                info_parts.append(f"🖼️ **Hình ảnh cửa hàng**: {store_info.store_image_url}")
+            
+            if not info_parts:
+                return {
+                    "status": "empty_info",
+                    "message": "Thông tin cửa hàng chưa được cập nhật đầy đủ. Vui lòng liên hệ quản trị viên."
+                }
+            
+            formatted_message = "**THÔNG TIN CỬA HÀNG**\n\n" + "\n\n".join(info_parts)
+            
+            return {
+                "status": "success",
+                "message": formatted_message,
+                "store_info": store_data
+            }
+            
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Lỗi khi lấy thông tin cửa hàng: {str(e)}"
+            }
+        finally:
+            db.close()
+    
+    return StructuredTool.from_function(
+        func=get_store_info,
+        name="get_store_info_tool",
+        description="Lấy thông tin cửa hàng bao gồm địa chỉ, số điện thoại, email, website, Facebook",
+        args_schema=GetStoreInfoInput
     )
 
 async def retrieve_document_logic(
@@ -492,6 +588,10 @@ def create_customer_tools(
     # Always include customer info checking tool
     check_customer_info_tool = create_check_customer_info_tool(customer_id, thread_id)
     tools.append(check_customer_info_tool)
+    
+    # Always include store info tool
+    store_info_tool = create_get_store_info_tool(customer_id)
+    tools.append(store_info_tool)
     
     available_tools = []
     
