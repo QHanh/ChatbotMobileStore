@@ -165,9 +165,9 @@ def create_get_store_info_tool(customer_id: str):
                 store_data["ban_do"] = store_info.store_address_map
                 info_parts.append(f"🗺️ **Bản đồ**: {store_info.store_address_map}")
             
-            if store_info.store_image_url:
-                store_data["hinh_anh"] = store_info.store_image_url
-                info_parts.append(f"🖼️ **Hình ảnh cửa hàng**: {store_info.store_image_url}")
+            if store_info.store_image:
+                store_data["hinh_anh"] = store_info.store_image
+                info_parts.append(f"🖼️ **Hình ảnh cửa hàng**: {store_info.store_image}")
             
             if not info_parts:
                 return {
