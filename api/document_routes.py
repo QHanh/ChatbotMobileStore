@@ -1,8 +1,13 @@
 from fastapi import APIRouter, HTTPException, File, UploadFile, Form, Query, Depends
 from fastapi.responses import StreamingResponse, JSONResponse
-from urllib.parse import quote
+from urllib.parse import quote, urljoin, urlparse
 from sqlalchemy.orm import Session
 from io import BytesIO
+import xml.etree.ElementTree as ET
+import requests
+import json
+import asyncio
+from typing import List, Set
 
 from service.data.data_loader_vector_db import (
     get_weaviate_client, 
@@ -122,6 +127,180 @@ async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session 
         # Weaviate client is managed by app lifespan; do not close here
         client.close()
         pass
+
+def parse_sitemap(sitemap_url: str) -> List[str]:
+    """Parse sitemap XML and extract URLs. Handles both sitemap index and regular sitemaps."""
+    try:
+        response = requests.get(sitemap_url, timeout=30)
+        response.raise_for_status()
+        
+        root = ET.fromstring(response.content)
+        
+        namespaces = {
+            'sitemap': 'http://www.sitemaps.org/schemas/sitemap/0.9'
+        }
+        
+        urls = []
+        
+        sitemap_elements = root.findall('.//sitemap:sitemap', namespaces)
+        if sitemap_elements:
+            for sitemap_elem in sitemap_elements:
+                loc_elem = sitemap_elem.find('sitemap:loc', namespaces)
+                if loc_elem is not None and loc_elem.text:
+                    sub_urls = parse_sitemap(loc_elem.text)
+                    urls.extend(sub_urls)
+        else:
+            url_elements = root.findall('.//sitemap:url', namespaces)
+            for url_elem in url_elements:
+                loc_elem = url_elem.find('sitemap:loc', namespaces)
+                if loc_elem is not None and loc_elem.text:
+                    urls.append(loc_elem.text)
+        
+        return urls
+    except Exception as e:
+        print(f"Error parsing sitemap {sitemap_url}: {e}")
+        return []
+
+def get_sitemap_urls(base_url: str) -> List[str]:
+    """Get all URLs from website sitemap. Tries common sitemap locations."""
+    parsed_url = urlparse(base_url)
+    base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
+    
+    sitemap_locations = [
+        f"{base_domain}/sitemap.xml",
+        f"{base_domain}/sitemap_index.xml",
+        f"{base_domain}/sitemaps.xml",
+        f"{base_url.rstrip('/')}/sitemap.xml"
+    ]
+    
+    all_urls = []
+    
+    for sitemap_url in sitemap_locations:
+        try:
+            urls = parse_sitemap(sitemap_url)
+            if urls:
+                all_urls.extend(urls)
+                break
+        except:
+            continue
+    
+    seen = set()
+    unique_urls = []
+    for url in all_urls:
+        if url not in seen:
+            seen.add(url)
+            unique_urls.append(url)
+    
+    return unique_urls
+
+async def crawl_url_content(url: str) -> tuple[str, str]:
+    """Crawl content from a single URL. Returns (url, content)."""
+    try:
+        content = get_text_from_url(url)
+        return url, content
+    except Exception as e:
+        print(f"Error crawling {url}: {e}")
+        return url, ""
+
+@router.post("/upload-sitemap/{customer_id}")
+async def upload_sitemap(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None), db: Session = Depends(get_db)):
+    """
+    Crawl website sitemap and upload all found URLs as documents.
+    Streams progress in real-time.
+    """
+    async def generate_progress():
+        client = None
+        try:
+            tenant_id = sanitize_for_weaviate(customer_id)
+            client = get_weaviate_client()
+            ensure_document_collection_exists(client)
+            ensure_tenant_exists(client, tenant_id)
+            
+            # Step 1: Get sitemap URLs
+            yield f"data: {json.dumps({'status': 'discovering', 'message': f'🔍 Đang tìm sitemap cho {website_url}...'})}\n\n"
+            
+            urls = get_sitemap_urls(website_url)
+            total_urls = len(urls)
+            
+            if total_urls == 0:
+                yield f"data: {json.dumps({'status': 'error', 'message': '❌ Không tìm thấy sitemap hoặc sitemap trống'})}\n\n"
+                return
+            
+            yield f"data: {json.dumps({'status': 'found', 'message': f'✅ Tìm thấy {total_urls} URLs trong sitemap', 'total_urls': total_urls})}\n\n"
+            
+            # Step 2: Crawl each URL
+            processed_count = 0
+            success_count = 0
+            failed_count = 0
+            
+            for i, url in enumerate(urls, 1):
+                try:
+                    # Update progress
+                    yield f"data: {json.dumps({'status': 'crawling', 'current_url': url, 'progress': i, 'total': total_urls, 'message': f'🔄 Đang crawl ({i}/{total_urls}): {url}'})}\n\n"
+                    
+                    # Crawl content
+                    _, content = await crawl_url_content(url)
+                    
+                    if content.strip():
+                        # Use custom source name or generate from website URL
+                        if source:
+                            source_name = source
+                        else:
+                            parsed_website = urlparse(website_url)
+                            domain_name = parsed_website.netloc.replace('www.', '')
+                            source_name = f"sitemap_{domain_name}"
+                        
+                        # Save to PostgreSQL with URL info in content
+                        content_with_url = f"URL: {url}\n\n{content}"
+                        new_document = Document(
+                            customer_id=customer_id,
+                            source_name=source_name,
+                            full_content=content_with_url,
+                            content_type="text/html"
+                        )
+                        db.add(new_document)
+                        
+                        # Process and load to vector DB with URL context
+                        enhanced_content = f"Trang web: {url}\nNội dung:\n{content}"
+                        process_and_load_text(client, enhanced_content, source_name, tenant_id)
+                        
+                        success_count += 1
+                        yield f"data: {json.dumps({'status': 'success', 'current_url': url, 'progress': i, 'total': total_urls, 'success_count': success_count, 'message': f'✅ Thành công ({i}/{total_urls}): {url}'})}\n\n"
+                    else:
+                        failed_count += 1
+                        yield f"data: {json.dumps({'status': 'failed', 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'message': f'⚠️ Không có nội dung ({i}/{total_urls}): {url}'})}\n\n"
+                
+                except Exception as e:
+                    failed_count += 1
+                    yield f"data: {json.dumps({'status': 'failed', 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'error': str(e), 'message': f'❌ Lỗi ({i}/{total_urls}): {url} - {str(e)}'})}\n\n"
+                
+                processed_count += 1
+                
+                # Small delay to prevent overwhelming the server
+                await asyncio.sleep(0.1)
+            
+            # Commit all changes
+            db.commit()
+            
+            # Final summary
+            yield f"data: {json.dumps({'status': 'completed', 'total_urls': total_urls, 'success_count': success_count, 'failed_count': failed_count, 'message': f'🎉 Hoàn thành! Đã crawl {success_count}/{total_urls} URLs thành công cho khách hàng {customer_id}'})}\n\n"
+            
+        except Exception as e:
+            yield f"data: {json.dumps({'status': 'error', 'message': f'❌ Lỗi hệ thống: {str(e)}'})}\n\n"
+        finally:
+            if client:
+                client.close()
+    
+    return StreamingResponse(
+        generate_progress(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
 
 @router.get("/document-original/{customer_id}")
 async def get_original_document(
