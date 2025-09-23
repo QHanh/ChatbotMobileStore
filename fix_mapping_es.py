@@ -1,11 +1,11 @@
 import asyncio
 from elasticsearch import AsyncElasticsearch
-from service.data.data_loader_elastic_search import SERVICES_INDEX, get_shared_index_mapping, ACCESSORIES_INDEX, PRODUCTS_INDEX
+from service.data.data_loader_elastic_search import SERVICES_INDEX, get_shared_index_mapping, ACCESSORIES_INDEX, PRODUCTS_INDEX, FAQ_INDEX
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
-index = PRODUCTS_INDEX
+index = FAQ_INDEX
 
 async def fix_elasticsearch_mapping():
     """Fix mapping của Elasticsearch index"""
@@ -30,7 +30,7 @@ async def fix_elasticsearch_mapping():
         
         # Tạo lại index với mapping đúng
         print(f"🛠️ Tạo lại index '{index}' với mapping đúng...")
-        mapping = get_shared_index_mapping("service")
+        mapping = get_shared_index_mapping("faq")
         
         # In ra mapping để kiểm tra
         print("📋 Mapping mới:")

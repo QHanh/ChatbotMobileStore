@@ -20,12 +20,13 @@ from datetime import datetime, timezone
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
     'names': [
-        'Câu hỏi', 'Câu trả lời'
+        'Câu hỏi', 'Câu trả lời', 'Phân loại'
     ],
     'required': ['Câu hỏi', 'Câu trả lời'],
     'rename_map': {
         "Câu hỏi": "question",
         "Câu trả lời": "answer",
+        "Phân loại": "classification",
     },
     'id_generation_field': 'Câu hỏi'
 }
@@ -210,10 +211,10 @@ async def export_faqs_to_excel(
     faqs = await get_all_faqs_by_customer(es_client, FAQ_INDEX, sanitized_customer_id)
     
     if not faqs:
-        df = pd.DataFrame(columns=['Câu hỏi', 'Câu trả lời'])
+        df = pd.DataFrame(columns=['Câu hỏi', 'Câu trả lời', 'Phân loại'])
     else:
         df = pd.DataFrame(faqs)
-        required_cols = {'question': 'Câu hỏi', 'answer': 'Câu trả lời'}
+        required_cols = {'question': 'Câu hỏi', 'answer': 'Câu trả lời', 'classification': 'Phân loại'}
         for col in required_cols.keys():
             if col not in df.columns:
                 df[col] = ''

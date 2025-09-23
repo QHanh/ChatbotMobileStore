@@ -61,6 +61,7 @@ def get_shared_index_mapping(data_type: str):
             "faq_id": {"type": "keyword"},
             "question": {"type": "text", "analyzer": "standard"},
             "answer": {"type": "text", "analyzer": "standard"},
+            "classification": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "created_at": {"type": "date"}
         }
     else:
