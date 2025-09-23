@@ -413,10 +413,16 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
         3.  Trước khi gọi công cụ này, BẮT BUỘC phải hỏi và thu thập đủ thông tin cá nhân của khách hàng, bao gồm: `ten_khach_hang`, `so_dien_thoai`, và `dia_chi`.
         """
         print("--- LangChain Agent đã gọi công cụ tạo đơn hàng dịch vụ ---")
+        print(f"Debug - loai_dich_vu type: {type(loai_dich_vu)}, value: {loai_dich_vu}")
 
         import time
         timestamp = str(int(time.time()))[-6:]  # Lấy 6 chữ số cuối của timestamp
         order_id = f"DHDV_{so_dien_thoai[-4:]}_{ma_dich_vu.split('-')[-1]}_{timestamp}"
+        
+        # Xử lý an toàn cho loai_dich_vu
+        safe_loai_dich_vu = None
+        if loai_dich_vu and str(loai_dich_vu).strip() and not str(loai_dich_vu).startswith('<'):
+            safe_loai_dich_vu = str(loai_dich_vu).strip()
         
         # Lưu vào database
         db = next(get_db())
@@ -427,7 +433,7 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
                 thread_id=thread_id,
                 ma_dich_vu=ma_dich_vu,
                 ten_dich_vu=ten_dich_vu,
-                loai_dich_vu=loai_dich_vu,
+                loai_dich_vu=safe_loai_dich_vu,
                 ten_san_pham_sua_chua=ten_san_pham,
                 ten_khach_hang=ten_khach_hang,
                 so_dien_thoai=so_dien_thoai,
@@ -441,7 +447,7 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
                 "order_id": order_id,
                 "ma_dich_vu": ma_dich_vu,
                 "ten_dich_vu": ten_dich_vu,
-                "loai_dich_vu": loai_dich_vu,
+                "loai_dich_vu": safe_loai_dich_vu,
                 "ten_san_pham_sua_chua": ten_san_pham,
                 "ten_khach_hang": ten_khach_hang,
                 "so_dien_thoai": so_dien_thoai,
