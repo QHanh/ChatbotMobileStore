@@ -72,7 +72,8 @@ async def delete_store_info(customer_id: str, db: Session = Depends(get_db)):
             store_info.store_website = None
             store_info.store_facebook = None
             store_info.store_address_map = None
-            store_info.store_image_url = None
+            store_info.store_image = None
+            store_info.info_more = None
             
             db.commit()
             return {"message": f"Thông tin cửa hàng của khách hàng '{customer_id}' đã được reset về mặc định."}

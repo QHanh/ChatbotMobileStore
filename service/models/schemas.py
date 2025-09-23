@@ -215,7 +215,8 @@ class StoreInfoBase(BaseModel):
     store_website: Optional[str] = None
     store_facebook: Optional[str] = None
     store_address_map: Optional[str] = None
-    store_image_url: Optional[str] = None
+    store_image: Optional[str] = None
+    info_more: Optional[str] = None
 
 class StoreInfoCreate(StoreInfoBase):
     """Input model for creating store information."""

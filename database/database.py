@@ -34,7 +34,8 @@ class StoreInfo(Base):
     store_website = Column(String, nullable=True)
     store_facebook = Column(String, nullable=True)
     store_address_map = Column(String, nullable=True)
-    store_image_url = Column(String, nullable=True)
+    store_image = Column(String, nullable=True)
+    info_more = Column(String, nullable=True)
     
 class CustomerIsSale(Base):
     __tablename__ = "customer_is_sale"
