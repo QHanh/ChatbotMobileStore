@@ -253,15 +253,48 @@ async def crawl_url_content(url: str) -> tuple[str, str]:
         print(f"Error crawling {url}: {e}")
         return url, ""
 
-@router.post("/upload-sitemap/{customer_id}")
-async def upload_sitemap(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None), db: Session = Depends(get_db)):
+@router.post("/start-sitemap-crawl/{customer_id}")
+async def start_sitemap_crawl(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None)):
     """
-    Crawl website sitemap and upload all found URLs as documents.
-    Streams progress in real-time.
-    Returns task_id for cancellation support.
+    Start a sitemap crawl task and return task_id immediately.
+    Use the task_id to get progress via /sitemap-progress/{task_id} or cancel via /cancel-crawl/{task_id}
     """
     # Generate unique task ID
     task_id = str(uuid.uuid4())
+    
+    # Initialize task status
+    crawl_task_status[task_id] = {
+        'status': 'initialized',
+        'customer_id': customer_id,
+        'website_url': website_url,
+        'source': source,
+        'start_time': datetime.now().isoformat(),
+        'progress': 0,
+        'total_urls': 0,
+        'success_count': 0,
+        'failed_count': 0
+    }
+    
+    return {
+        "task_id": task_id,
+        "message": f"Crawl task created for {website_url}",
+        "progress_url": f"/sitemap-progress/{task_id}",
+        "cancel_url": f"/cancel-crawl/{task_id}",
+        "status_url": f"/crawl-status/{task_id}"
+    }
+
+@router.get("/sitemap-progress/{task_id}")
+async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
+    """
+    Stream progress for a specific crawl task.
+    """
+    if task_id not in crawl_task_status:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    
+    task_info = crawl_task_status[task_id]
+    customer_id = task_info['customer_id']
+    website_url = task_info['website_url']
+    source = task_info.get('source')
     
     async def generate_progress():
         client = None
@@ -271,17 +304,11 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             ensure_document_collection_exists(client)
             ensure_tenant_exists(client, tenant_id)
             
-            # Initialize task status
-            crawl_task_status[task_id] = {
+            # Update task status to running
+            crawl_task_status[task_id].update({
                 'status': 'running',
-                'customer_id': customer_id,
-                'website_url': website_url,
-                'start_time': datetime.now().isoformat(),
-                'progress': 0,
-                'total_urls': 0,
-                'success_count': 0,
-                'failed_count': 0
-            }
+                'actual_start_time': datetime.now().isoformat()
+            })
             
             # Step 1: Get sitemap URLs
             yield f"data: {json.dumps({'status': 'discovering', 'task_id': task_id, 'message': f'🔍 Đang tìm sitemap cho {website_url}...'})}\n\n"
@@ -445,10 +472,6 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             if task_id in active_crawl_tasks:
                 del active_crawl_tasks[task_id]
     
-    # Store the task for potential cancellation
-    task = asyncio.create_task(generate_progress().__anext__())
-    active_crawl_tasks[task_id] = task
-    
     return StreamingResponse(
         generate_progress(),
         media_type="text/event-stream",
@@ -460,6 +483,15 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             "X-Task-ID": task_id,  # Return task ID in header
         }
     )
+
+# Keep the old API for backward compatibility
+@router.post("/upload-sitemap/{customer_id}")
+async def upload_sitemap(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None)):
+    """
+    Legacy API - Start crawl and return task_id immediately, then use /sitemap-progress/{task_id} to stream.
+    """
+    result = await start_sitemap_crawl(customer_id, website_url, source)
+    return result
 
 @router.post("/cancel-crawl/{task_id}")
 async def cancel_crawl(task_id: str):
