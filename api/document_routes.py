@@ -351,13 +351,11 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
                 content_type="text/html"
             )
             db.add(new_document)
-            db.commit()  # Commit initial record
-            document_id = new_document.id  # Store ID for updates
+            db.commit()
+            document_id = new_document.id
             
             for i, url in enumerate(urls, 1):
-                # Check if task was cancelled
                 if task_id in crawl_task_status and crawl_task_status[task_id]['status'] == 'cancelled':
-                    # Update final status in PostgreSQL before cancelling
                     cancelled_content = f"SITEMAP CRAWL SUMMARY\n"
                     cancelled_content += f"Website: {website_url}\n"
                     cancelled_content += f"Total URLs to crawl: {total_urls}\n"
@@ -370,7 +368,6 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
                     if all_crawled_content:
                         cancelled_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
                     
-                    # Save cancelled state to PostgreSQL
                     db.query(Document).filter(Document.id == document_id).update({
                         Document.full_content: cancelled_content
                     })
@@ -389,22 +386,18 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
                     
                     yield f"data: {json.dumps({'status': 'crawling', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'message': f'🔄 Đang crawl ({i}/{total_urls}): {url}'})}\n\n"
                     
-                    # Crawl content
                     _, content = await crawl_url_content(url)
                     
                     if content.strip():
-                        # Store content with URL info for later aggregation
                         content_with_url = f"URL: {url}\n\n{content}"
                         all_crawled_content.append(content_with_url)
                         
-                        # Process and load to vector DB individually for better search
                         enhanced_content = f"Trang web: {url}\nNội dung:\n{content}"
                         process_and_load_text(client, enhanced_content, source_name, tenant_id)
                         
                         success_count += 1
                         crawl_task_status[task_id]['success_count'] = success_count
                         
-                        # Update PostgreSQL record immediately after each successful URL
                         updated_content = f"SITEMAP CRAWL SUMMARY\n"
                         updated_content += f"Website: {website_url}\n"
                         updated_content += f"Total URLs to crawl: {total_urls}\n"
@@ -414,11 +407,10 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
                         updated_content += f"\n{'='*80}\n\n"
                         updated_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
                         
-                        # Update the existing record
                         db.query(Document).filter(Document.id == document_id).update({
                             Document.full_content: updated_content
                         })
-                        db.commit()  # Commit after each successful URL
+                        db.commit()
                         
                         yield f"data: {json.dumps({'status': 'success', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'success_count': success_count, 'message': f'✅ Thành công ({i}/{total_urls}): {url}'})}\n\n"
                     else:
@@ -433,10 +425,8 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
                 
                 processed_count += 1
                 
-                # Small delay to prevent overwhelming the server
                 await asyncio.sleep(0.1)
             
-            # Step 3: Final update to PostgreSQL record with completion status
             final_content = f"SITEMAP CRAWL SUMMARY\n"
             final_content += f"Website: {website_url}\n"
             final_content += f"Total URLs crawled: {total_urls}\n"
@@ -448,7 +438,6 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
             if all_crawled_content:
                 final_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
             
-            # Final update to mark as completed
             db.query(Document).filter(Document.id == document_id).update({
                 Document.full_content: final_content
             })
@@ -456,7 +445,6 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
             
             yield f"data: {json.dumps({'status': 'saving', 'message': f'💾 Đã hoàn thành và lưu {success_count} URLs vào database'})}\n\n"
             
-            # Final summary
             crawl_task_status[task_id]['status'] = 'completed'
             crawl_task_status[task_id]['end_time'] = datetime.now().isoformat()
             yield f"data: {json.dumps({'status': 'completed', 'task_id': task_id, 'total_urls': total_urls, 'success_count': success_count, 'failed_count': failed_count, 'message': f'🎉 Hoàn thành! Đã crawl {success_count}/{total_urls} URLs thành công cho khách hàng {customer_id}'})}\n\n"
@@ -468,7 +456,6 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
         finally:
             if client:
                 client.close()
-            # Clean up task from active tasks
             if task_id in active_crawl_tasks:
                 del active_crawl_tasks[task_id]
     
@@ -480,18 +467,9 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
-            "X-Task-ID": task_id,  # Return task ID in header
+            "X-Task-ID": task_id,
         }
     )
-
-# Keep the old API for backward compatibility
-@router.post("/upload-sitemap/{customer_id}")
-async def upload_sitemap(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None)):
-    """
-    Legacy API - Start crawl and return task_id immediately, then use /sitemap-progress/{task_id} to stream.
-    """
-    result = await start_sitemap_crawl(customer_id, website_url, source)
-    return result
 
 @router.post("/cancel-crawl/{task_id}")
 async def cancel_crawl(task_id: str):
