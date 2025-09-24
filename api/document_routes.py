@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import requests
 import json
 import asyncio
+from datetime import datetime
 from typing import List, Set
 
 from service.data.data_loader_vector_db import (
@@ -271,10 +272,19 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             
             yield f"data: {json.dumps({'status': 'found', 'message': f'✅ Tìm thấy {total_urls} URLs trong sitemap', 'total_urls': total_urls})}\n\n"
             
-            # Step 2: Crawl each URL
+            # Step 2: Crawl each URL and collect all content
             processed_count = 0
             success_count = 0
             failed_count = 0
+            all_crawled_content = []  # Store all successful crawls
+            
+            # Determine source name once
+            if source:
+                source_name = source
+            else:
+                parsed_website = urlparse(website_url)
+                domain_name = parsed_website.netloc.replace('www.', '')
+                source_name = f"sitemap_{domain_name}"
             
             for i, url in enumerate(urls, 1):
                 try:
@@ -285,25 +295,11 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                     _, content = await crawl_url_content(url)
                     
                     if content.strip():
-                        # Use custom source name or generate from website URL
-                        if source:
-                            source_name = source
-                        else:
-                            parsed_website = urlparse(website_url)
-                            domain_name = parsed_website.netloc.replace('www.', '')
-                            source_name = f"sitemap_{domain_name}"
-                        
-                        # Save to PostgreSQL with URL info in content
+                        # Store content with URL info for later aggregation
                         content_with_url = f"URL: {url}\n\n{content}"
-                        new_document = Document(
-                            customer_id=customer_id,
-                            source_name=source_name,
-                            full_content=content_with_url,
-                            content_type="text/html"
-                        )
-                        db.add(new_document)
+                        all_crawled_content.append(content_with_url)
                         
-                        # Process and load to vector DB with URL context
+                        # Still process and load to vector DB individually for better search
                         enhanced_content = f"Trang web: {url}\nNội dung:\n{content}"
                         process_and_load_text(client, enhanced_content, source_name, tenant_id)
                         
@@ -321,6 +317,27 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                 
                 # Small delay to prevent overwhelming the server
                 await asyncio.sleep(0.1)
+            
+            # Step 3: Save all content as ONE record in PostgreSQL
+            if all_crawled_content:
+                # Combine all content with separators
+                combined_content = f"SITEMAP CRAWL SUMMARY\n"
+                combined_content += f"Website: {website_url}\n"
+                combined_content += f"Total URLs crawled: {success_count}\n"
+                combined_content += f"Crawl date: {datetime.now().isoformat()}\n"
+                combined_content += f"\n{'='*80}\n\n"
+                combined_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
+                
+                # Save single record to PostgreSQL
+                new_document = Document(
+                    customer_id=customer_id,
+                    source_name=source_name,
+                    full_content=combined_content,
+                    content_type="text/html"
+                )
+                db.add(new_document)
+                
+                yield f"data: {json.dumps({'status': 'saving', 'message': f'💾 Đang lưu tổng hợp {success_count} URLs vào database...'})}\n\n"
             
             # Commit all changes
             db.commit()
