@@ -8,7 +8,8 @@ import requests
 import json
 import asyncio
 from datetime import datetime
-from typing import List, Set
+from typing import List, Set, Dict
+import uuid
 
 from service.data.data_loader_vector_db import (
     get_weaviate_client, 
@@ -26,6 +27,10 @@ from typing import Optional
 from service.utils.helpers import sanitize_for_weaviate, get_text_from_url
 
 router = APIRouter()
+
+# Global dictionary to store active crawl tasks
+active_crawl_tasks: Dict[str, asyncio.Task] = {}
+crawl_task_status: Dict[str, Dict] = {}
 
 @router.post("/upload-text/{customer_id}")
 async def upload_text(customer_id: str, doc_input: DocumentInput, db: Session = Depends(get_db)):
@@ -253,7 +258,11 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
     """
     Crawl website sitemap and upload all found URLs as documents.
     Streams progress in real-time.
+    Returns task_id for cancellation support.
     """
+    # Generate unique task ID
+    task_id = str(uuid.uuid4())
+    
     async def generate_progress():
         client = None
         try:
@@ -262,8 +271,20 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             ensure_document_collection_exists(client)
             ensure_tenant_exists(client, tenant_id)
             
+            # Initialize task status
+            crawl_task_status[task_id] = {
+                'status': 'running',
+                'customer_id': customer_id,
+                'website_url': website_url,
+                'start_time': datetime.now().isoformat(),
+                'progress': 0,
+                'total_urls': 0,
+                'success_count': 0,
+                'failed_count': 0
+            }
+            
             # Step 1: Get sitemap URLs
-            yield f"data: {json.dumps({'status': 'discovering', 'message': f'🔍 Đang tìm sitemap cho {website_url}...'})}\n\n"
+            yield f"data: {json.dumps({'status': 'discovering', 'task_id': task_id, 'message': f'🔍 Đang tìm sitemap cho {website_url}...'})}\n\n"
             
             urls = get_sitemap_urls(website_url)
             total_urls = len(urls)
@@ -282,16 +303,27 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             
             # Determine source name once
             if source:
-                source_name = source
+                source_name = source + '.url'
             else:
                 parsed_website = urlparse(website_url)
                 domain_name = parsed_website.netloc.replace('www.', '')
-                source_name = f"sitemap_{domain_name}"
+                source_name = f"sitemap_{domain_name}.url"
             
             for i, url in enumerate(urls, 1):
+                # Check if task was cancelled
+                if task_id in crawl_task_status and crawl_task_status[task_id]['status'] == 'cancelled':
+                    yield f"data: {json.dumps({'status': 'cancelled', 'message': '🛑 Crawl đã bị dừng bởi người dùng'})}\n\n"
+                    return
+                
                 try:
                     # Update progress
-                    yield f"data: {json.dumps({'status': 'crawling', 'current_url': url, 'progress': i, 'total': total_urls, 'message': f'🔄 Đang crawl ({i}/{total_urls}): {url}'})}\n\n"
+                    crawl_task_status[task_id].update({
+                        'progress': i,
+                        'total_urls': total_urls,
+                        'current_url': url
+                    })
+                    
+                    yield f"data: {json.dumps({'status': 'crawling', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'message': f'🔄 Đang crawl ({i}/{total_urls}): {url}'})}\n\n"
                     
                     # Crawl content
                     _, content = await crawl_url_content(url)
@@ -306,14 +338,17 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                         process_and_load_text(client, enhanced_content, source_name, tenant_id)
                         
                         success_count += 1
-                        yield f"data: {json.dumps({'status': 'success', 'current_url': url, 'progress': i, 'total': total_urls, 'success_count': success_count, 'message': f'✅ Thành công ({i}/{total_urls}): {url}'})}\n\n"
+                        crawl_task_status[task_id]['success_count'] = success_count
+                        yield f"data: {json.dumps({'status': 'success', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'success_count': success_count, 'message': f'✅ Thành công ({i}/{total_urls}): {url}'})}\n\n"
                     else:
                         failed_count += 1
-                        yield f"data: {json.dumps({'status': 'failed', 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'message': f'⚠️ Không có nội dung ({i}/{total_urls}): {url}'})}\n\n"
+                        crawl_task_status[task_id]['failed_count'] = failed_count
+                        yield f"data: {json.dumps({'status': 'failed', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'message': f'⚠️ Không có nội dung ({i}/{total_urls}): {url}'})}\n\n"
                 
                 except Exception as e:
                     failed_count += 1
-                    yield f"data: {json.dumps({'status': 'failed', 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'error': str(e), 'message': f'❌ Lỗi ({i}/{total_urls}): {url} - {str(e)}'})}\n\n"
+                    crawl_task_status[task_id]['failed_count'] = failed_count
+                    yield f"data: {json.dumps({'status': 'failed', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'failed_count': failed_count, 'error': str(e), 'message': f'❌ Lỗi ({i}/{total_urls}): {url} - {str(e)}'})}\n\n"
                 
                 processed_count += 1
                 
@@ -345,13 +380,24 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             db.commit()
             
             # Final summary
-            yield f"data: {json.dumps({'status': 'completed', 'total_urls': total_urls, 'success_count': success_count, 'failed_count': failed_count, 'message': f'🎉 Hoàn thành! Đã crawl {success_count}/{total_urls} URLs thành công cho khách hàng {customer_id}'})}\n\n"
+            crawl_task_status[task_id]['status'] = 'completed'
+            crawl_task_status[task_id]['end_time'] = datetime.now().isoformat()
+            yield f"data: {json.dumps({'status': 'completed', 'task_id': task_id, 'total_urls': total_urls, 'success_count': success_count, 'failed_count': failed_count, 'message': f'🎉 Hoàn thành! Đã crawl {success_count}/{total_urls} URLs thành công cho khách hàng {customer_id}'})}\n\n"
             
         except Exception as e:
-            yield f"data: {json.dumps({'status': 'error', 'message': f'❌ Lỗi hệ thống: {str(e)}'})}\n\n"
+            crawl_task_status[task_id]['status'] = 'error'
+            crawl_task_status[task_id]['error'] = str(e)
+            yield f"data: {json.dumps({'status': 'error', 'task_id': task_id, 'message': f'❌ Lỗi hệ thống: {str(e)}'})}\n\n"
         finally:
             if client:
                 client.close()
+            # Clean up task from active tasks
+            if task_id in active_crawl_tasks:
+                del active_crawl_tasks[task_id]
+    
+    # Store the task for potential cancellation
+    task = asyncio.create_task(generate_progress().__anext__())
+    active_crawl_tasks[task_id] = task
     
     return StreamingResponse(
         generate_progress(),
@@ -361,8 +407,52 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
             "Connection": "keep-alive",
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Headers": "*",
+            "X-Task-ID": task_id,  # Return task ID in header
         }
     )
+
+@router.post("/cancel-crawl/{task_id}")
+async def cancel_crawl(task_id: str):
+    """
+    Cancel an active crawl task.
+    """
+    if task_id not in crawl_task_status:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    
+    if crawl_task_status[task_id]['status'] in ['completed', 'error', 'cancelled']:
+        return {"message": f"Task {task_id} is already {crawl_task_status[task_id]['status']}", "task_id": task_id}
+    
+    # Mark task as cancelled
+    crawl_task_status[task_id]['status'] = 'cancelled'
+    crawl_task_status[task_id]['cancelled_at'] = datetime.now().isoformat()
+    
+    # Cancel the asyncio task if it exists
+    if task_id in active_crawl_tasks:
+        active_crawl_tasks[task_id].cancel()
+        del active_crawl_tasks[task_id]
+    
+    return {"message": f"Task {task_id} has been cancelled", "task_id": task_id}
+
+@router.get("/crawl-status/{task_id}")
+async def get_crawl_status(task_id: str):
+    """
+    Get the status of a crawl task.
+    """
+    if task_id not in crawl_task_status:
+        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
+    
+    return crawl_task_status[task_id]
+
+@router.get("/active-crawls")
+async def get_active_crawls():
+    """
+    Get all active crawl tasks.
+    """
+    active_tasks = {
+        task_id: status for task_id, status in crawl_task_status.items()
+        if status['status'] == 'running'
+    }
+    return {"active_tasks": active_tasks, "count": len(active_tasks)}
 
 @router.get("/document-original/{customer_id}")
 async def get_original_document(
