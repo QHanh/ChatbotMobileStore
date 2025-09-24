@@ -309,10 +309,47 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                 domain_name = parsed_website.netloc.replace('www.', '')
                 source_name = f"sitemap_{domain_name}.url"
             
+            # Create initial PostgreSQL record
+            initial_content = f"SITEMAP CRAWL SUMMARY\n"
+            initial_content += f"Website: {website_url}\n"
+            initial_content += f"Total URLs to crawl: {total_urls}\n"
+            initial_content += f"Crawl started: {datetime.now().isoformat()}\n"
+            initial_content += f"Status: In Progress...\n"
+            initial_content += f"\n{'='*80}\n\n"
+            
+            new_document = Document(
+                customer_id=customer_id,
+                source_name=source_name,
+                full_content=initial_content,
+                content_type="text/html"
+            )
+            db.add(new_document)
+            db.commit()  # Commit initial record
+            document_id = new_document.id  # Store ID for updates
+            
             for i, url in enumerate(urls, 1):
                 # Check if task was cancelled
                 if task_id in crawl_task_status and crawl_task_status[task_id]['status'] == 'cancelled':
-                    yield f"data: {json.dumps({'status': 'cancelled', 'message': '🛑 Crawl đã bị dừng bởi người dùng'})}\n\n"
+                    # Update final status in PostgreSQL before cancelling
+                    cancelled_content = f"SITEMAP CRAWL SUMMARY\n"
+                    cancelled_content += f"Website: {website_url}\n"
+                    cancelled_content += f"Total URLs to crawl: {total_urls}\n"
+                    cancelled_content += f"Crawl started: {datetime.now().isoformat()}\n"
+                    cancelled_content += f"Status: CANCELLED by user\n"
+                    cancelled_content += f"Success: {success_count}, Failed: {failed_count}\n"
+                    cancelled_content += f"Cancelled at URL {i}/{total_urls}: {url if 'url' in locals() else 'N/A'}\n"
+                    cancelled_content += f"Cancelled time: {datetime.now().isoformat()}\n"
+                    cancelled_content += f"\n{'='*80}\n\n"
+                    if all_crawled_content:
+                        cancelled_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
+                    
+                    # Save cancelled state to PostgreSQL
+                    db.query(Document).filter(Document.id == document_id).update({
+                        Document.full_content: cancelled_content
+                    })
+                    db.commit()
+                    
+                    yield f"data: {json.dumps({'status': 'cancelled', 'message': f'🛑 Crawl đã bị dừng bởi người dùng. Đã lưu {success_count} URLs thành công.'})}\n\n"
                     return
                 
                 try:
@@ -333,12 +370,29 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                         content_with_url = f"URL: {url}\n\n{content}"
                         all_crawled_content.append(content_with_url)
                         
-                        # Still process and load to vector DB individually for better search
+                        # Process and load to vector DB individually for better search
                         enhanced_content = f"Trang web: {url}\nNội dung:\n{content}"
                         process_and_load_text(client, enhanced_content, source_name, tenant_id)
                         
                         success_count += 1
                         crawl_task_status[task_id]['success_count'] = success_count
+                        
+                        # Update PostgreSQL record immediately after each successful URL
+                        updated_content = f"SITEMAP CRAWL SUMMARY\n"
+                        updated_content += f"Website: {website_url}\n"
+                        updated_content += f"Total URLs to crawl: {total_urls}\n"
+                        updated_content += f"Crawl started: {datetime.now().isoformat()}\n"
+                        updated_content += f"Status: In Progress... ({success_count}/{total_urls} completed)\n"
+                        updated_content += f"Success: {success_count}, Failed: {failed_count}\n"
+                        updated_content += f"\n{'='*80}\n\n"
+                        updated_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
+                        
+                        # Update the existing record
+                        db.query(Document).filter(Document.id == document_id).update({
+                            Document.full_content: updated_content
+                        })
+                        db.commit()  # Commit after each successful URL
+                        
                         yield f"data: {json.dumps({'status': 'success', 'task_id': task_id, 'current_url': url, 'progress': i, 'total': total_urls, 'success_count': success_count, 'message': f'✅ Thành công ({i}/{total_urls}): {url}'})}\n\n"
                     else:
                         failed_count += 1
@@ -355,29 +409,25 @@ async def upload_sitemap(customer_id: str, website_url: str = Form(...), source:
                 # Small delay to prevent overwhelming the server
                 await asyncio.sleep(0.1)
             
-            # Step 3: Save all content as ONE record in PostgreSQL
+            # Step 3: Final update to PostgreSQL record with completion status
+            final_content = f"SITEMAP CRAWL SUMMARY\n"
+            final_content += f"Website: {website_url}\n"
+            final_content += f"Total URLs crawled: {total_urls}\n"
+            final_content += f"Crawl started: {datetime.now().isoformat()}\n"
+            final_content += f"Status: COMPLETED\n"
+            final_content += f"Success: {success_count}, Failed: {failed_count}\n"
+            final_content += f"Crawl finished: {datetime.now().isoformat()}\n"
+            final_content += f"\n{'='*80}\n\n"
             if all_crawled_content:
-                # Combine all content with separators
-                combined_content = f"SITEMAP CRAWL SUMMARY\n"
-                combined_content += f"Website: {website_url}\n"
-                combined_content += f"Total URLs crawled: {success_count}\n"
-                combined_content += f"Crawl date: {datetime.now().isoformat()}\n"
-                combined_content += f"\n{'='*80}\n\n"
-                combined_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
-                
-                # Save single record to PostgreSQL
-                new_document = Document(
-                    customer_id=customer_id,
-                    source_name=source_name,
-                    full_content=combined_content,
-                    content_type="text/html"
-                )
-                db.add(new_document)
-                
-                yield f"data: {json.dumps({'status': 'saving', 'message': f'💾 Đang lưu tổng hợp {success_count} URLs vào database...'})}\n\n"
+                final_content += "\n\n" + "="*80 + "\n\n".join(all_crawled_content)
             
-            # Commit all changes
+            # Final update to mark as completed
+            db.query(Document).filter(Document.id == document_id).update({
+                Document.full_content: final_content
+            })
             db.commit()
+            
+            yield f"data: {json.dumps({'status': 'saving', 'message': f'💾 Đã hoàn thành và lưu {success_count} URLs vào database'})}\n\n"
             
             # Final summary
             crawl_task_status[task_id]['status'] = 'completed'
