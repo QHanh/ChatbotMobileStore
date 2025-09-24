@@ -161,29 +161,72 @@ def parse_sitemap(sitemap_url: str) -> List[str]:
         print(f"Error parsing sitemap {sitemap_url}: {e}")
         return []
 
+def parse_robots_txt(base_url: str) -> List[str]:
+    """Parse robots.txt to extract sitemap URLs."""
+    try:
+        parsed_url = urlparse(base_url)
+        base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        robots_url = f"{base_domain}/robots.txt"
+        
+        response = requests.get(robots_url, timeout=30)
+        response.raise_for_status()
+        
+        sitemap_urls = []
+        for line in response.text.split('\n'):
+            line = line.strip()
+            if line.lower().startswith('sitemap:'):
+                sitemap_url = line.split(':', 1)[1].strip()
+                if sitemap_url:
+                    sitemap_urls.append(sitemap_url)
+        
+        return sitemap_urls
+    except Exception as e:
+        print(f"Error parsing robots.txt for {base_url}: {e}")
+        return []
+
 def get_sitemap_urls(base_url: str) -> List[str]:
-    """Get all URLs from website sitemap. Tries common sitemap locations."""
+    """Get all URLs from website sitemap. First tries robots.txt, then common sitemap locations."""
     parsed_url = urlparse(base_url)
     base_domain = f"{parsed_url.scheme}://{parsed_url.netloc}"
     
-    sitemap_locations = [
-        f"{base_domain}/sitemap.xml",
-        f"{base_domain}/sitemap_index.xml",
-        f"{base_domain}/sitemaps.xml",
-        f"{base_url.rstrip('/')}/sitemap.xml"
-    ]
-    
     all_urls = []
     
-    for sitemap_url in sitemap_locations:
-        try:
-            urls = parse_sitemap(sitemap_url)
-            if urls:
-                all_urls.extend(urls)
-                break
-        except:
-            continue
+    # Step 1: Try to get sitemap URLs from robots.txt
+    print(f"🤖 Checking robots.txt for sitemap URLs...")
+    robots_sitemaps = parse_robots_txt(base_url)
     
+    if robots_sitemaps:
+        print(f"✅ Found {len(robots_sitemaps)} sitemap(s) in robots.txt")
+        for sitemap_url in robots_sitemaps:
+            try:
+                urls = parse_sitemap(sitemap_url)
+                if urls:
+                    all_urls.extend(urls)
+            except Exception as e:
+                print(f"Error parsing sitemap from robots.txt {sitemap_url}: {e}")
+                continue
+    
+    # Step 2: If no URLs found from robots.txt, try common sitemap locations
+    if not all_urls:
+        print(f"🔍 No sitemaps found in robots.txt, trying common locations...")
+        sitemap_locations = [
+            f"{base_domain}/sitemap.xml",
+            f"{base_domain}/sitemap_index.xml",
+            f"{base_domain}/sitemaps.xml",
+            f"{base_url.rstrip('/')}/sitemap.xml"
+        ]
+        
+        for sitemap_url in sitemap_locations:
+            try:
+                urls = parse_sitemap(sitemap_url)
+                if urls:
+                    print(f"✅ Found sitemap at: {sitemap_url}")
+                    all_urls.extend(urls)
+                    break
+            except:
+                continue
+    
+    # Remove duplicates
     seen = set()
     unique_urls = []
     for url in all_urls:
