@@ -14,13 +14,31 @@ from dotenv import load_dotenv
 from weaviate.client import WeaviateClient
 from weaviate.connect import ConnectionParams
 import re
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 
 load_dotenv()
 
 WEAVIATE_URL = os.getenv("WEAVIATE_URL", "http://localhost:8080")
 WEAVIATE_API_KEY = os.getenv("WEAVIATE_API_KEY")
 DOCUMENT_CLASS_NAME = "Document"
+
+# Global embedding instance to reuse across functions
+_embedding_instance = None
+
+def get_embedding_model():
+    """
+    Get or create a singleton instance of the Vietnamese embedding model.
+    """
+    global _embedding_instance
+    if _embedding_instance is None:
+        print("Initializing Vietnamese embedding model: huyydangg/DEk21_hcmute_embedding")
+        _embedding_instance = HuggingFaceEmbeddings(
+            model_name="huyydangg/DEk21_hcmute_embedding",
+            model_kwargs={'device': 'cpu'},  # Use 'cuda' if you have GPU
+            encode_kwargs={'normalize_embeddings': True}
+        )
+        print("✅ Vietnamese embedding model initialized successfully!")
+    return _embedding_instance
 
 def ensure_document_collection_exists(client: weaviate.WeaviateClient):
     """
@@ -139,7 +157,8 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             }
 
     try:
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+        # Use Vietnamese embedding model from Hugging Face
+        embeddings = get_embedding_model()
         
         WeaviateVectorStore.from_documents(
             documents=chunks,
