@@ -31,7 +31,7 @@ def get_embedding_model():
     """
     global _embedding_instance
     if _embedding_instance is None:
-        print("Initializing Vietnamese embedding model: huyydangg/DEk21_hcmute_embedding")
+        # print("Initializing Vietnamese embedding model: huyydangg/DEk21_hcmute_embedding")
         _embedding_instance = HuggingFaceEmbeddings(
             model_name="huyydangg/DEk21_hcmute_embedding",
             model_kwargs={'device': 'cpu'},  # Use 'cuda' if you have GPU
@@ -157,7 +157,6 @@ def load_chunks_to_weaviate(client: weaviate.WeaviateClient, chunks: List[Docume
             }
 
     try:
-        # Use Vietnamese embedding model from Hugging Face
         embeddings = get_embedding_model()
         
         WeaviateVectorStore.from_documents(
