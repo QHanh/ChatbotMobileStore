@@ -2,12 +2,12 @@ from langchain_core.tools import tool
 import json
 import re
 import requests
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from functools import partial
 from langchain.tools import StructuredTool
 from pydantic import BaseModel, Field
 from service.retrieve.search_service import search_products, search_accessories, search_services
-from database.database import get_db, Product, Accessory, Service, Order
+from database.database import get_db
 from sqlalchemy.orm import Session
 from datetime import datetime
 from elasticsearch import AsyncElasticsearch
