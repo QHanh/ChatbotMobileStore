@@ -107,7 +107,9 @@ async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session 
         ensure_document_collection_exists(client)
         ensure_tenant_exists(client, tenant_id)
         
-        source_name = doc_input.source if doc_input.source else doc_input.url + ".url"
+        # Always add .url suffix, use custom source or URL as base
+        base_name = doc_input.source.strip() if doc_input.source and doc_input.source.strip() else doc_input.url
+        source_name = base_name + ".url"
 
         # Save the original content to PostgreSQL
         new_document = Document(
