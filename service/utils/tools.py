@@ -1,10 +1,16 @@
 from langchain_core.tools import tool
-from langchain.tools import StructuredTool
-from typing import Optional, List, Dict, Any
+import json
+import re
+import requests
+from typing import List, Optional
 from functools import partial
+from langchain.tools import StructuredTool
+from pydantic import BaseModel, Field
+from service.retrieve.search_service import search_products, search_accessories, search_services
+from database.database import get_db, Product, Accessory, Service, Order
+from sqlalchemy.orm import Session
+from datetime import datetime
 from elasticsearch import AsyncElasticsearch
-
-from service.retrieve.search_service import search_products, search_services, search_accessories
 from service.retrieve.retrieve_vector_service import retrieve_documents
 from service.models.schemas import (
     SearchProductInput, SearchServiceInput, SearchAccessoryInput,
@@ -26,6 +32,53 @@ class CheckCustomerInfoInput(BaseModel):
 class GetStoreInfoInput(BaseModel):
     """Schema for getting store information"""
     pass  # No input needed as customer_id is bound
+
+def validate_thread_id(thread_id: str) -> bool:
+    """
+    Validate thread_id: must be all digits and at least 9 characters long
+    """
+    return thread_id.isdigit() and len(thread_id) >= 9
+
+def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: str, address: str, product_name: str) -> dict:
+    """
+    Call Zalo API to create group with order information
+    """
+    try:
+        url = "https://zaloapi.doiquanai.vn/api/groups/managers"
+        
+        # Create name with customer info and product
+        group_name = f"{customer_name} {phone} {address} {product_name}"
+        
+        payload = {
+            "session_key": customer_id,
+            "members": thread_id,
+            "name": group_name
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            return {
+                "status": "success",
+                "message": "Đã tạo nhóm Zalo thành công",
+                "data": response.json()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Lỗi API Zalo: {response.status_code} - {response.text}"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {
+            "status": "error",
+            "message": "Timeout khi gọi API Zalo"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Lỗi khi gọi API Zalo: {str(e)}"
+        }
 
 def create_check_customer_info_tool(customer_id: str, thread_id: str):
     def check_existing_customer_info():
@@ -373,10 +426,22 @@ def create_order_product_tool_with_db(customer_id: str, thread_id: str):
                 "loai_don_hang": "Sản phẩm"
             }
             
+            # Call Zalo API only if thread_id is valid
+            zalo_result = None
+            if validate_thread_id(thread_id):
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_san_pham)
+            
+            success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
+            if zalo_result and zalo_result["status"] == "success":
+                success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
+            elif zalo_result:
+                success_message += f" Lưu ý: {zalo_result['message']}"
+            
             return {
                 "status": "success",
-                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-                "order_detail": order_detail
+                "message": success_message,
+                "order_detail": order_detail,
+                # "zalo_result": zalo_result
             }
         except Exception as e:
             db.rollback()
@@ -455,10 +520,23 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
                 "loai_don_hang": "Dịch vụ"
             }
 
+            # Call Zalo API only if thread_id is valid
+            zalo_result = None
+            if validate_thread_id(thread_id):
+                service_name = f"{ten_dich_vu} - {ten_san_pham}"
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, service_name)
+            
+            success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
+            if zalo_result and zalo_result["status"] == "success":
+                success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
+            elif zalo_result:
+                success_message += f" Lưu ý: {zalo_result['message']}"
+
             return {
                 "status": "success",
-                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-                "order_detail": order_detail
+                "message": success_message,
+                "order_detail": order_detail,
+                # "zalo_result": zalo_result
             }
         except Exception as e:
             db.rollback()
@@ -527,11 +605,23 @@ def create_order_accessory_tool_with_db(customer_id: str, thread_id: str):
                 "dia_chi": dia_chi,
                 "loai_don_hang": "Phụ kiện"
             }
+            
+            # Call Zalo API only if thread_id is valid
+            zalo_result = None
+            if validate_thread_id(thread_id):
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_phu_kien)
+            
+            success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
+            if zalo_result and zalo_result["status"] == "success":
+                success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
+            elif zalo_result:
+                success_message += f" Lưu ý: {zalo_result['message']}"
         
             return {
                 "status": "success",
-                "message": f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}.",
-                "order_detail": order_detail
+                "message": success_message,
+                "order_detail": order_detail,
+                # "zalo_result": zalo_result
             }
         except Exception as e:
             db.rollback()
