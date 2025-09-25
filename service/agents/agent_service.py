@@ -84,6 +84,7 @@ def create_agent_executor(
     1. Xác định nhu cầu của khách: **sản phẩm**, **dịch vụ**, hay **linh kiện/phụ kiện**.
     2. Sử dụng công cụ tìm kiếm tương ứng:
        {'\n   '.join(workflow_steps)}
+    3. Mọi câu hỏi không liên quan đến sản phẩm, dịch vụ, hay linh kiện/phụ kiện thì **HÃY DÙNG CÔNG CỤ TÌM TÀI LIỆU `retrieve_document_tool`**.
     """
 
     pagination_instruction = """
