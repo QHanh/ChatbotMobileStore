@@ -40,9 +40,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!container) return;
 
         const iconUrl = settings?.chatbot_icon_url || 'https://chatbot.quandoiai.vn/icon2.png';
-        const chatbotName = settings?.chatbot_name || 'Hoàng Mai Mobile';
-        const calloutMessage = settings?.chatbot_callout || '👋 Chào anh/chị, em là trợ lý AI của Hoàng Mai Mobile!';
-        const defaultMessage = settings?.chatbot_message_default || 'Xin chào anh/chị, em là trợ lý AI của Hoàng Mai Mobile luôn sẵn sàng hỗ trợ anh/chị ạ!';
+        const chatbotName = settings?.chatbot_name || 'Chatbot';
+        const calloutMessage = settings?.chatbot_callout || '👋 Chào anh/chị, em là trợ lý Chatbot!';
+        const defaultMessage = settings?.chatbot_message_default || 'Xin chào anh/chị, em là trợ lý Chatbot luôn sẵn sàng hỗ trợ anh/chị ạ!';
 
         container.innerHTML = `
             <div class="chatbot-button-container">
