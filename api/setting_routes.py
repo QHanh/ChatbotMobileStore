@@ -27,7 +27,8 @@ def get_settings(customer_id: str, db: Session = Depends(get_db)):
             customer_id=customer_id,
             chatbot_icon_url='',
             chatbot_message_default='',
-            chatbot_callout=''
+            chatbot_callout='',
+            chatbot_name=''
         )
     return db_settings
 
