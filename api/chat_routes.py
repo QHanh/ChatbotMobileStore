@@ -92,7 +92,12 @@ async def chat(
         return {"response": response['output']}
 
     except ValueError as ve:
-        raise HTTPException(status_code=500, detail=str(ve))
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail="Đã có lỗi không mong muốn xảy ra từ server.")
 
 @router.get("/chat-history/{customer_id}/{thread_id}", response_model=List[ChatHistoryResponse])
 async def get_chat_history(

@@ -161,7 +161,8 @@ def create_agent_executor(
         agent=agent, 
         tools=customer_tools, 
         verbose=True,
-        handle_parsing_errors=True
+        handle_parsing_errors=True,
+        return_intermediate_steps=True
     )
     
     return agent_executor
@@ -220,6 +221,17 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         "faq_context": faq_context,
         "thread_id": session_id,
     })
+
+    print("--- AGENT RESPONSE ---")
+    print(response)
+    print("----------------------")
+
+    # Lấy output một cách an toàn
+    if 'output' not in response or not response['output']:
+        print(f"[ERROR] Agent response is empty or does not contain 'output' key: {response}")
+        output_message = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này. Vui lòng thử lại sau.'
+    else:
+        output_message = response['output']
     
     chat_thread = db.query(ChatThread).filter(
         ChatThread.customer_id == customer_id,
@@ -241,12 +253,14 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         thread_id=session_id,
         thread_name=thread_name,
         role="bot",
-        message=response["output"]
+        message=output_message
     )
     db.add(ai_message)
     
     db.commit()
     
+    # Đảm bảo response trả về luôn có 'output'
+    response['output'] = output_message
     return response
 
 def clear_chat_history_for_customer(customer_id: str, db: Session):
