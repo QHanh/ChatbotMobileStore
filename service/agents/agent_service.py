@@ -167,7 +167,7 @@ def create_agent_executor(
     
     return agent_executor
 
-def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 20) -> List[BaseMessage]:
+def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 14) -> List[BaseMessage]:
     """Lấy các tin nhắn gần nhất trong lịch sử chat từ database."""
     history_records = db.query(ChatHistory).filter(
         ChatHistory.customer_id == customer_id,
