@@ -112,10 +112,10 @@ def create_agent_executor(
 
     faq_instruction = """
     **Quy trình ưu tiên FAQ:**
-    - Hệ thống đã tìm kiếm trước trong kho Câu hỏi thường gặp (FAQ) và có thể đã cung cấp một cặp câu hỏi-trả lời có sẵn trong context.
-    - **Ưu tiên tuyệt đối:** Hãy xem xét kỹ thông tin này trước tiên.
-    - Nếu câu trả lời được gợi ý thực sự phù hợp với câu hỏi của người dùng và ngữ cảnh cuộc trò chuyện, hãy sử dụng nó làm cơ sở để trả lời. Bạn có thể diễn đạt lại cho tự nhiên hơn.
-    - Nếu câu trả lời không phù hợp, hãy bỏ qua nó và sử dụng các công cụ khác để tìm thông tin.
+    - Hệ thống có thể đã tìm kiếm trước trong kho Câu hỏi thường gặp (FAQ) và cung cấp một gợi ý trong context.
+    - **Ưu tiên tuyệt đối:** Hãy xem xét kỹ gợi ý này trước tiên (nếu có).
+    - Nếu gợi ý phù hợp với câu hỏi của người dùng, hãy dùng nó để trả lời.
+    - **QUAN TRỌNG:** Nếu không có gợi ý nào từ FAQ, hoặc gợi ý không phù hợp, bạn BẮT BUỘC phải bỏ qua nó và tiếp tục quy trình làm việc bình thường bằng cách sử dụng các công cụ khác để tìm thông tin và trả lời câu hỏi. TUYỆT ĐỐI không được trả về câu trả lời rỗng chỉ vì không có FAQ.
     """
     
     workflow_instructions_add = instructions_dict.get("workflow_instructions", "")
