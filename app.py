@@ -20,6 +20,8 @@ from api import (
 )
 from database.database import init_db
 import dependencies
+import os
+os.environ["LANGCHAIN_DEBUG"] = "true"
 import tracemalloc
 tracemalloc.start()
 import logging
