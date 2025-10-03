@@ -125,6 +125,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
         if 'model' in item: # Product
             context.append(f"Mã sản phẩm: {item.get('ma_san_pham', '')}")
             context.append(f"Sản phẩm: {item.get('model', '')} {item.get('dung_luong', '')} {item.get('mau_sac', '')}".strip())
+            if item.get('loai_thiet_bi'):
+                context.append(f"  Loại thiết bị: {item.get('loai_thiet_bi')}")
             if item.get('tinh_trang_may'):
                 context.append(f"  Tình trạng máy: {item.get('tinh_trang_may')}")
             price = item.get('gia', 0)
