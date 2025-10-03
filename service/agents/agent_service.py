@@ -110,12 +110,6 @@ def create_agent_executor(
     else:
         offerings_str = offerings[0] if offerings else ""
 
-    general_query_instruction = f"""
-    **Xử lý câu hỏi chung:**
-    - Khi người dùng hỏi những câu chung chung như "shop có gì?", "bên bạn có dịch vụ gì?", "bạn bán gì vậy?" mà không cung cấp chi tiết cụ thể, **KHÔNG SỬ DỤNG CÔNG CỤ TÌM KIẾM**.
-    - Thay vào đó, hãy trả lời trực tiếp bằng cách tóm tắt các dịch vụ của cửa hàng. Dựa trên các chức năng đang được bật, câu trả lời của bạn nên là: "Dạ bên em chuyên {offerings_str} ạ. Anh/chị đang quan tâm đến mảng nào ạ?"
-    """
-
     faq_instruction = """
     **Quy trình ưu tiên FAQ:**
     - Hệ thống đã tìm kiếm trước trong kho Câu hỏi thường gặp (FAQ) và có thể đã cung cấp một cặp câu hỏi-trả lời có sẵn trong context.
@@ -141,7 +135,6 @@ def create_agent_executor(
         workflow_instructions,
         custom_prompt_section,
         pagination_instruction,
-        general_query_instruction,
         workflow_instructions_add,
         faq_instruction,
         other_instructions
@@ -167,7 +160,7 @@ def create_agent_executor(
     
     return agent_executor
 
-def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 14) -> List[BaseMessage]:
+def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 8) -> List[BaseMessage]:
     """Lấy các tin nhắn gần nhất trong lịch sử chat từ database."""
     history_records = db.query(ChatHistory).filter(
         ChatHistory.customer_id == customer_id,
