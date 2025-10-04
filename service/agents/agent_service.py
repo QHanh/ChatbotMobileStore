@@ -188,9 +188,14 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
     
     if faq_results:
         found_faq = faq_results[0]
+        # Kiểm tra xem có hình ảnh không
+        image_text = ""
+        if 'image' in found_faq and found_faq['image']:
+            image_text = f". Hình ảnh kèm theo: {found_faq['image']}"
+        
         faq_prompt = f"""--- GỢI Ý TỪ FAQ ---
 Câu hỏi tương tự đã tìm thấy: "{found_faq['question']}"
-Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy phù hợp): "{found_faq['answer']}. Hình ảnh kèm theo: {found_faq['image']}"
+Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy phù hợp): "{found_faq['answer']}{image_text}"
 --- HẾT GỢI Ý ---"""
         faq_context.append(HumanMessage(content=faq_prompt))
 
