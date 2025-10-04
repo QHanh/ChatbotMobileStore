@@ -80,6 +80,44 @@ def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: s
             "message": f"Lỗi khi gọi API Zalo: {str(e)}"
         }
 
+def send_order_notification(customer_id: str, thread_id: str, message: str) -> dict:
+    """
+    Send order notification to group using the send-message API
+    """
+    try:
+        url = "https://zaloapi.doiquanai.vn/api/groups/send-message"
+        
+        payload = {
+            "session_key": customer_id,
+            "thread_id": thread_id,
+            "message": message
+        }
+        
+        response = requests.post(url, json=payload, timeout=10)
+        
+        if response.status_code == 200:
+            return {
+                "status": "success",
+                "message": "Đã gửi thông báo đơn hàng thành công",
+                "data": response.json()
+            }
+        else:
+            return {
+                "status": "error",
+                "message": f"Lỗi API gửi thông báo: {response.status_code} - {response.text}"
+            }
+            
+    except requests.exceptions.Timeout:
+        return {
+            "status": "error",
+            "message": "Timeout khi gửi thông báo đơn hàng"
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": f"Lỗi khi gửi thông báo đơn hàng: {str(e)}"
+        }
+
 def create_check_customer_info_tool(customer_id: str, thread_id: str):
     def check_existing_customer_info():
         """
@@ -428,14 +466,22 @@ def create_order_product_tool_with_db(customer_id: str, thread_id: str):
             
             # Call Zalo API only if thread_id is valid
             zalo_result = None
+            notification_result = None
             if validate_thread_id(thread_id):
                 zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_san_pham)
+                
+                # Send order notification
+                order_message = f"Đơn hàng mới: {order_id}\nSản phẩm: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
+                notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
             if zalo_result and zalo_result["status"] == "success":
                 success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
             elif zalo_result:
                 success_message += f" Lưu ý: {zalo_result['message']}"
+            
+            if notification_result and notification_result["status"] == "success":
+                success_message += " Đã gửi thông báo đơn hàng cho nhân viên."
             
             return {
                 "status": "success",
@@ -522,15 +568,23 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
 
             # Call Zalo API only if thread_id is valid
             zalo_result = None
+            notification_result = None
             if validate_thread_id(thread_id):
                 service_name = f"{ten_dich_vu} - {ten_san_pham}"
                 zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, service_name)
+                
+                # Send order notification
+                order_message = f"Đơn hàng mới: {order_id}\nDịch vụ: {ten_dich_vu}\nSản phẩm sửa chữa: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}"
+                notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
             if zalo_result and zalo_result["status"] == "success":
                 success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
             elif zalo_result:
                 success_message += f" Lưu ý: {zalo_result['message']}"
+            
+            if notification_result and notification_result["status"] == "success":
+                success_message += " Đã gửi thông báo đơn hàng cho nhân viên."
 
             return {
                 "status": "success",
@@ -608,14 +662,22 @@ def create_order_accessory_tool_with_db(customer_id: str, thread_id: str):
             
             # Call Zalo API only if thread_id is valid
             zalo_result = None
+            notification_result = None
             if validate_thread_id(thread_id):
                 zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_phu_kien)
+                
+                # Send order notification
+                order_message = f"Đơn hàng mới: {order_id}\nPhụ kiện: {ten_phu_kien}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
+                notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
             if zalo_result and zalo_result["status"] == "success":
                 success_message += " Đã tạo nhóm Zalo để theo dõi đơn hàng."
             elif zalo_result:
                 success_message += f" Lưu ý: {zalo_result['message']}"
+            
+            if notification_result and notification_result["status"] == "success":
+                success_message += " Đã gửi thông báo đơn hàng cho nhân viên."
         
             return {
                 "status": "success",
