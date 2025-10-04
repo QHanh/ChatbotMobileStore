@@ -39,7 +39,7 @@ def validate_thread_id(thread_id: str) -> bool:
     """
     return thread_id.isdigit() and len(thread_id) >= 9
 
-def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: str, address: str, product_name: str) -> dict:
+def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: str, address: str, product_name: str, order_message: str) -> dict:
     """
     Call Zalo API to create group with order information
     """
@@ -48,11 +48,12 @@ def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: s
         
         # Create name with customer info and product
         group_name = f"{customer_name} {phone} {address} {product_name}"
-        
+        message = order_message
         payload = {
             "session_key": customer_id,
-            "members": thread_id,
-            "name": group_name
+            "thread_id": thread_id,
+            "name": group_name,
+            "message": message
         }
         
         response = requests.post(url, json=payload, timeout=10)
@@ -468,10 +469,10 @@ def create_order_product_tool_with_db(customer_id: str, thread_id: str):
             zalo_result = None
             notification_result = None
             if validate_thread_id(thread_id):
-                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_san_pham)
+                order_message = f"Đơn hàng mới: {order_id}\nSản phẩm: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_san_pham, order_message)
                 
                 # Send order notification
-                order_message = f"Đơn hàng mới: {order_id}\nSản phẩm: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
                 notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
@@ -571,10 +572,10 @@ def create_order_service_tool_with_db(customer_id: str, thread_id: str):
             notification_result = None
             if validate_thread_id(thread_id):
                 service_name = f"{ten_dich_vu} - {ten_san_pham}"
-                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, service_name)
+                order_message = f"Đơn hàng mới: {order_id}\nDịch vụ: {ten_dich_vu}\nSản phẩm sửa chữa: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}"
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, service_name, order_message)
                 
                 # Send order notification
-                order_message = f"Đơn hàng mới: {order_id}\nDịch vụ: {ten_dich_vu}\nSản phẩm sửa chữa: {ten_san_pham}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}"
                 notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."
@@ -664,10 +665,10 @@ def create_order_accessory_tool_with_db(customer_id: str, thread_id: str):
             zalo_result = None
             notification_result = None
             if validate_thread_id(thread_id):
-                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_phu_kien)
+                order_message = f"Đơn hàng mới: {order_id}\nPhụ kiện: {ten_phu_kien}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
+                zalo_result = call_zalo_api(customer_id, thread_id, ten_khach_hang, so_dien_thoai, dia_chi, ten_phu_kien, order_message)
                 
                 # Send order notification
-                order_message = f"Đơn hàng mới: {order_id}\nPhụ kiện: {ten_phu_kien}\nKhách hàng: {ten_khach_hang}\nSĐT: {so_dien_thoai}\nĐịa chỉ: {dia_chi}\nSố lượng: {so_luong}"
                 notification_result = send_order_notification(customer_id, thread_id, order_message)
             
             success_message = f"Đã tạo đơn hàng thành công! Mã đơn hàng của bạn là {order_id}."

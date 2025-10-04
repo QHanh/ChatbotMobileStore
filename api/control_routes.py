@@ -206,7 +206,7 @@ async def delete_customer_data(
             "deleted_count": deleted_count
         }
         
-        except Exception as e:
+    except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=500,
