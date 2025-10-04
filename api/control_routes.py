@@ -206,9 +206,44 @@ async def delete_customer_data(
             "deleted_count": deleted_count
         }
         
-    except Exception as e:
+        except Exception as e:
         db.rollback()
         raise HTTPException(
             status_code=500,
             detail=f"Lỗi khi xóa dữ liệu ChatCustomer cho khách hàng {customer_id}: {str(e)}"
+        )
+
+@router.delete("/customer/threads/{customer_id}")
+async def delete_all_customer_threads(
+    customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Xóa tất cả các bản ghi ChatThread của một khách hàng cụ thể.
+    """
+    try:
+        # Đếm số lượng bản ghi ChatThread trước khi xóa
+        chat_thread_count = db.query(ChatThread).filter(ChatThread.customer_id == customer_id).count()
+        
+        if chat_thread_count == 0:
+            return {
+                "message": f"Không có dữ liệu ChatThread nào để xóa cho khách hàng {customer_id}.",
+                "deleted_count": 0
+            }
+        
+        # Xóa tất cả bản ghi ChatThread của customer này
+        deleted_count = db.query(ChatThread).filter(ChatThread.customer_id == customer_id).delete()
+        
+        db.commit()
+        
+        return {
+            "message": f"Đã xóa thành công {deleted_count} bản ghi ChatThread cho khách hàng {customer_id}.",
+            "deleted_count": deleted_count
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi xóa dữ liệu ChatThread cho khách hàng {customer_id}: {str(e)}"
         )
