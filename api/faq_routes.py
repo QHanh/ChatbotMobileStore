@@ -20,12 +20,13 @@ from datetime import datetime, timezone
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
     'names': [
-        'Câu hỏi', 'Câu trả lời', 'Phân loại'
+        'Câu hỏi', 'Câu trả lời', 'Ảnh', 'Phân loại'
     ],
     'required': ['Câu hỏi', 'Câu trả lời'],
     'rename_map': {
         "Câu hỏi": "question",
         "Câu trả lời": "answer",
+        "Ảnh": "image",
         "Phân loại": "classification",
     },
     'id_generation_field': 'Câu hỏi'

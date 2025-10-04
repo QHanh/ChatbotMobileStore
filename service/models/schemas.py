@@ -10,12 +10,14 @@ class FaqRow(BaseModel):
     faq_id: str = Field(description="The unique identifier for the FAQ.")
     question: str = Field(description="The question.")
     answer: str = Field(description="The answer to the question.")
+    image: Optional[str] = Field(default=None, description="The image of the FAQ.")
     classification: Optional[str] = Field(default=None, description="The classification or category of the FAQ.")
 
 class FaqCreate(BaseModel):
     """Input model for creating a new FAQ entry."""
     question: str = Field(description="The question.")
     answer: str = Field(description="The answer to the question.")
+    image: Optional[str] = Field(default=None, description="The image of the FAQ.")
     classification: Optional[str] = Field(default=None, description="The classification or category of the FAQ.")
 
 class SearchProductInput(BaseModel):
