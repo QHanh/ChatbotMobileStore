@@ -177,3 +177,38 @@ async def get_customer_bot_status(
     
     status = chat_customer.status if chat_customer else "active"
     return {"customer_id": customer_id, "status": status}
+
+@router.delete("/customer/{customer_id}")
+async def delete_customer_data(
+    customer_id: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Xóa tất cả các bản ghi ChatCustomer của một khách hàng cụ thể.
+    """
+    try:
+        # Đếm số lượng bản ghi ChatCustomer trước khi xóa
+        chat_customer_count = db.query(ChatCustomer).filter(ChatCustomer.customer_id == customer_id).count()
+        
+        if chat_customer_count == 0:
+            return {
+                "message": f"Không có dữ liệu ChatCustomer nào để xóa cho khách hàng {customer_id}.",
+                "deleted_count": 0
+            }
+        
+        # Xóa tất cả bản ghi ChatCustomer của customer này
+        deleted_count = db.query(ChatCustomer).filter(ChatCustomer.customer_id == customer_id).delete()
+        
+        db.commit()
+        
+        return {
+            "message": f"Đã xóa thành công {deleted_count} bản ghi ChatCustomer cho khách hàng {customer_id}.",
+            "deleted_count": deleted_count
+        }
+        
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Lỗi khi xóa dữ liệu ChatCustomer cho khách hàng {customer_id}: {str(e)}"
+        )
