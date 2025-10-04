@@ -212,10 +212,10 @@ async def export_faqs_to_excel(
     faqs = await get_all_faqs_by_customer(es_client, FAQ_INDEX, sanitized_customer_id)
     
     if not faqs:
-        df = pd.DataFrame(columns=['Câu hỏi', 'Câu trả lời', 'Phân loại'])
+        df = pd.DataFrame(columns=['Câu hỏi', 'Câu trả lời', 'Ảnh', 'Phân loại'])
     else:
         df = pd.DataFrame(faqs)
-        required_cols = {'question': 'Câu hỏi', 'answer': 'Câu trả lời', 'classification': 'Phân loại'}
+        required_cols = {'question': 'Câu hỏi', 'answer': 'Câu trả lời', 'image': 'Ảnh', 'classification': 'Phân loại'}
         for col in required_cols.keys():
             if col not in df.columns:
                 df[col] = ''
