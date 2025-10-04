@@ -83,6 +83,19 @@ async def add_faq(
         doc_id = hashlib.sha1(question_str.encode('utf-8')).hexdigest()
 
         faq_dict = faq_data.model_dump()
+        
+        # Xử lý trường images/image: đưa tất cả vào field image
+        final_image = None
+        
+        # Ưu tiên images (list) nếu có
+        if faq_dict.get('images') and isinstance(faq_dict['images'], list):
+            final_image = ','.join(faq_dict['images'])
+        # Nếu không có images thì sử dụng image
+        elif faq_dict.get('image'):
+            final_image = faq_dict['image']
+        
+        # Gán kết quả vào field image
+        faq_dict['image'] = final_image
         faq_dict['faq_id'] = doc_id
         faq_dict['created_at'] = datetime.now(timezone.utc)
         
@@ -107,6 +120,19 @@ async def update_faq(
     try:
         sanitized_customer_id = sanitize_for_es(customer_id)
         faq_dict = faq_data.model_dump()
+        
+        # Xử lý trường images/image: đưa tất cả vào field image
+        final_image = None
+        
+        # Ưu tiên images (list) nếu có
+        if faq_dict.get('images') and isinstance(faq_dict['images'], list):
+            final_image = ','.join(faq_dict['images'])
+        # Nếu không có images thì sử dụng image
+        elif faq_dict.get('image'):
+            final_image = faq_dict['image']
+        
+        # Gán kết quả vào field image
+        faq_dict['image'] = final_image
         faq_dict['faq_id'] = faq_id
         faq_dict['created_at'] = datetime.now(timezone.utc)
             

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
+from typing import Optional, List, List
 
 class BulkDeleteInput(BaseModel):
     """Input model for bulk delete operations."""
@@ -18,6 +18,7 @@ class FaqCreate(BaseModel):
     question: str = Field(description="The question.")
     answer: str = Field(description="The answer to the question.")
     image: Optional[str] = Field(default=None, description="The image of the FAQ.")
+    images: Optional[List[str]] = Field(default=None, description="List of image URLs for the FAQ.")
     classification: Optional[str] = Field(default=None, description="The classification or category of the FAQ.")
 
 class SearchProductInput(BaseModel):
