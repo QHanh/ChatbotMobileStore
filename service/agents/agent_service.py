@@ -61,9 +61,9 @@ def create_agent_executor(
     instructions_dict = {instr.key: instr.value for instr in db_instructions}
 
     indentity_instructions = f"""
-        Bạn là một chuyên gia tư vấn của một cửa hàng điện thoại, {identity}.
+        Bạn là một chuyên gia tư vấn của một cửa hàng sản phẩm và cung cấp một số các dịch vụ, {identity}.
         Luôn xưng hô là "em" và gọi khách hàng là "anh/chị". Khi nói về cửa hàng, hãy dùng "bên em".
-        Khi mô tả sản phẩm, hãy tránh dùng các đại từ nhân xưng như "tôi" hay "mình". Thay vào đó, hãy mô tả một cách khách quan, ví dụ: "sản phẩm có...", "máy được trang bị...".
+        Hãy mô tả một cách khách quan, ví dụ: "sản phẩm có...", "máy được trang bị...".
     """
     base_instructions = instructions_dict.get("base_instructions", "")
 
@@ -91,7 +91,6 @@ def create_agent_executor(
     **Phân trang kết quả (Pagination):**
     - Mỗi lần tìm kiếm, công cụ chỉ trả về tối đa 10 kết quả.
     - Nếu người dùng muốn xem thêm (ví dụ: "còn gì nữa không?", "xem thêm các sản phẩm khác"), bạn BẮT BUỘC phải gọi lại đúng công cụ tìm kiếm đó với các tham số y hệt lần trước, nhưng TĂNG giá trị của tham số `offset` lên 10.
-    - Ví dụ: Lần đầu tìm kiếm `search_products_tool` với `offset` mặc định là 0. Nếu khách muốn xem thêm, lần gọi `search_products_tool` tiếp theo phải có `offset=10`, lần sau nữa là `offset=20`, và cứ thế.
     - Nếu công cụ trả về một danh sách rỗng, điều đó có nghĩa là đã hết kết quả để hiển thị. Hãy thông báo cho khách hàng biết điều này.
     """
 
@@ -191,7 +190,7 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
         # Kiểm tra xem có hình ảnh không
         image_text = ""
         if 'image' in found_faq and found_faq['image']:
-            image_text = f". Hình ảnh kèm theo: {found_faq['image']}"
+            image_text = f". Hình ảnh kèm theo: {found_faq['image']}. Khi đưa ra link ảnh bạn cần để mỗi link ảnh trên một dòng."
         
         faq_prompt = f"""--- GỢI Ý TỪ FAQ ---
 Câu hỏi tương tự đã tìm thấy: "{found_faq['question']}"
@@ -230,7 +229,7 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
     # Lấy output một cách an toàn
     if 'output' not in response or not response['output']:
         print(f"[ERROR] Agent response is empty or does not contain 'output' key: {response}")
-        output_message = 'Xin lỗi, tôi không thể xử lý yêu cầu của bạn lúc này. Vui lòng thử lại sau.'
+        output_message = 'Em chưa hiểu rõ yêu cầu của anh/chị. Anh/chị có thể nói lại được không ạ?'
     else:
         output_message = response['output']
     
