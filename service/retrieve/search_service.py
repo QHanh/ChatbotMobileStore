@@ -1,5 +1,6 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
+import json
 from sqlalchemy.orm import Session
 from database.database import CustomerIsSale, SessionLocal
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
@@ -175,6 +176,10 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
         elif 'accessory_name' in item: # Accessory
             context.append(f"Mã phụ kiện: {item.get('accessory_code', '')}")
             context.append(f"Phụ kiện: {item.get('accessory_name', '')}")
+            if item.get('trademark'):
+                context.append(f"  Thương hiệu: {item.get('trademark')}")
+            if item.get('category'):
+                context.append(f"  Danh mục: {item.get('category')}")
             prop = item.get('properties')
             if prop and str(prop).strip() and str(prop).strip() != '0':
                 context.append(f"  Thuộc tính: {prop}")
@@ -370,6 +375,7 @@ async def search_accessories(
     customer_id: str,
     thread_id: str,
     ten_phu_kien: Optional[str] = None,
+    thuong_hieu: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
@@ -386,44 +392,115 @@ async def search_accessories(
         return [{"error": "Không thể kết nối đến Elasticsearch."}]
 
     sanitized_customer_id = sanitize_for_es(customer_id)
-    query = {"bool": {"must": [], "should": [], "filter": []}}
-    query["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
+    base_bool = {"bool": {"must": [], "should": [], "filter": []}}
+    base_bool["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
 
+    price_range = {}
+    if min_gia is not None:
+        price_range["gte"] = min_gia
+    if max_gia is not None:
+        price_range["lte"] = max_gia
+    if price_range:
+        base_bool["bool"]["filter"].append({"range": {"lifecare_price": price_range}})
+
+    search_terms: List[str] = []
     if ten_phu_kien:
-        query["bool"]["must"].append({"match": {"accessory_name": {"query": ten_phu_kien}}})
-        query["bool"]["should"].append({"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 10.0}}})
+        search_terms.append(str(ten_phu_kien))
+    if thuoc_tinh_phu_kien:
+        search_terms.append(str(thuoc_tinh_phu_kien))
 
-    if phan_loai_phu_kien:
-        query["bool"]["should"].append({
+    if search_terms:
+        combined_query = " ".join(search_terms)
+        base_bool["bool"]["must"].append({
+            "multi_match": {
+                "query": combined_query,
+                "fields": [
+                    "accessory_name^5",
+                    "accessory_code^4",
+                    "trademark^3",
+                    "properties^2",
+                    "specifications^1"
+                ],
+                "type": "best_fields",
+                "operator": "or",
+                "minimum_should_match": "70%"
+            }
+        })
+
+    if thuong_hieu:
+        base_bool["bool"]["should"].append({
             "bool": {
                 "should": [
-                    {"match": {"category": {"query": phan_loai_phu_kien, "boost": 5.0}}}
+                    {"term": {"trademark.keyword": {"value": thuong_hieu, "boost": 5.0}}},
+                    {"match_phrase": {"trademark": {"query": thuong_hieu, "boost": 4.0}}},
+                    {"match": {"trademark": thuong_hieu}}
                 ]
             }
         })
-    
+
+    if phan_loai_phu_kien:
+        base_bool["bool"]["should"].append({
+            "bool": {
+                "should": [
+                    {"term": {"category.keyword": {"value": phan_loai_phu_kien, "boost": 4.0}}},
+                    {"match_phrase": {"category": {"query": phan_loai_phu_kien, "boost": 3.0}}},
+                    {"match": {"category": phan_loai_phu_kien}}
+                ]
+            }
+        })
+
+    if ten_phu_kien:
+        base_bool["bool"]["should"].append({"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 10.0}}})
     if thuoc_tinh_phu_kien:
-        query["bool"]["should"].append({"match": {"properties": {"query": thuoc_tinh_phu_kien, "operator": "and"}}})
+        base_bool["bool"]["should"].append({"match_phrase": {"properties": {"query": thuoc_tinh_phu_kien, "boost": 3.0}}})
 
-    price_range = {}
-    if min_gia is not None: price_range["gte"] = min_gia
-    if max_gia is not None: price_range["lte"] = max_gia
-    if price_range: query["bool"]["filter"].append({"range": {"lifecare_price": price_range}})
+    search_query = {
+        "function_score": {
+            "query": base_bool,
+            "functions": [
+                {
+                    "filter": {"range": {"inventory": {"gt": 0}}},
+                    "weight": 2.0
+                },
+                {
+                    "field_value_factor": {
+                        "field": "lifecare_price",
+                        "modifier": "reciprocal",
+                        "factor": 0.00001,
+                        "missing": 1.0
+                    }
+                }
+            ],
+            "score_mode": "multiply",
+            "boost_mode": "multiply"
+        }
+    }
 
+    print(f"Sending search to Elasticsearch for accessories: {json.dumps(search_query, indent=2, ensure_ascii=False)}")
     try:
         response = await es_client.search(
             index=ACCESSORIES_INDEX,
-            query=query,
+            query=search_query,
             routing=sanitized_customer_id,
             size=10,
             from_=offset
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
-        print(f"Tìm thấy {len(hits)} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
+        num_hits = len(hits)
+        print(f"Tìm thấy {num_hits} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
+        
+        # Xóa specifications nếu có nhiều hơn 5 kết quả để giảm token
+        if num_hits > 5:
+            for item in hits:
+                if 'specifications' in item:
+                    del item['specifications']
+        
         is_sale = _get_customer_is_sale(customer_id, thread_id)
         formatted_hits = _format_results_for_agent(hits, is_sale)
+
         if original_query and llm:
-            return await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+            formatted_hits = await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
+
         return formatted_hits
 
     except Exception as e:

@@ -383,6 +383,7 @@ async def search_accessories_logic(
     customer_id: str,
     thread_id: Optional[str] = None,
     ten_phu_kien: Optional[str] = None,
+    thuong_hieu: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
     min_gia: Optional[float] = None,
@@ -394,7 +395,17 @@ async def search_accessories_logic(
 ) -> List[Dict[str, Any]]:
     """
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các phụ kiện có trong dữ liệu của cửa hàng.
-    Cung cấp các tiêu chí cụ thể như tên phụ kiện, thuộc tính phụ kiện, phân loại phụ kiện, hoặc khoảng giá để lọc kết quả.
+
+    HƯỚNG DẪN GỌI THAM SỐ:
+    - ten_phu_kien: Ghi NGUYÊN cụm tên người dùng nói, BAO GỒM cả thương hiệu nếu có.
+      Ví dụ: "kính hiển vi RELIFE", "đèn kính hiển vi 2UUL".
+    - thuong_hieu: Nếu nhận diện được thương hiệu, HÃY điền thêm tham số này (ví dụ: "RELIFE", "2UUL").
+    - phan_loai_phu_kien, thuoc_tinh_phu_kien, min_gia, max_gia, offset: điền nếu có.
+
+    Ví dụ:
+    - Input: "có kính hiển vi RELIFE không?"
+      -> ten_phu_kien = "kính hiển vi RELIFE"
+      -> thuong_hieu = "RELIFE"
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho khách hàng: {customer_id} ---")
     results = await search_accessories(
@@ -402,6 +413,7 @@ async def search_accessories_logic(
         customer_id=customer_id,
         thread_id=thread_id,
         ten_phu_kien=ten_phu_kien,
+        thuong_hieu=thuong_hieu,
         phan_loai_phu_kien=phan_loai_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
         min_gia=min_gia,

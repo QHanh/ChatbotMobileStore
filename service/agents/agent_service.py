@@ -222,9 +222,9 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         "thread_id": session_id,
     })
 
-    print("--- AGENT RESPONSE ---")
-    print(response)
-    print("----------------------")
+    print("--- AGENT RESPONSDED ---")
+    # print(response)
+    # print("----------------------")
 
     # Lấy output một cách an toàn
     if 'output' not in response or not response['output']:

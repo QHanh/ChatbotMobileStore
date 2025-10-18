@@ -283,6 +283,11 @@ async def process_and_upsert_file_data(
 
         df = df[config_cols]
         
+        for col in columns_config.get('required', []):
+            if pd.api.types.is_string_dtype(df[col]):
+                df[col] = df[col].str.strip()
+            df[col] = df[col].replace(r'^\s*$', np.nan, regex=True)
+
         df = df.dropna(subset=columns_config['required'])
 
         for col, dtype in columns_config.get('numerics', {}).items():

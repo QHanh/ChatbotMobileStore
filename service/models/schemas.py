@@ -46,9 +46,10 @@ class SearchServiceInput(BaseModel):
 class SearchAccessoryInput(BaseModel):
     """Input model for the search_accessories_tool."""
     thread_id: Optional[str] = Field(default=None, description="ID luồng chat của người dùng.")
-    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện, ghi đầy đủ tên phụ kiện kèm cả hãng, ví dụ: 'Kính hiển vi KAISI', 'Phản quang Oppo F3'.")
-    phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện")
-    thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại',....")
+    ten_phu_kien: Optional[str] = Field(default=None, description="Tên phụ kiện (CÓ THỂ bao gồm cả thương hiệu nếu người dùng nêu), ví dụ: 'Kính hiển vi RELIFE', 'Đèn kính hiển vi 2UUL'.")
+    thuong_hieu: Optional[str] = Field(default=None, description="Thương hiệu/hãng của phụ kiện, ví dụ: 'KAISI', 'RELIFE', '2UUL', 'Oppo'.")
+    phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện, ví dụ: 'Kính hiển vi & PK', 'Dụng cụ sửa chữa'.")
+    thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại', 'số mắt',....")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
     offset: Optional[int] = Field(default=0, description="Số lượng kết quả bỏ qua, dùng để xem các trang kết quả tiếp theo. Ví dụ offset=10 để xem trang 2.")
@@ -88,11 +89,13 @@ class OrderAccessoryInput(BaseModel):
 
 class ChatbotRequest(BaseModel):
     """Input model for the chatbot."""
-    query: str = Field(description="The user's query for the chatbot.")
+    query: Optional[str] = Field(default=None, description="The user's query for the chatbot.")
     customer_id: str = Field(description="The unique identifier for the store owner.")
     llm_provider: Optional[str] = Field(default="google_genai", description="The LLM provider to use, e.g., 'google_genai' or 'openai'.")
     api_key: Optional[str] = Field(description="The API key for the LLM provider.")
     access: Optional[int] = Field(default=100, description="The access of the customer, e.g., '100' for test, '0' for not response, '1' for product, '2' for service, '3' for accessory, '12' for product and service, '13' for product and accessory, '23' for service and accessory, '123' for product, service and accessory.")
+    image_url: Optional[str] = Field(default=None, description="Image URL to OCR as chat input when provided.")
+    image_base64: Optional[str] = Field(default=None, description="Base64-encoded image data to OCR as chat input when provided.")
 
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""
