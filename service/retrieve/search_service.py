@@ -118,7 +118,7 @@ async def filter_results_with_ai(
         print(f"Lỗi khi lọc kết quả bằng AI: {e}")
         return results
 
-def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False) -> List[str]:
+def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False, show_specifications: bool = True) -> List[str]:
     """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
     formatted_results = []
     for item in hits:
@@ -191,8 +191,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
             inventory = item.get('inventory')
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
-            # if item.get('specifications'):
-            #     context.append(f"  Mô tả: {item.get('specifications')}")
+            if show_specifications and item.get('specifications'):
+                context.append(f"  Mô tả: {item.get('specifications')}")
             if item.get('guarantee'):
                 context.append(f"  Bảo hành: {item.get('guarantee')}")
             if item.get('link_product'):
@@ -394,6 +394,8 @@ async def search_accessories(
     sanitized_customer_id = sanitize_for_es(customer_id)
     base_bool = {"bool": {"must": [], "should": [], "filter": []}}
     base_bool["bool"]["filter"].append({"term": {"customer_id": sanitized_customer_id}})
+    # Chỉ lấy sản phẩm còn hàng
+    # base_bool["bool"]["filter"].append({"range": {"inventory": {"gt": 0}}})
 
     price_range = {}
     if min_gia is not None:
@@ -411,21 +413,40 @@ async def search_accessories(
 
     if search_terms:
         combined_query = " ".join(search_terms)
+        # Bắt buộc phải có ít nhất 70% từ khóa trong accessory_name
         base_bool["bool"]["must"].append({
-            "multi_match": {
-                "query": combined_query,
-                "fields": [
-                    "accessory_name^5",
-                    "accessory_code^4",
-                    "trademark^3",
-                    "properties^2",
-                    "specifications^1"
-                ],
-                "type": "best_fields",
-                "operator": "or",
-                "minimum_should_match": "70%"
+            "match": {
+                "accessory_name": {
+                    "query": combined_query,
+                    "minimum_should_match": "70%"
+                }
             }
         })
+        
+        # Ưu tiên cao hơn cho match chính xác
+        base_bool["bool"]["should"].extend([
+            {
+                "match_phrase": {
+                    "accessory_name": {
+                        "query": combined_query,
+                        "boost": 10.0
+                    }
+                }
+            },
+            # Tìm kiếm trong các trường khác để tăng điểm (bỏ specifications)
+            {
+                "multi_match": {
+                    "query": combined_query,
+                    "fields": [
+                        "category^3",
+                        "trademark^2",
+                        "properties^1"
+                    ],
+                    "type": "best_fields",
+                    "operator": "or"
+                }
+            }
+        ])
 
     if thuong_hieu:
         base_bool["bool"]["should"].append({
@@ -454,27 +475,7 @@ async def search_accessories(
     if thuoc_tinh_phu_kien:
         base_bool["bool"]["should"].append({"match_phrase": {"properties": {"query": thuoc_tinh_phu_kien, "boost": 3.0}}})
 
-    search_query = {
-        "function_score": {
-            "query": base_bool,
-            "functions": [
-                {
-                    "filter": {"range": {"inventory": {"gt": 0}}},
-                    "weight": 2.0
-                },
-                {
-                    "field_value_factor": {
-                        "field": "lifecare_price",
-                        "modifier": "reciprocal",
-                        "factor": 0.00001,
-                        "missing": 1.0
-                    }
-                }
-            ],
-            "score_mode": "multiply",
-            "boost_mode": "multiply"
-        }
-    }
+    search_query = base_bool
 
     print(f"Sending search to Elasticsearch for accessories: {json.dumps(search_query, indent=2, ensure_ascii=False)}")
     try:
@@ -483,20 +484,17 @@ async def search_accessories(
             query=search_query,
             routing=sanitized_customer_id,
             size=10,
-            from_=offset
+            from_=offset,
+            collapse={"field": "accessory_code.keyword"}
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
         num_hits = len(hits)
         print(f"Tìm thấy {num_hits} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
         
-        # Xóa specifications nếu có nhiều hơn 5 kết quả để giảm token
-        if num_hits > 5:
-            for item in hits:
-                if 'specifications' in item:
-                    del item['specifications']
-        
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        formatted_hits = _format_results_for_agent(hits, is_sale)
+        # Chỉ hiển thị specifications nếu có <= 5 kết quả
+        show_specs = num_hits <= 5
+        formatted_hits = _format_results_for_agent(hits, is_sale, show_specs)
 
         if original_query and llm:
             formatted_hits = await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
