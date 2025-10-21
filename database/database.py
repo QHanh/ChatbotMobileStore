@@ -50,6 +50,42 @@ class SystemInstruction(Base):
     key = Column(String, primary_key=True, index=True)
     value = Column(Text, nullable=False)
 
+class SystemPromptProfile(Base):
+    __tablename__ = "system_prompt_profiles"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, nullable=True, index=True)
+    name = Column(String, nullable=True)
+    persona_template = Column(Text, nullable=True)
+    tone_style = Column(Text, nullable=True)
+    workflow_header = Column(Text, nullable=True)
+    base_instructions = Column(Text, nullable=True)
+    product_workflow = Column(Text, nullable=True)
+    service_workflow = Column(Text, nullable=True)
+    accessory_workflow = Column(Text, nullable=True)
+    workflow_instructions = Column(Text, nullable=True)
+    pagination_instruction = Column(Text, nullable=True)
+    faq_instruction = Column(Text, nullable=True)
+    faq_context_template = Column(Text, nullable=True)
+    ocr_instruction = Column(Text, nullable=True)
+    ocr_prefix_label = Column(String, nullable=True)
+    chat_history_role_user = Column(String, nullable=True)
+    chat_history_role_ai = Column(String, nullable=True)
+    tool_retrieve_document_description = Column(Text, nullable=True)
+    tool_check_customer_info_description = Column(Text, nullable=True)
+    tool_get_store_info_description = Column(Text, nullable=True)
+    tool_search_products_description = Column(Text, nullable=True)
+    tool_create_order_product_description = Column(Text, nullable=True)
+    tool_search_services_description = Column(Text, nullable=True)
+    tool_create_order_service_description = Column(Text, nullable=True)
+    tool_search_accessories_description = Column(Text, nullable=True)
+    tool_create_order_accessory_description = Column(Text, nullable=True)
+    tool_escalate_to_human_response = Column(Text, nullable=True)
+    tool_end_conversation_response = Column(Text, nullable=True)
+    filter_results_prompt = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 class ChatThread(Base):
     __tablename__ = "chat_threads"
 

@@ -10,8 +10,9 @@ from typing import List
 load_dotenv()
 
 from service.utils.tools import create_customer_tools
-from database.database import Customer, SystemInstruction, ChatHistory, ChatThread
+from database.database import Customer, ChatHistory, ChatThread
 from service.retrieve.search_service import search_faqs
+from service.prompts.prompt_service import compose_system_prompt, load_instructions
 
 def create_agent_executor(
     es_client: AsyncElasticsearch,
@@ -51,93 +52,13 @@ def create_agent_executor(
         llm=llm
     )
 
-    identity = ""
-    if persona['ai_role']:
-        identity = f"đóng vai là một {persona['ai_role']} am hiểu và thân thiện"
-    if persona['ai_name']:
-        identity += f" tên là {persona['ai_name']}"
-        
-    db_instructions = db.query(SystemInstruction).all()
-    instructions_dict = {instr.key: instr.value for instr in db_instructions}
-
-    indentity_instructions = f"""
-        Bạn là một chuyên gia tư vấn của một cửa hàng sản phẩm và cung cấp một số các dịch vụ, {identity}.
-        Luôn xưng hô là "em" và gọi khách hàng là "anh/chị". Khi nói về cửa hàng, hãy dùng "bên em".
-        Hãy mô tả một cách khách quan, ví dụ: "sản phẩm có...", "máy được trang bị...".
-    """
-    base_instructions = instructions_dict.get("base_instructions", "")
-
-    product_workflow = instructions_dict.get("product_workflow", "")
-    service_workflow = instructions_dict.get("service_workflow", "")
-    accessory_workflow = instructions_dict.get("accessory_workflow", "")
-
-    workflow_steps = []
-    if product_feature_enabled:
-        workflow_steps.append(product_workflow)
-    if service_feature_enabled:
-        workflow_steps.append(service_workflow)
-    if accessory_feature_enabled:
-        workflow_steps.append(accessory_workflow)
-    
-    workflow_instructions = f"""
-    **Quy trình làm việc:**
-    1. Xác định nhu cầu của khách: **sản phẩm**, **dịch vụ**, hay **linh kiện/phụ kiện**.
-    2. Sử dụng công cụ tìm kiếm tương ứng:
-       {'\n   '.join(workflow_steps)}
-    3. Mọi câu hỏi không liên quan đến sản phẩm, dịch vụ, hay linh kiện/phụ kiện thì **HÃY DÙNG CÔNG CỤ TÌM TÀI LIỆU `retrieve_document_tool`**.
-    """
-
-    pagination_instruction = """
-    **Phân trang kết quả (Pagination):**
-    - Mỗi lần tìm kiếm, công cụ chỉ trả về tối đa 10 kết quả.
-    - Nếu người dùng muốn xem thêm (ví dụ: "còn gì nữa không?", "xem thêm các sản phẩm khác"), bạn BẮT BUỘC phải gọi lại đúng công cụ tìm kiếm đó với các tham số y hệt lần trước, nhưng TĂNG giá trị của tham số `offset` lên 10.
-    - Nếu công cụ trả về một danh sách rỗng, điều đó có nghĩa là đã hết kết quả để hiển thị. Hãy thông báo cho khách hàng biết điều này.
-    """
-
-    offerings = []
-    if product_feature_enabled:
-        offerings.append("bán điện thoại")
-    if service_feature_enabled:
-        offerings.append("sửa chữa điện thoại")
-    if accessory_feature_enabled:
-        offerings.append("bán phụ kiện")
-
-    if len(offerings) > 2:
-        offerings_str = ", ".join(offerings[:-1]) + f" và {offerings[-1]}"
-    elif len(offerings) == 2:
-        offerings_str = " và ".join(offerings)
-    else:
-        offerings_str = offerings[0] if offerings else ""
-
-    faq_instruction = """
-    **Quy trình ưu tiên FAQ:**
-    - Hệ thống có thể đã tìm kiếm trước trong kho Câu hỏi thường gặp (FAQ) và cung cấp một gợi ý trong context.
-    - **Ưu tiên tuyệt đối:** Hãy xem xét kỹ gợi ý này trước tiên (nếu có).
-    - Nếu gợi ý phù hợp với câu hỏi của người dùng, hãy dùng nó để trả lời.
-    - **QUAN TRỌNG:** Nếu không có gợi ý nào từ FAQ, hoặc gợi ý không phù hợp, bạn BẮT BUỘC phải bỏ qua nó và tiếp tục quy trình làm việc bình thường bằng cách sử dụng các công cụ khác để tìm thông tin và trả lời câu hỏi. TUYỆT ĐỐI không được trả về câu trả lời rỗng chỉ vì không có FAQ.
-    """
-    
-    workflow_instructions_add = instructions_dict.get("workflow_instructions", "")
-    
-    other_instructions = instructions_dict.get("other_instructions", "")
-
-    custom_prompt_section = ""
-    if custom_prompt_text:
-        custom_prompt_section = f'''
-**Lưu ý đặc biệt cần ưu tiên tuân thủ (Strictly follow this):**
-{custom_prompt_text}
-'''
-
-    final_system_prompt = "\n".join(filter(None, [
-        indentity_instructions,
-        base_instructions,
-        workflow_instructions,
-        custom_prompt_section,
-        pagination_instruction,
-        workflow_instructions_add,
-        faq_instruction,
-        other_instructions
-    ]))
+    final_system_prompt = compose_system_prompt(
+        db=db,
+        customer_config=customer_config,
+        product_feature_enabled=product_feature_enabled,
+        service_feature_enabled=service_feature_enabled,
+        accessory_feature_enabled=accessory_feature_enabled,
+    )
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", final_system_prompt),
@@ -184,26 +105,37 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
     """
     faq_context = []
     faq_results = await search_faqs(es_client=es_client, customer_id=customer_id, query=user_input)
+    instr = load_instructions(db)
     
     if faq_results:
         found_faq = faq_results[0]
-        # Kiểm tra xem có hình ảnh không
+        template = instr.get(
+            "faq_context_template",
+            """--- GỢI Ý TỪ FAQ ---
+Câu hỏi tương tự đã tìm thấy: "{question}"
+Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy phù hợp): "{answer}{image_text}"
+--- HẾT GỢI Ý ---"""
+        )
         image_text = ""
         if 'image' in found_faq and found_faq['image']:
             image_text = f". Hình ảnh kèm theo: {found_faq['image']}. Khi đưa ra link ảnh bạn cần để mỗi link ảnh trên một dòng."
-        
-        faq_prompt = f"""--- GỢI Ý TỪ FAQ ---
-Câu hỏi tương tự đã tìm thấy: "{found_faq['question']}"
-Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy phù hợp): "{found_faq['answer']}{image_text}"
---- HẾT GỢI Ý ---"""
+        faq_prompt = (
+            template
+            .replace("{question}", str(found_faq.get('question', "")))
+            .replace("{answer}", str(found_faq.get('answer', "")))
+            .replace("{image_text}", image_text)
+        )
         faq_context.append(HumanMessage(content=faq_prompt))
 
     chat_history = get_session_history(customer_id, session_id, db)
     
+    user_label = instr.get("chat_history_role_user", "Người dùng")
+    ai_label = instr.get("chat_history_role_ai", "Trợ lý")
+
     def format_history_for_llm(history: List[BaseMessage]) -> List[str]:
         formatted = []
         for msg in history:
-            role = "Người dùng" if isinstance(msg, HumanMessage) else "Trợ lý"
+            role = user_label if isinstance(msg, HumanMessage) else ai_label
             formatted.append(f"{role}: {msg.content}")
         return formatted
 

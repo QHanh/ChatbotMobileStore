@@ -3,6 +3,7 @@ from typing import Optional, List, Dict, Any
 import json
 from sqlalchemy.orm import Session
 from database.database import CustomerIsSale, SessionLocal
+from service.prompts.prompt_service import load_instructions
 from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
 from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
@@ -43,7 +44,14 @@ async def filter_results_with_ai(
 
     history_str = "\n".join(chat_history or [])
     results_str = "\n\n".join(results)
-    prompt_template_str = """
+    db = SessionLocal()
+    try:
+        instr = load_instructions(db)
+    finally:
+        db.close()
+    prompt_template_str = instr.get(
+        "filter_results_prompt",
+        """
             Bạn là một trợ lý AI có nhiệm vụ lọc kết quả tìm kiếm một cách nghiêm ngặt. Dựa trên LỊCH SỬ TRÒ CHUYỆN và CÂU HỎI HIỆN TẠI của người dùng, hãy lọc và chỉ giữ lại những kết quả tìm kiếm THỰC SỰ liên quan.
 
             **QUY TRÌNH LỌC:**
@@ -67,6 +75,7 @@ async def filter_results_with_ai(
             Danh sách kết quả tìm kiếm cần lọc:
             {results}
             """
+    )
 
     try:
         filtered_results_str = ""

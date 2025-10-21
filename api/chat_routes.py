@@ -9,10 +9,11 @@ from dependencies import get_es_client
 from typing import List
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
+from service.prompts.prompt_service import compose_system_prompt, load_instructions
 
 router = APIRouter()
 
-async def _ocr_image_to_text(llm_provider: str, api_key: str, image_url: str = None, image_base64: str = None) -> str:
+async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None) -> str:
     """Extract text from image using LLM vision capabilities."""
     if not (image_url or image_base64):
         return ""
@@ -36,8 +37,14 @@ async def _ocr_image_to_text(llm_provider: str, api_key: str, image_url: str = N
                 data_url = f"data:image/png;base64,{data_url}"
             image_data = {"type": "image_url", "image_url": {"url": data_url}}
 
+        instr = load_instructions(db)
+        ocr_text_instruction = instr.get(
+            "ocr_instruction",
+            "Hãy trích xuất (OCR) toàn bộ văn bản có trong ảnh này. Chỉ trả về văn bản được trích xuất, giữ nguyên định dạng và xuống dòng. Nếu không có văn bản nào trong ảnh, hãy trả về chuỗi rỗng."
+        )
+
         message_content = [
-            {"type": "text", "text": "Hãy trích xuất (OCR) toàn bộ văn bản có trong ảnh này. Chỉ trả về văn bản được trích xuất, giữ nguyên định dạng và xuống dòng. Nếu không có văn bản nào trong ảnh, hãy trả về chuỗi rỗng."},
+            {"type": "text", "text": ocr_text_instruction},
             image_data
         ]
 
@@ -120,11 +127,13 @@ async def chat(
 
         if image_url or image_base64:
             print(f"[CHAT DEBUG] Calling OCR with provider: {llm_provider}")
-            ocr_text = await _ocr_image_to_text(llm_provider, api_key, image_url=image_url, image_base64=image_base64)
+            ocr_text = await _ocr_image_to_text(llm_provider, api_key, db, image_url=image_url, image_base64=image_base64)
             print(f"[CHAT DEBUG] OCR result length: {len(ocr_text)}")
             print(f"[CHAT DEBUG] OCR result: {ocr_text[:200] if ocr_text else 'EMPTY'}")
+            instr = load_instructions(db)
+            ocr_prefix_label = instr.get("ocr_prefix_label", "[OCR từ ảnh]:")
             if user_input and ocr_text:
-                user_input = f"{user_input}\n\n[OCR từ ảnh]:\n{ocr_text}"
+                user_input = f"{user_input}\n\n{ocr_prefix_label}\n{ocr_text}"
                 print(f"[CHAT DEBUG] Combined input (text + OCR)")
             elif not user_input:
                 user_input = ocr_text or ""
@@ -173,6 +182,38 @@ async def chat(
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail="Đã có lỗi không mong muốn xảy ra từ server.")
+
+@router.get("/chat/system-prompt/{threadId}")
+async def get_system_prompt(
+    threadId: str = Path(..., description="Mã phiên chat với người dùng."),
+    customer_id: str = None,
+    access: int = 100,
+    db: Session = Depends(get_db)
+):
+    if not threadId:
+        raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
+    if not customer_id:
+        raise HTTPException(status_code=400, detail="Mã khách hàng là bắt buộc.")
+
+    customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
+    if not customer_config:
+        customer_config = Customer(customer_id=customer_id)
+
+    if access != 100:
+        access_str = str(access)
+        customer_config.product_feature_enabled = '1' in access_str
+        customer_config.service_feature_enabled = '2' in access_str
+        customer_config.accessory_feature_enabled = '3' in access_str
+
+    system_prompt = compose_system_prompt(
+        db=db,
+        customer_config=customer_config,
+        product_feature_enabled=customer_config.product_feature_enabled,
+        service_feature_enabled=customer_config.service_feature_enabled,
+        accessory_feature_enabled=customer_config.accessory_feature_enabled,
+    )
+
+    return {"system_prompt": system_prompt}
 
 @router.get("/chat-history/{customer_id}/{thread_id}", response_model=List[ChatHistoryResponse])
 async def get_chat_history(

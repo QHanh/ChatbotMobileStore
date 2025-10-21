@@ -22,6 +22,7 @@ from service.models.schemas import (
 from pydantic import BaseModel, Field
 from langchain_core.language_models.base import BaseLanguageModel
 from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder, StoreInfo
+from service.prompts.prompt_service import load_instructions
 
 # Schema for checking existing customer info
 class CheckCustomerInfoInput(BaseModel):
@@ -721,7 +722,15 @@ async def escalate_to_human_tool() -> str:
     Công cụ này sẽ kết nối người dùng đến một nhân viên thật.
     """
     print("--- Agent đã gọi công cụ chuyển cho người thật ---")
-    return "Đang kết nối anh/chị với nhân viên tư vấn. Anh/chị vui lòng chờ trong giây lát..."
+    db = next(get_db())
+    try:
+        instr = load_instructions(db)
+        return instr.get(
+            "tool.escalate_to_human.response",
+            "Đang kết nối anh/chị với nhân viên tư vấn. Anh/chị vui lòng chờ trong giây lát...",
+        )
+    finally:
+        db.close()
 
 @tool
 async def end_conversation_tool() -> str:
@@ -730,7 +739,15 @@ async def end_conversation_tool() -> str:
     Công cụ này sẽ kết thúc cuộc trò chuyện một cách lịch sự.
     """
     print("--- Agent đã gọi công cụ kết thúc trò chuyện ---")
-    return "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!"
+    db = next(get_db())
+    try:
+        instr = load_instructions(db)
+        return instr.get(
+            "tool.end_conversation.response",
+            "Cảm ơn anh/chị đã quan tâm đến cửa hàng của chúng em. Hẹn gặp lại anh/chị lần sau!",
+        )
+    finally:
+        db.close()
 
 def create_customer_tools(
     es_client: AsyncElasticsearch,
@@ -744,13 +761,22 @@ def create_customer_tools(
     """
     Tạo một danh sách các tool dành riêng cho một khách hàng cụ thể.
     """
+    db = next(get_db())
+    try:
+        instr = load_instructions(db)
+    finally:
+        db.close()
+
     tools = []
     
     # Always include document retrieval tool
     retrieve_document_tool = StructuredTool.from_function(
         func=partial(retrieve_document_logic, tenant_id=customer_id),
         name="retrieve_document_tool",
-        description="Tìm kiếm thông tin chung, chính sách, hướng dẫn từ cơ sở tri thức",
+        description=instr.get(
+            "tool.retrieve_document.description",
+            "Tìm kiếm thông tin chung, chính sách, hướng dẫn từ cơ sở tri thức",
+        ),
         args_schema=RetrieveDocumentInput,
         coroutine=partial(retrieve_document_logic, tenant_id=customer_id)
     )
@@ -758,10 +784,18 @@ def create_customer_tools(
     
     # Always include customer info checking tool
     check_customer_info_tool = create_check_customer_info_tool(customer_id, thread_id)
+    check_customer_info_tool.description = instr.get(
+        "tool.check_customer_info.description",
+        check_customer_info_tool.description,
+    )
     tools.append(check_customer_info_tool)
     
     # Always include store info tool
     store_info_tool = create_get_store_info_tool(customer_id)
+    store_info_tool.description = instr.get(
+        "tool.get_store_info.description",
+        store_info_tool.description,
+    )
     tools.append(store_info_tool)
     
     available_tools = []
@@ -772,13 +806,20 @@ def create_customer_tools(
         search_product_tool = StructuredTool.from_function(
             func=customer_search_product_func,
             name="search_products_tool",
-            description=search_products_logic.__doc__,
+            description=instr.get(
+                "tool.search_products.description",
+                search_products_logic.__doc__,
+            ),
             args_schema=SearchProductInput,
             coroutine=customer_search_product_func
         )
         # Tạo order tool với customer_id và thread_id được bind sẵn
         order_product_tool = create_order_product_tool_with_db(customer_id=customer_id, thread_id=thread_id)
         
+        order_product_tool.description = instr.get(
+            "tool.create_order_product.description",
+            order_product_tool.description,
+        )
         available_tools.extend([
             search_product_tool,
             order_product_tool,
@@ -790,7 +831,10 @@ def create_customer_tools(
         search_service_tool = StructuredTool.from_function(
             func=customer_search_service_func,
             name="search_services_tool",
-            description=search_services_logic.__doc__,
+            description=instr.get(
+                "tool.search_services.description",
+                search_services_logic.__doc__,
+            ),
             args_schema=SearchServiceInput,
             coroutine=customer_search_service_func
         )
@@ -798,6 +842,10 @@ def create_customer_tools(
         # Tạo order tool với customer_id và thread_id được bind sẵn
         order_service_tool = create_order_service_tool_with_db(customer_id=customer_id, thread_id=thread_id)
         
+        order_service_tool.description = instr.get(
+            "tool.create_order_service.description",
+            order_service_tool.description,
+        )
         available_tools.extend([
             search_service_tool,
             order_service_tool,
@@ -809,7 +857,10 @@ def create_customer_tools(
         search_accessory_tool = StructuredTool.from_function(
             func=customer_search_accessory_func,
             name="search_accessories_tool",
-            description=search_accessories_logic.__doc__,
+            description=instr.get(
+                "tool.search_accessories.description",
+                search_accessories_logic.__doc__,
+            ),
             args_schema=SearchAccessoryInput,
             coroutine=customer_search_accessory_func
         )
@@ -817,6 +868,10 @@ def create_customer_tools(
         # Tạo order tool với customer_id và thread_id được bind sẵn
         order_accessory_tool = create_order_accessory_tool_with_db(customer_id=customer_id, thread_id=thread_id)
 
+        order_accessory_tool.description = instr.get(
+            "tool.create_order_accessory.description",
+            order_accessory_tool.description,
+        )
         available_tools.extend([
             search_accessory_tool,
             order_accessory_tool,
