@@ -18,7 +18,7 @@ from api import (
     order_routes,
     info_store_routes
 )
-from database.database import init_db
+from database.database import init_db, SessionLocal, SystemInstruction
 import dependencies
 import os
 os.environ["LANGCHAIN_DEBUG"] = "true"
@@ -48,6 +48,28 @@ async def lifespan(app: FastAPI):
     # Initialize all clients on startup
     await dependencies.init_es_client()
     await dependencies.init_weaviate_client()
+    
+    # Ensure required SystemInstruction keys exist; upsert missing defaults
+    try:
+        db = SessionLocal()
+        from create_db import DEFAULT_INSTRUCTIONS
+        existing_keys = {row[0] for row in db.query(SystemInstruction.key).all()}
+        missing = [k for k in DEFAULT_INSTRUCTIONS.keys() if k not in existing_keys]
+        if missing:
+            print(f"[PROMPT] Missing SystemInstruction keys: {missing}. Seeding...")
+            for key in missing:
+                db.add(SystemInstruction(key=key, value=DEFAULT_INSTRUCTIONS[key]))
+            db.commit()
+            print(f"[PROMPT] Seeded {len(missing)} key(s).")
+        else:
+            print("[PROMPT] All default SystemInstruction keys present.")
+    except Exception as e:
+        print(f"[PROMPT ERROR] Failed to check/seed system_instructions: {e}")
+    finally:
+        try:
+            db.close()
+        except Exception:
+            pass
     
     yield
     

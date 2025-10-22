@@ -6,7 +6,9 @@ from database.database import SystemInstruction, Customer
 
 def load_instructions(db: Session) -> Dict[str, str]:
     rows = db.query(SystemInstruction).all()
-    return {row.key: row.value for row in rows}
+    data = {row.key: row.value for row in rows}
+    print(f"[PROMPT] Loaded SystemInstruction keys: {list(data.keys())}")
+    return data
 
 
 def _render(text: str, params: Dict[str, str]) -> str:
@@ -25,12 +27,20 @@ def compose_system_prompt(
     accessory_feature_enabled: bool,
 ) -> str:
     instr = load_instructions(db)
+    
+    def _pick(key: str, default_value: str) -> str:
+        if key in instr:
+            print(f"[PROMPT] {key}: DB")
+            return instr.get(key, default_value)
+        else:
+            print(f"[PROMPT] {key}: default")
+            return default_value
 
     ai_name = customer_config.ai_name or ""
     ai_role = customer_config.ai_role or ""
     params = {"ai_name": ai_name, "ai_role": ai_role}
 
-    persona_template = instr.get(
+    persona_template = _pick(
         "persona_template",
         (
             "Bạn là một chuyên gia tư vấn của một cửa hàng sản phẩm và cung cấp một số các dịch vụ, "
@@ -39,7 +49,7 @@ def compose_system_prompt(
     )
     persona_section = _render(persona_template, params).strip()
 
-    tone_style = instr.get(
+    tone_style = _pick(
         "tone_style",
         (
             "Luôn xưng hô là \"em\" và gọi khách hàng là \"anh/chị\". Khi nói về cửa hàng, hãy dùng \"bên em\".\n"
@@ -47,17 +57,17 @@ def compose_system_prompt(
         ),
     )
 
-    base_instructions = instr.get("base_instructions", "")
+    base_instructions = _pick("base_instructions", "")
 
-    product_workflow = instr.get(
+    product_workflow = _pick(
         "product_workflow",
         "-   Khi khách hỏi về **sản phẩm** (điện thoại, máy tính bảng, ...), dùng `search_products_tool`.",
     )
-    service_workflow = instr.get(
+    service_workflow = _pick(
         "service_workflow",
         "-   Khi khách hỏi về **dịch vụ** (sửa chữa, thay pin, ...), dùng `search_services_tool`.",
     )
-    accessory_workflow = instr.get(
+    accessory_workflow = _pick(
         "accessory_workflow",
         (
             "-   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`. "
@@ -73,7 +83,7 @@ def compose_system_prompt(
     if accessory_feature_enabled:
         steps.append(accessory_workflow)
 
-    workflow_header = instr.get("workflow_header", "**Quy trình làm việc:**")
+    workflow_header = _pick("workflow_header", "**Quy trình làm việc:**")
     if steps:
         steps_block = "\n   " + "\n   ".join(steps)
     else:
@@ -87,9 +97,9 @@ def compose_system_prompt(
         "3. Mọi câu hỏi không liên quan đến sản phẩm, dịch vụ, hay linh kiện/phụ kiện thì **HÃY DÙNG CÔNG CỤ TÌM TÀI LIỆU `retrieve_document_tool`**.\n"
     )
 
-    workflow_instructions_add = instr.get("workflow_instructions", "")
+    workflow_instructions_add = _pick("workflow_instructions", "")
 
-    pagination_instruction = instr.get(
+    pagination_instruction = _pick(
         "pagination_instruction",
         (
             "**Phân trang kết quả (Pagination):**\n"
@@ -99,7 +109,7 @@ def compose_system_prompt(
         ),
     )
 
-    faq_instruction = instr.get(
+    faq_instruction = _pick(
         "faq_instruction",
         (
             "**Quy trình ưu tiên FAQ:**\n"
@@ -110,9 +120,10 @@ def compose_system_prompt(
         ),
     )
 
-    other_instructions = instr.get("other_instructions", "")
+    other_instructions = _pick("other_instructions", "")
 
     custom_prompt_text = customer_config.custom_prompt or ""
+    print(f"[PROMPT] custom_prompt: {'present' if custom_prompt_text else 'empty'}")
     custom_prompt_section = (
         f"\n**Lưu ý đặc biệt cần ưu tiên tuân thủ (Strictly follow this):**\n{custom_prompt_text}\n"
         if custom_prompt_text

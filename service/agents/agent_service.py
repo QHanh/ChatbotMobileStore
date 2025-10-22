@@ -107,9 +107,17 @@ async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id:
     faq_results = await search_faqs(es_client=es_client, customer_id=customer_id, query=user_input)
     instr = load_instructions(db)
     
+    def _pick(key: str, default_value: str) -> str:
+        if key in instr:
+            print(f"[PROMPT] {key}: DB")
+            return instr.get(key, default_value)
+        else:
+            print(f"[PROMPT] {key}: default")
+            return default_value
+    
     if faq_results:
         found_faq = faq_results[0]
-        template = instr.get(
+        template = _pick(
             "faq_context_template",
             """--- GỢI Ý TỪ FAQ ---
 Câu hỏi tương tự đã tìm thấy: "{question}"
@@ -129,8 +137,8 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
 
     chat_history = get_session_history(customer_id, session_id, db)
     
-    user_label = instr.get("chat_history_role_user", "Người dùng")
-    ai_label = instr.get("chat_history_role_ai", "Trợ lý")
+    user_label = _pick("chat_history_role_user", "Người dùng")
+    ai_label = _pick("chat_history_role_ai", "Trợ lí")
 
     def format_history_for_llm(history: List[BaseMessage]) -> List[str]:
         formatted = []
