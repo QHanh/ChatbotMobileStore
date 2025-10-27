@@ -5,7 +5,7 @@ from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
-from typing import List
+from typing import List, Optional
 
 load_dotenv()
 
@@ -98,7 +98,15 @@ def get_session_history(customer_id: str, session_id: str, db: Session, limit: i
             messages.append(AIMessage(content=record.message))
     return messages
 
-async def invoke_agent_with_memory(agent_executor, customer_id: str, session_id: str, user_input: str, db: Session, es_client: AsyncElasticsearch):
+async def invoke_agent_with_memory(
+    agent_executor,
+    customer_id: str,
+    session_id: str,
+    user_input: str,
+    db: Session,
+    es_client: AsyncElasticsearch,
+    history_override: Optional[List] = None,
+):
     """
     Gọi agent với input của người dùng và quản lý lịch sử trò chuyện trong database.
     Luôn kiểm tra FAQ trước tiên.
@@ -135,7 +143,21 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         )
         faq_context.append(HumanMessage(content=faq_prompt))
 
-    chat_history = get_session_history(customer_id, session_id, db)
+    if history_override is not None:
+        chat_history: List[BaseMessage] = []
+        for item in history_override:
+            role = getattr(item, 'role', None)
+            message = getattr(item, 'message', None)
+            if role is None or message is None:
+                if isinstance(item, dict):
+                    role = item.get('role')
+                    message = item.get('message')
+            if role == 'human':
+                chat_history.append(HumanMessage(content=message or ""))
+            else:
+                chat_history.append(AIMessage(content=message or ""))
+    else:
+        chat_history = get_session_history(customer_id, session_id, db)
     
     user_label = _pick("chat_history_role_user", "Người dùng")
     ai_label = _pick("chat_history_role_ai", "Trợ lí")

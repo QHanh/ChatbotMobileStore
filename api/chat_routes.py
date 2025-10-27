@@ -170,7 +170,8 @@ async def chat(
             threadId, 
             user_input, 
             db,
-            es_client=es_client
+            es_client=es_client,
+            history_override=request.history
         )
 
         return {"response": response['output']}

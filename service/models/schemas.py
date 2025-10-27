@@ -87,6 +87,11 @@ class OrderAccessoryInput(BaseModel):
     dia_chi: str = Field(description="Địa chỉ người mua.")
 
 
+class ChatMessageInput(BaseModel):
+    role: str
+    message: str
+
+
 class ChatbotRequest(BaseModel):
     """Input model for the chatbot."""
     query: Optional[str] = Field(default=None, description="The user's query for the chatbot.")
@@ -96,6 +101,7 @@ class ChatbotRequest(BaseModel):
     access: Optional[int] = Field(default=100, description="The access of the customer, e.g., '100' for test, '0' for not response, '1' for product, '2' for service, '3' for accessory, '12' for product and service, '13' for product and accessory, '23' for service and accessory, '123' for product, service and accessory.")
     image_url: Optional[str] = Field(default=None, description="Image URL to OCR as chat input when provided.")
     image_base64: Optional[str] = Field(default=None, description="Base64-encoded image data to OCR as chat input when provided.")
+    history: Optional[List[ChatMessageInput]] = None
 
 class PersonaConfig(BaseModel):
     """Input model for configuring the AI's persona."""
