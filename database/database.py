@@ -184,6 +184,17 @@ class ChatCustomer(Base):
     status = Column(String, default="active", nullable=False)  # active, stopped
 
 
+class GraphRAGArtifact(Base):
+    __tablename__ = "graphrag_artifacts"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, index=True, nullable=False)
+    artifact_type = Column(String, nullable=False)  # entities, relationships, text_units, community_reports, ...
+    row_id = Column(String, nullable=True)
+    payload = Column(Text, nullable=False)  # JSON string of the row
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 
 def init_db():
     Base.metadata.create_all(bind=engine)
