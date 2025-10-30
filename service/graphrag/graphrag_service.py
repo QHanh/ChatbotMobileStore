@@ -4,7 +4,7 @@ import json
 import hashlib
 import subprocess
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 
@@ -78,6 +78,7 @@ def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash-lite
         "api_key": "${GEMINI_API_KEY}",
         "model_provider": "gemini",
         "model": chat_model,
+        "model_supports_json": True,
     }
     models["default_embedding_model"] = {
         "type": "embedding",
@@ -87,6 +88,70 @@ def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash-lite
         "model": embedding_model,
     }
     data["models"] = models
+
+    with settings_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+
+
+def configure_cache_short_base(root: Path):
+    """Use a short absolute cache base_dir to avoid Windows MAX_PATH issues.
+
+    Sets cache.base_dir to a short path under the user's home directory, e.g.
+    <home>/.grc/<workspace_name>
+    Also pre-creates the cache base and common subfolders used by GraphRAG.
+    """
+    settings_path = root / "settings.yaml"
+    if not settings_path.exists():
+        return
+    with settings_path.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    # Build short base dir
+    base_dir = Path.home() / ".grc" / root.name
+    # Use forward slashes to avoid YAML/backslash escape issues
+    base_dir_str = base_dir.as_posix()
+
+    cache_cfg = data.get("cache", {})
+    cache_cfg["type"] = "file"
+    cache_cfg["base_dir"] = base_dir_str
+    data["cache"] = cache_cfg
+
+    # Write settings first
+    with settings_path.open("w", encoding="utf-8") as f:
+        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+
+    # Pre-create directories to avoid races
+    try:
+        (base_dir / "extract_noun_phrases").mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+
+def configure_input_for_json(root: Path):
+    """Ensure settings.yaml is configured to read JSON files from input/.
+
+    Sets:
+      input.storage.type = file
+      input.storage.base_dir = "input"
+      input.file_type = json
+      input.file_pattern = ".*\\.json$"
+    """
+    settings_path = root / "settings.yaml"
+    if not settings_path.exists():
+        return
+    with settings_path.open("r", encoding="utf-8") as f:
+        data = yaml.safe_load(f) or {}
+
+    input_cfg = data.get("input", {})
+    storage = input_cfg.get("storage", {})
+    storage["type"] = "file"
+    storage["base_dir"] = "input"
+    input_cfg["storage"] = storage
+    input_cfg["file_type"] = "json"
+    # Avoid trailing '$' which breaks Python string.Template used by GraphRAG config loader
+    input_cfg["file_pattern"] = ".*\\.json"
+    # Hint GraphRAG to interpret JSON as the standard 'documents' schema (id, text, title, creation_date, metadata)
+    input_cfg["json_schema"] = "documents"
+    data["input"] = input_cfg
 
     with settings_path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
@@ -124,14 +189,113 @@ def export_documents(db: Session, customer_id: str, root: Path) -> int:
     out_path = input_dir / "documents.json"
     with out_path.open("w", encoding="utf-8") as f:
         json.dump(items, f, ensure_ascii=False)
+
+    # Fallback: also export individual .txt files so pipelines configured for text can index
+    # Filenames: doc_<seq>_<first8_of_hash>.txt
+    for idx, it in enumerate(items):
+        fn = f"doc_{idx+1:05d}_{it['id'][:8]}.txt"
+        fp = input_dir / fn
+        try:
+            with fp.open("w", encoding="utf-8") as tf:
+                # include title as header to give context
+                title_line = it.get("title") or ""
+                if title_line:
+                    tf.write(f"{title_line}\n\n")
+                tf.write(it.get("text", ""))
+        except Exception:
+            # ignore per-file write errors to keep export robust
+            pass
     return len(items)
 
 
-def run_index(root: Path, method: str = "fast"):
+def run_index(root: Path, method: str = "fast") -> bool:
     cmd = [sys.executable, "-m", "graphrag", "index", "--root", str(root)]
     if method and method.lower() == "fast":
         cmd += ["--method", "fast"]
-    subprocess.run(cmd, check=True)
+    logs_dir = root / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    cli_log = logs_dir / "cli_index.log"
+    try:
+        proc = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        with cli_log.open("a", encoding="utf-8") as f:
+            f.write("\n==== graphrag index STDOUT ===="\
+                    f"\n{proc.stdout}\n")
+            f.write("\n==== graphrag index STDERR ===="\
+                    f"\n{proc.stderr}\n")
+        return True
+    except subprocess.CalledProcessError as e:
+        with cli_log.open("a", encoding="utf-8") as f:
+            f.write("\n==== graphrag index FAILED ===="\
+                    f"\nCommand: {' '.join(cmd)}\n"\
+                    f"Return code: {e.returncode}\n"\
+                    f"STDOUT:\n{e.stdout}\n"\
+                    f"STDERR:\n{e.stderr}\n")
+        return False
+
+
+def run_query(
+    root: Path,
+    method: str,
+    query: str,
+    community_level: Optional[int] = None,
+    response_type: Optional[str] = None,
+    timeout_sec: int = 60,
+) -> str:
+    logs_dir = root / "logs"
+    logs_dir.mkdir(parents=True, exist_ok=True)
+    cli_log = logs_dir / "cli_query.log"
+    cmd = [
+        sys.executable,
+        "-m",
+        "graphrag",
+        "query",
+        "--root",
+        str(root),
+        "--method",
+        method,
+        "--query",
+        query,
+    ]
+    if community_level is not None:
+        cmd += ["--community-level", str(community_level)]
+    if response_type:
+        cmd += ["--response-type", response_type]
+    try:
+        proc = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout_sec,
+        )
+        stdout_text = proc.stdout or ""
+        stderr_text = proc.stderr or ""
+        with cli_log.open("a", encoding="utf-8") as f:
+            f.write("\n==== graphrag query STDOUT ====\n" + stdout_text + "\n")
+            f.write("\n==== graphrag query STDERR ====\n" + stderr_text + "\n")
+        return stdout_text.strip()
+    except subprocess.TimeoutExpired as e:
+        with cli_log.open("a", encoding="utf-8") as f:
+            f.write("\n==== graphrag query TIMEOUT ====\n")
+            f.write(f"Command: {' '.join(cmd)}\nTimeout: {timeout_sec}s\n")
+            if e.output:
+                f.write(f"STDOUT (partial):\n{e.output}\n")
+            if e.stderr:
+                f.write(f"STDERR (partial):\n{e.stderr}\n")
+        return ""
+    except subprocess.CalledProcessError as e:
+        with cli_log.open("a", encoding="utf-8") as f:
+            f.write("\n==== graphrag query FAILED ====\n")
+            f.write(f"Command: {' '.join(cmd)}\nReturn code: {e.returncode}\n")
+            f.write(f"STDOUT:\n{e.stdout}\nSTDERR:\n{e.stderr}\n")
+        return ""
 
 
 def _list_parquet_files(output_root: Path) -> List[Path]:

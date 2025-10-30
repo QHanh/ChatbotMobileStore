@@ -14,15 +14,20 @@ from elasticsearch import AsyncElasticsearch
 from service.retrieve.retrieve_vector_service import retrieve_documents
 from service.models.schemas import (
     SearchProductInput, SearchServiceInput, SearchAccessoryInput,
-    RetrieveDocumentInput, 
-    OrderProductInput, 
-    OrderServiceInput, 
+    RetrieveDocumentInput,
+    GraphRAGQueryInput,
+    OrderProductInput,
+    OrderServiceInput,
     OrderAccessoryInput
 )
 from pydantic import BaseModel, Field
 from langchain_core.language_models.base import BaseLanguageModel
 from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder, StoreInfo
 from service.prompts.prompt_service import load_instructions
+from service.graphrag.graphrag_service import (
+    workspace_path_for_customer,
+    run_query,
+)
 
 # Schema for checking existing customer info
 class CheckCustomerInfoInput(BaseModel):
@@ -303,6 +308,23 @@ async def retrieve_document_logic(
     print(f"\n--- Agent đã gọi công cụ truy xuất tài liệu cho tenant: {tenant_id} ---")
     results = await retrieve_documents(query=query, customer_id=tenant_id)
     return results
+
+
+async def graphrag_search_logic(
+    customer_id: str,
+    method: str,
+    query: str,
+    community_level: Optional[int] = None,
+    response_type: Optional[str] = None,
+) -> str:
+    """
+    Truy vấn GraphRAG Query Engine trên workspace của khách hàng.
+    method: 'local' | 'global' | 'drift' | 'basic'
+    """
+    print(f"--- Agent đã gọi GraphRAG Query: customer={customer_id}, method={method} ---")
+    root = workspace_path_for_customer(customer_id)
+    output = run_query(root=root, method=method, query=query, community_level=community_level, response_type=response_type)
+    return output or ""
 
 async def search_products_logic(
     es_client: AsyncElasticsearch,
@@ -770,17 +792,18 @@ def create_customer_tools(
     tools = []
     
     # Always include document retrieval tool
-    retrieve_document_tool = StructuredTool.from_function(
-        func=partial(retrieve_document_logic, tenant_id=customer_id),
-        name="retrieve_document_tool",
+    graphrag_tool_func = partial(graphrag_search_logic, customer_id=customer_id)
+    graphrag_search_tool = StructuredTool.from_function(
+        func=graphrag_tool_func,
+        name="graphrag_search_tool",
         description=instr.get(
-            "tool.retrieve_document.description",
-            "Tìm kiếm thông tin chung, chính sách, hướng dẫn từ cơ sở tri thức",
+            "tool.graphrag_search.description",
+            "Tìm kiếm kiến thức bằng GraphRAG Query Engine (local/global/drift/basic).",
         ),
-        args_schema=RetrieveDocumentInput,
-        coroutine=partial(retrieve_document_logic, tenant_id=customer_id)
+        args_schema=GraphRAGQueryInput,
+        coroutine=graphrag_tool_func,
     )
-    tools.append(retrieve_document_tool)
+    tools.append(graphrag_search_tool)
     
     # Always include customer info checking tool
     check_customer_info_tool = create_check_customer_info_tool(customer_id, thread_id)

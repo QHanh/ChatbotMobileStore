@@ -94,7 +94,8 @@ def compose_system_prompt(
         "1. Xác định nhu cầu của khách: **sản phẩm**, **dịch vụ**, hay **linh kiện/phụ kiện**.\n"
         "2. Sử dụng công cụ tìm kiếm tương ứng:\n"
         f"   {steps_block}\n"
-        "3. Mọi câu hỏi không liên quan đến sản phẩm, dịch vụ, hay linh kiện/phụ kiện thì **HÃY DÙNG CÔNG CỤ TÌM TÀI LIỆU `retrieve_document_tool`**.\n"
+        "3. Mọi câu hỏi tra cứu tri thức/chính sách/hướng dẫn KHÔNG thuộc 3 nhóm trên: **DÙNG `graphrag_search_tool`**.\n"
+        "   - Chọn phương thức phù hợp: `local` (thực thể cụ thể), `global` (tổng hợp toàn cục), `drift` (kết hợp), `basic` (RAG vector cơ bản).\n"
     )
 
     workflow_instructions_add = _pick("workflow_instructions", "")

@@ -58,6 +58,13 @@ class RetrieveDocumentInput(BaseModel):
     """Input model for the retrieve_document_tool."""
     query: str = Field(description="Truy vấn tìm kiếm bằng ngôn ngữ tự nhiên, bạn nên dựa vào lịch sử hội thoại để viết lại câu hỏi của khách hàng đầy đủ ngữ nghĩa nhất để truy xuất dữ liệu, ví dụ: 'iPhone màu xanh giá rẻ'.")
 
+class GraphRAGQueryInput(BaseModel):
+    """Input model for the graphrag_search_tool."""
+    method: str = Field(description="Phương thức truy vấn: local, global, drift, hoặc basic.")
+    query: str = Field(description="Câu hỏi/truy vấn của người dùng.")
+    community_level: Optional[int] = Field(default=None, description="Mức độ cộng đồng (Leiden level) cho global/drift. Mặc định 2 nếu bỏ trống.")
+    response_type: Optional[str] = Field(default=None, description="Định dạng phản hồi mong muốn, ví dụ: 'Multiple Paragraphs' hoặc 'List of 3-7 Points'.")
+
 class OrderProductInput(BaseModel):
     """Input model for the create_order_product_tool."""
     ma_san_pham: str = Field(description="Mã sản phẩm khách hàng đặt.")

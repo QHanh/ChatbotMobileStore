@@ -60,7 +60,8 @@ async def upload_text(customer_id: str, doc_input: DocumentInput, db: Session = 
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 @router.post("/upload-file/{customer_id}")
@@ -94,7 +95,8 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 @router.post("/upload-url/{customer_id}")
@@ -133,7 +135,8 @@ async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session 
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 def parse_sitemap(sitemap_url: str) -> List[str]:
@@ -577,7 +580,8 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 @router.get("/sources/{customer_id}")
@@ -605,7 +609,8 @@ async def list_document_sources(customer_id: str):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 @router.delete("/sources/{customer_id}")
@@ -630,7 +635,8 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         # Weaviate client is managed by app lifespan; do not close here
-        client.close()
+        if client:
+            client.close()
         pass
 
 @router.delete("/documents/{customer_id}")
