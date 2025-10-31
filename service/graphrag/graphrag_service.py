@@ -63,7 +63,7 @@ def upsert_env_api_key(root: Path, api_key: str, env_key: str = "GRAPHRAG_API_KE
         f.write("\n".join(lines))
 
 
-def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash-lite", embedding_model: str = "gemini-embedding-001"):
+def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash", embedding_model: str = "gemini-embedding-001"):
     """Modify settings.yaml to use LiteLLM with Gemini for chat and embeddings."""
     settings_path = root / "settings.yaml"
     if not settings_path.exists():
@@ -208,10 +208,10 @@ def export_documents(db: Session, customer_id: str, root: Path) -> int:
     return len(items)
 
 
-def run_index(root: Path, method: str = "fast") -> bool:
+def run_index(root: Path, method: str = "standard") -> bool:
     cmd = [sys.executable, "-m", "graphrag", "index", "--root", str(root)]
-    if method and method.lower() == "fast":
-        cmd += ["--method", "fast"]
+    if method:
+        cmd += ["--method", method]
     logs_dir = root / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
     cli_log = logs_dir / "cli_index.log"
@@ -310,13 +310,14 @@ def persist_output_to_db(db: Session, customer_id: str, root: Path, overwrite: b
     Returns number of rows persisted.
     """
     output_dir = root / "output"
+    update_output_dir = root / "update_output"
 
     if overwrite:
         db.query(GraphRAGArtifact).filter(GraphRAGArtifact.customer_id == customer_id).delete(synchronize_session=False)
         db.commit()
 
     total_rows = 0
-    parquet_files = _list_parquet_files(output_dir)
+    parquet_files = _list_parquet_files(output_dir) + _list_parquet_files(update_output_dir)
     for pf in parquet_files:
         try:
             df = pd.read_parquet(pf)

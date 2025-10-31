@@ -26,7 +26,7 @@ class GraphRAGIndexRequest(BaseModel):
     persist_to_db: Optional[bool] = True
     overwrite: Optional[bool] = True
     provider: Optional[str] = "openai"  # "openai" | "gemini"
-    chat_model: Optional[str] = None     # e.g., "gemini-2.5-flash-lite"
+    chat_model: Optional[str] = None     # e.g., "gemini-2.5-flash"
     embedding_model: Optional[str] = None  # e.g., "gemini-embedding-001"
 
 
@@ -46,7 +46,7 @@ def _background_reindex(
         # Configure Gemini via LiteLLM in settings.yaml and set GEMINI_API_KEY
         configure_models_gemini(
             root,
-            chat_model=chat_model or "gemini-2.5-flash-lite",
+            chat_model=chat_model or "gemini-2.5-flash",
             embedding_model=embedding_model or "gemini-embedding-001",
         )
         if api_key:
@@ -64,7 +64,7 @@ def _background_reindex(
         export_documents(db, customer_id, root)
     finally:
         db.close()
-    ok = run_index(root, method or "fast")
+    ok = run_index(root, method or "standard")
     if not ok:
         # write a small marker so users can find the CLI log quickly
         try:
