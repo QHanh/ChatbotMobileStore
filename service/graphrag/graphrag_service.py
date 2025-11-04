@@ -149,7 +149,7 @@ def configure_input_for_json(root: Path):
     input_cfg["file_type"] = "json"
     # Avoid trailing '$' which breaks Python string.Template used by GraphRAG config loader
     input_cfg["file_pattern"] = ".*\\.json"
-    # Hint GraphRAG to interpret JSON as the standard 'documents' schema (id, text, title, creation_date, metadata)
+    # Hint GraphRAG to interpret JSON as the fast 'documents' schema (id, text, title, creation_date, metadata)
     input_cfg["json_schema"] = "documents"
     data["input"] = input_cfg
 
@@ -208,19 +208,25 @@ def export_documents(db: Session, customer_id: str, root: Path) -> int:
     return len(items)
 
 
-def run_index(root: Path, method: str = "standard") -> bool:
-    cmd = [sys.executable, "-m", "graphrag", "index", "--root", str(root)]
+def run_index(root: Path, method: str = "fast") -> bool:
+    cmd = [sys.executable, "-X", "utf8", "-m", "graphrag", "index", "--root", str(root)]
     if method:
         cmd += ["--method", method]
     logs_dir = root / "logs"
     logs_dir.mkdir(parents=True, exist_ok=True)
     cli_log = logs_dir / "cli_index.log"
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     try:
         proc = subprocess.run(
             cmd,
             check=True,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env=env,
         )
         with cli_log.open("a", encoding="utf-8") as f:
             f.write("\n==== graphrag index STDOUT ===="\
@@ -251,6 +257,8 @@ def run_query(
     cli_log = logs_dir / "cli_query.log"
     cmd = [
         sys.executable,
+        "-X",
+        "utf8",
         "-m",
         "graphrag",
         "query",
@@ -265,6 +273,9 @@ def run_query(
         cmd += ["--community-level", str(community_level)]
     if response_type:
         cmd += ["--response-type", response_type]
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "utf-8"
+    env["PYTHONUTF8"] = "1"
     try:
         proc = subprocess.run(
             cmd,
@@ -273,6 +284,7 @@ def run_query(
             text=True,
             encoding="utf-8",
             errors="replace",
+            env=env,
             timeout=timeout_sec,
         )
         stdout_text = proc.stdout or ""

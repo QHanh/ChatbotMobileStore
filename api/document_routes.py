@@ -42,7 +42,7 @@ def _reindex_graphrag_for_customer(customer_id: str):
         export_documents(db1, customer_id, root)
     finally:
         db1.close()
-    ok = run_index(root, "standard")
+    ok = run_index(root, "fast")
     if ok:
         db2 = SessionLocal()
         try:

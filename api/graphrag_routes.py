@@ -22,7 +22,7 @@ router = APIRouter()
 
 class GraphRAGIndexRequest(BaseModel):
     api_key: str
-    method: Optional[str] = "standard"
+    method: Optional[str] = "fast"
     persist_to_db: Optional[bool] = True
     overwrite: Optional[bool] = True
     provider: Optional[str] = "openai"  # "openai" | "gemini"
@@ -64,7 +64,7 @@ def _background_reindex(
         export_documents(db, customer_id, root)
     finally:
         db.close()
-    ok = run_index(root, method or "standard")
+    ok = run_index(root, method or "fast")
     if not ok:
         # write a small marker so users can find the CLI log quickly
         try:

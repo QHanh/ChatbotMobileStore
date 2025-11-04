@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const instructionsContainer = document.getElementById('instructions-container');
     const saveButton = document.getElementById('save-button');
-    const apiUrl = 'https://chatbotmobile.quandoiai.vn/instructions';
+    const apiUrl = 'http://localhost:8010/instructions';
 
     let originalInstructions = [];
 
