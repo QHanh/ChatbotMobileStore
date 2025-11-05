@@ -25,24 +25,21 @@ def workspace_path_for_customer(customer_id: str) -> Path:
     return workspaces_root() / tenant
 
 
-def ensure_workspace_initialized(root: Path):
-    root.mkdir(parents=True, exist_ok=True)
-    env_path = root / ".env"
-    settings_path = root / "settings.yaml"
-    if not env_path.exists() or not settings_path.exists():
-        subprocess.run([sys.executable, "-m", "graphrag", "init", "--root", str(root)], check=True)
-
-
 def ensure_workspace_initialized(root: Path, force: bool = False):
     """Ensure workspace has .env and settings.yaml. If force, re-init with --force."""
     root.mkdir(parents=True, exist_ok=True)
     if force:
         subprocess.run([sys.executable, "-m", "graphrag", "init", "--root", str(root), "--force"], check=True)
+        configure_models_gemini(root)
         return
     env_path = root / ".env"
     settings_path = root / "settings.yaml"
+    did_init = False
     if not env_path.exists() or not settings_path.exists():
         subprocess.run([sys.executable, "-m", "graphrag", "init", "--root", str(root)], check=True)
+        did_init = True
+    if did_init:
+        configure_models_gemini(root)
 
 
 def upsert_env_api_key(root: Path, api_key: str, env_key: str = "GRAPHRAG_API_KEY"):
