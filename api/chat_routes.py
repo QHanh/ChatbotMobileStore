@@ -65,6 +65,55 @@ async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image
         traceback.print_exc()
         raise ValueError(f"Không thể trích xuất văn bản từ ảnh: {str(e)}")
 
+async def _identify_product_from_image(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None) -> str:
+    if not (image_url or image_base64):
+        return ""
+    if not api_key:
+        raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
+
+    try:
+        if llm_provider == "google_genai":
+            llm = init_chat_model(model="gemini-2.0-flash-exp", model_provider="google_genai", api_key=api_key)
+        elif llm_provider == "openai":
+            llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
+        else:
+            raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
+
+        image_data = None
+        if image_url:
+            image_data = {"type": "image_url", "image_url": {"url": image_url}}
+        elif image_base64:
+            data_url = image_base64.strip()
+            if not data_url.startswith("data:"):
+                data_url = f"data:image/png;base64,{data_url}"
+            image_data = {"type": "image_url", "image_url": {"url": data_url}}
+
+        instr = load_instructions(db)
+        identify_instruction = instr.get(
+            "product_identify_instruction",
+            "Hãy quan sát ảnh và xác định đây là sản phẩm gì hoặc tài liệu gì. Trả lời ngắn gọn bằng tiếng Việt với: tên sản phẩm, nhãn hiệu, model/biến thể chính, màu sắc/dung lượng nếu thấy, và một câu mô tả ngắn. Nếu không chắc chắn, trả về 'Không xác định'."
+        )
+
+        message_content = [
+            {"type": "text", "text": identify_instruction},
+            image_data,
+        ]
+
+        message = HumanMessage(content=message_content)
+        resp = await llm.ainvoke([message])
+        text = resp.content if hasattr(resp, 'content') else str(resp)
+        result = text.strip()
+
+        print(f"[IMAGE DETECT DEBUG] Result length: {len(result)}")
+        print(f"[IMAGE DETECT DEBUG] First 200 chars: {result[:200] if result else 'EMPTY'}")
+
+        return result
+    except Exception as e:
+        print(f"[IMAGE DETECT ERROR] Failed to identify product from image: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise ValueError(f"Không thể nhận diện sản phẩm từ ảnh: {str(e)}")
+
 @router.post("/chat/{threadId}")
 async def chat(
     request: ChatbotRequest,
@@ -126,20 +175,20 @@ async def chat(
             raise HTTPException(status_code=400, detail="Bạn phải nhập câu hỏi hoặc gửi hình ảnh.")
 
         if image_url or image_base64:
-            print(f"[CHAT DEBUG] Calling OCR with provider: {llm_provider}")
-            ocr_text = await _ocr_image_to_text(llm_provider, api_key, db, image_url=image_url, image_base64=image_base64)
-            print(f"[CHAT DEBUG] OCR result length: {len(ocr_text)}")
-            print(f"[CHAT DEBUG] OCR result: {ocr_text[:200] if ocr_text else 'EMPTY'}")
+            print(f"[CHAT DEBUG] Calling Product Identification with provider: {llm_provider}")
+            product_info = await _identify_product_from_image(llm_provider, api_key, db, image_url=image_url, image_base64=image_base64)
+            print(f"[CHAT DEBUG] Product identify result length: {len(product_info)}")
+            print(f"[CHAT DEBUG] Product identify result: {product_info[:200] if product_info else 'EMPTY'}")
             instr = load_instructions(db)
-            ocr_prefix_label = instr.get("ocr_prefix_label", "[OCR từ ảnh]:")
-            if user_input and ocr_text:
-                user_input = f"{user_input}\n\n{ocr_prefix_label}\n{ocr_text}"
-                print(f"[CHAT DEBUG] Combined input (text + OCR)")
+            product_prefix_label = instr.get("product_prefix_label", "[Sản phẩm từ ảnh]:")
+            if user_input and product_info:
+                user_input = f"{user_input}\n\n{product_prefix_label}\n{product_info}"
+                print(f"[CHAT DEBUG] Combined input (text + product info)")
             elif not user_input:
-                user_input = ocr_text or ""
-                print(f"[CHAT DEBUG] Using OCR-only input")
+                user_input = product_info or ""
+                print(f"[CHAT DEBUG] Using product-info-only input")
             if not user_input:
-                raise HTTPException(status_code=400, detail="Không nhận dạng được văn bản từ ảnh đã gửi.")
+                raise HTTPException(status_code=400, detail="Không nhận diện được sản phẩm từ ảnh đã gửi.")
         
         print(f"[CHAT DEBUG] Final user_input length: {len(user_input)}")
         print(f"[CHAT DEBUG] Final user_input first 300 chars: {user_input[:300]}...")
