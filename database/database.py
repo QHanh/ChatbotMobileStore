@@ -1,5 +1,5 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime
+from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime, UniqueConstraint
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 from datetime import datetime, timezone
@@ -205,3 +205,42 @@ def get_db():
         yield db
     finally:
         db.close()
+
+# ------------------------
+# Ingest & Prompt Versioning
+# ------------------------
+
+class IngestedMessage(Base):
+    __tablename__ = "ingested_messages"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    source = Column(String, nullable=False)
+    external_message_id = Column(String, nullable=False)
+    external_thread_id = Column(String, index=True, nullable=False)
+    customer_id = Column(String, index=True, nullable=False)
+    role = Column(String, nullable=False)  # 'human' | 'bot'
+    content = Column(Text, nullable=False)
+    timestamp = Column(DateTime, nullable=True)
+    rating = Column(Integer, nullable=True)  # -1 | 0 | 1
+    content_hash = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint('source', 'external_message_id', name='uq_ingested_source_msg'),
+    )
+
+
+class PromptVersion(Base):
+    __tablename__ = "prompt_versions"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, index=True, nullable=False)
+    version = Column(Integer, nullable=False)
+    template = Column(Text, nullable=False)
+    algo = Column(String, nullable=True)
+    metrics = Column(Text, nullable=True)  # JSON string for metrics
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint('customer_id', 'version', name='uq_prompt_version_customer'),
+    )

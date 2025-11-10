@@ -3,7 +3,7 @@ import weaviate
 from typing import List, Dict, Any, Optional
 from langchain_community.document_loaders import DirectoryLoader, PyPDFLoader, Docx2txtLoader, TextLoader
 
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_weaviate.vectorstores import WeaviateVectorStore
 from langchain_core.documents import Document
 from weaviate.classes.config import Configure, Property, DataType

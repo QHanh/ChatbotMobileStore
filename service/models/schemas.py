@@ -251,3 +251,18 @@ class StoreInfo(StoreInfoBase):
     """Response model for store information."""
     model_config = ConfigDict(from_attributes=True)
     customer_id: str
+
+
+class IngestItem(BaseModel):
+    external_message_id: str
+    external_thread_id: str
+    role: str
+    content: str
+    timestamp: Optional[str] = None
+    rating: Optional[int] = None
+
+
+class IngestBatch(BaseModel):
+    source: str
+    customer_id: str
+    items: List[IngestItem]

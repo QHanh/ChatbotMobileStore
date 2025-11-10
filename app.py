@@ -17,7 +17,8 @@ from api import (
     setting_routes,
     order_routes,
     info_store_routes,
-    graphrag_routes
+    graphrag_routes,
+    training_routes,
 )
 from database.database import init_db
 import dependencies
@@ -77,6 +78,7 @@ app.include_router(setting_routes.router, tags=["Settings"])
 app.include_router(order_routes.router, tags=["Orders"])
 app.include_router(info_store_routes.router, tags=["Store Info"])
 app.include_router(graphrag_routes.router, tags=["GraphRAG"])
+app.include_router(training_routes.router, tags=["Training"])
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8010, reload=False)

@@ -1,0 +1,144 @@
+Kế hoạch tích hợp Agent-lightning (phiên bản ingest lịch sử chat qua API hằng ngày)
+Mục tiêu
+Tối ưu prompt theo từng customer_id bằng Agent-lightning (APO), giữ nguyên logic Agent/Tools hiện tại.
+Ingest dữ liệu chat từ service ngoài qua API mỗi ngày (lịch “2h” do bạn chỉ định), không phụ thuộc 
+ChatHistory
+ runtime.
+Tự động huấn luyện sau ingest và cập nhật prompt tối ưu về DB để runtime dùng ngay.
+Kiến trúc tổng quan
+Ingest API nhận batch lịch sử chat → lưu vào kho ingested_messages.
+Dataset builder đọc kho ingest → dựng train/val theo customer_id.
+Agent-lightning (Algorithm: APO, Adapter: TraceToMessages) tối ưu main_prompt.
+Serve: ghi prompt tối ưu về customers.custom_prompt + versioning; agent_service tự dùng prompt mới khi phục vụ.
+Dòng dữ liệu hằng ngày (theo lịch bạn đặt)
+Bước 1: Service ngoài gọi POST /training/ingest-chat-batch (batch theo customer_id).
+Bước 2: Ghi dữ liệu vào ingested_messages (idempotent).
+Bước 3: Khởi động huấn luyện cho các customer đã ingest:
+Tự động (cron nội bộ) hoặc gọi POST /training/start?customer_id=....
+Bước 4: Lưu prompt tối ưu (nếu cải thiện) → customers.custom_prompt và prompt_versions.
+Thiết kế API ingest
+Endpoint: POST /training/ingest-chat-batch
+Bảo mật:
+Header X-Api-Key: <secret> hoặc HMAC (X-Signature, X-Timestamp) để chống giả mạo và replay.
+Idempotency:
+Header X-Idempotency-Key (tùy chọn).
+Unique (source, external_message_id) để tránh ghi trùng.
+Giới hạn:
+Tối đa 10k messages/request, hỗ trợ Content-Encoding: gzip.
+Payload mẫu:
+json
+{
+  "source": "external_service",
+  "customer_id": "CUST_123",
+  "items": [
+    {
+      "external_message_id": "msg_001",
+      "external_thread_id": "thread_abc",
+      "role": "human",
+      "content": "Anh ơi có iPhone 14 không?",
+      "timestamp": "2025-11-07T13:00:00Z",
+      "rating": 1,
+      "metadata": { "tags": ["product_query"] }
+    },
+    {
+      "external_message_id": "msg_002",
+      "external_thread_id": "thread_abc",
+      "role": "bot",
+      "content": "Bên em có iPhone 14...",
+      "timestamp": "2025-11-07T13:00:10Z"
+    }
+  ]
+}
+Phản hồi:
+200/201 khi thành công toàn phần.
+207 Multi-Status nếu có bản ghi lỗi một phần (trả kèm chi tiết).
+Kho dữ liệu ingest và migration
+Bảng ingested_messages:
+id (PK), source, external_message_id (unique với source), external_thread_id
+customer_id, role ['human','bot'], content (Text), timestamp (UTC), rating int [-1..1] nullable
+hash nội dung (chống trùng), created_at
+Bảng prompt_versions:
+id (PK), customer_id, version, template (Text), algo (e.g. APO), metrics (JSON), created_at
+(Tùy chọn) Bảng training_runs:
+id, customer_id, started_at/ended_at, status, stats, best_version_id
+Dataset builder
+Task schema (MyTask):
+customer_id, thread_id, input (user message), chat_history (vài turn trước, ngắn), label/reward (nếu có).
+Cách dựng:
+Gom theo external_thread_id → sắp theo timestamp.
+Lấy các cặp human→bot, hoặc human đơn lẻ nếu thiếu bot.
+Gắn rating nếu có (ưu tiên để làm reward).
+Chia tập:
+Theo thời gian (90/10) hoặc theo thread (train/val tách biệt).
+Tích hợp Agent-lightning vào logic hiện tại
+Resource tối ưu: main_prompt ánh xạ customers.custom_prompt (giữ nguyên base/workflows).
+Rollout wrapper:
+Nhận prompt_template từ AGL → render → override customer_config.custom_prompt.
+Gọi create_agent_executor(...) và invoke 1 lượt inference phiên bản “không ghi DB”.
+Trả về reward (float) hoặc để tracer thu thập và adapter xử lý.
+Reward:
+Ưu tiên từ rating ingest (+1/0/-1).
+Fallback heuristic: +1 nếu gọi tool đúng ý định (product/service/accessory), +1 nếu bám sát FAQ khi có; 0/-1 nếu trả lời rỗng/“không hiểu”.
+Thuật toán, Adapter, Trainer
+Algorithm: APO (Automatic Prompt Optimization).
+Adapter: TraceToMessages() (chuyển spans thành OpenAI message format cho APO).
+Trainer:
+n_runners: 4–8 (tùy ngân sách).
+initial_resources = {"main_prompt": PromptTemplate(template=current_custom_prompt or "You are a helpful assistant.", engine="f-string")}
+Quy trình: trainer.dev() kiểm thử nhanh → trainer.fit() theo từng customer_id.
+Lịch chạy huấn luyện (gợi ý)
+T0 (giờ bạn đặt, ví dụ 02:00 hoặc 20:00, TZ: Asia/Ho_Chi_Minh): service ngoài gọi ingest.
+T0 + 10’: chạy trainer.dev() với subset (sanity).
+T0 + 15’ → 60’: chạy trainer.fit() (giới hạn ngân sách/timebox).
+T0 + 60’+: nếu metric cải thiện → ghi prompt_versions + cập nhật customers.custom_prompt.
+Cập nhật vào runtime và an toàn triển khai
+Áp dụng: cập nhật customers.custom_prompt → agent_service tự tiêm khi tạo agent.
+Ngưỡng chấp nhận: chỉ áp dụng nếu reward/metric cải thiện > threshold (ví dụ +5%).
+Rollback: endpoint admin chọn version cũ từ prompt_versions.
+(Tùy chọn) Canary: rollout 10–20% traffic trước khi áp dụng 100%.
+Bảo mật, giám sát, chi phí
+Bảo mật ingest: API Key/HMAC, kiểm tra X-Timestamp lệch ≤ 5 phút, rate limit theo IP.
+Giám sát:
+Logs: số messages ingest, số tasks train, thời gian và chi phí model.
+Metrics: reward_mean, acceptance_rate, tool-usage-correctness, FAQ-adherence.
+Chi phí:
+Training dùng OpenAI (cho APO). Đặt ngân sách/night hoặc max trials/timebox.
+Phụ thuộc & cấu hình
+Thêm package:
+agentlightning (cốt lõi).
+agentlightning[apo] (nếu dùng APO; yêu cầu openai>=2.0).
+Biến môi trường:
+OPENAI_API_KEY cho training.
+(Tùy chọn) cấu hình đường dẫn Store/logs cho Agent-lightning.
+Lộ trình triển khai (4 ngày gợi ý)
+Ngày 1:
+Triển khai POST /training/ingest-chat-batch (+ bảo mật, idempotency).
+Tạo bảng ingested_messages (+ migration).
+Ngày 2:
+Viết dataset builder.
+Tạo rollout wrapper (không ghi DB) + reward heuristic.
+Ngày 3:
+Cấu hình APO + TraceToMessages, trainer.dev() và trainer.fit() nhỏ.
+Lưu prompt_versions, cập nhật customers.custom_prompt.
+Ngày 4:
+Thêm endpoint/admin để xem/apply/rollback prompt.
+Giám sát, đặt threshold cải thiện, tài liệu hóa.
+Checklist triển khai
+[ingest_api] API ingest + bảo mật + idempotency.
+[db_ingest] Migration tạo ingested_messages, prompt_versions.
+[payload_contract] Chuẩn hóa schema payload ingest.
+[data] Dataset builder theo customer_id.
+[rollout] Rollout wrapper + “non-persist” invoke.
+[resources] Ánh xạ resource main_prompt → customers.custom_prompt.
+[algo] Cấu hình APO + Adapter.
+[dev]/[fit] Chạy train theo lịch sau ingest.
+[serve] Áp dụng/rollback prompt tối ưu.
+[security_schedule] Thiết lập lịch và múi giờ, rate limit.
+[obs] Logging/metrics.
+[deps] Thêm agentlightning (+ [apo] nếu dùng).
+Cần bạn xác nhận
+Giờ chạy chính xác: “2h tối” bạn muốn 02:00 sáng hay 20:00 tối? Múi giờ dùng Asia/Ho_Chi_Minh chứ?
+Payload thực tế: có gửi rating không? có external_message_id duy nhất không?
+Phạm vi: chạy cho tất cả customer hay danh sách chỉ định?
+Ngân sách: đặt giới hạn thời gian/chi phí mỗi lần train?
+Tóm tắt trạng thái: Đã cung cấp bản kế hoạch đầy đủ, dễ hiểu theo mô hình ingest qua API hằng ngày, tối ưu custom_prompt bằng Agent-lightning (APO), kèm bảo mật, lịch, dataset, training, áp dụng và giám sát. Sẵn sàng bắt đầu thiết kế API và migration khi bạn xác nhận giờ chạy và payload.

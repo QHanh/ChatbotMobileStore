@@ -1,45 +1,50 @@
 # Core web framework
-fastapi==0.115.6
-uvicorn[fast]==0.34.0
-python-multipart==0.0.20
+fastapi
+uvicorn[standard]
+python-multipart
 
 # Database
-SQLAlchemy==2.0.44
-alembic==1.17.0
-psycopg2-binary==2.9.9
+SQLAlchemy
+alembic
+psycopg2-binary
 
 # Config
-python-dotenv==1.1.1
-pydantic==2.10.6
-PyYAML==6.0.2
+python-dotenv
+pydantic
+PyYAML
 
 # HTTP and parsing
-requests==2.32.3
-beautifulsoup4==4.12.3
+requests
+beautifulsoup4
+aiohttp
 
 # Search and vector DB
-elasticsearch==8.17.0
-weaviate-client==4.10.3
-aiohttp==3.11.11
+elasticsearch
+weaviate-client
 
 # Google services
 gspread
 google-auth
-google-generativeai
+google-genai
 
-# LangChain + providers
+# LangChain + providers (dòng 0.3.x đồng bộ)
 langchain
 langchain-core
+langchain-text-splitters
+langchain-community
 langchain-huggingface
 langchain-google-genai
 openai
-
 
 # Data for GraphRAG artifacts
 pandas
 numpy
 pyarrow
-langchain_weaviate
+langchain-weaviate
+
 # CLI for GraphRAG pipelines
 graphrag
-langchain_huggingface
+
+# Agent-lightning (tùy dự án bạn đang theo)
+# agentlightning
+agentlightning[apo]

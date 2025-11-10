@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents import create_tool_calling_agent, AgentExecutor
-from langchain_core.messages import AIMessage, HumanMessage, BaseMessage
+from langgraph.prebuilt import create_react_agent
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, SystemMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
@@ -68,15 +68,40 @@ def create_agent_executor(
         MessagesPlaceholder(variable_name="agent_scratchpad", optional=True),
     ])
 
-    agent = create_tool_calling_agent(llm, customer_tools, prompt)
+    agent = create_react_agent(llm, customer_tools)
 
-    agent_executor = AgentExecutor(
-        agent=agent, 
-        tools=customer_tools, 
-        verbose=True,
-        handle_parsing_errors=True,
-        return_intermediate_steps=True
-    )
+    class _AgentWrapper:
+        def __init__(self, agent, tools, system_prompt: str):
+            self._agent = agent
+            self.tools = tools
+            self.system_prompt = system_prompt
+
+        async def ainvoke(self, data: dict):
+            messages = []
+            if self.system_prompt:
+                messages.append(SystemMessage(content=self.system_prompt))
+            faq_context = data.get("faq_context") or []
+            chat_history = data.get("chat_history") or []
+            if faq_context:
+                messages.extend(faq_context)
+            if chat_history:
+                messages.extend(chat_history)
+            input_text = data.get("input", "")
+            if input_text:
+                messages.append(HumanMessage(content=input_text))
+
+            state = await self._agent.ainvoke({"messages": messages})
+            output_text = ""
+            try:
+                msgs = state.get("messages", [])
+                if msgs:
+                    last = msgs[-1]
+                    output_text = last.content if hasattr(last, "content") else str(last)
+            except Exception:
+                output_text = ""
+            return {"output": output_text, "intermediate_steps": []}
+
+    agent_executor = _AgentWrapper(agent, customer_tools, final_system_prompt)
     
     return agent_executor
 
@@ -106,6 +131,7 @@ async def invoke_agent_with_memory(
     db: Session,
     es_client: AsyncElasticsearch,
     history_override: Optional[List] = None,
+    persist: bool = True,
 ):
     """
     Gọi agent với input của người dùng và quản lý lịch sử trò chuyện trong database.
@@ -177,12 +203,33 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
             tool.coroutine.keywords['original_query'] = user_input
             tool.coroutine.keywords['chat_history'] = formatted_history
 
-    response = await agent_executor.ainvoke({
-        "input": user_input,
-        "chat_history": chat_history,
-        "faq_context": faq_context,
-        "thread_id": session_id,
-    })
+    try:
+        response = await agent_executor.ainvoke({
+            "input": user_input,
+            "chat_history": chat_history,
+            "faq_context": faq_context,
+            "thread_id": session_id,
+        })
+    except BlockingIOError as e:
+        print(f"[AGENT ERROR] Non-blocking IO error during ainvoke: {e}")
+        response = {
+            "input": user_input,
+            "chat_history": chat_history,
+            "faq_context": faq_context,
+            "thread_id": session_id,
+            "output": "",
+            "intermediate_steps": []
+        }
+    except Exception as e:
+        print(f"[AGENT ERROR] Unexpected error during ainvoke: {e}")
+        response = {
+            "input": user_input,
+            "chat_history": chat_history,
+            "faq_context": faq_context,
+            "thread_id": session_id,
+            "output": "",
+            "intermediate_steps": []
+        }
 
     print("--- AGENT RESPONSDED ---")
     # print(response)
@@ -190,8 +237,8 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
 
     # Lấy output một cách an toàn
     if 'output' not in response or not response['output']:
-        print(f"[ERROR] Agent response is empty or does not contain 'output' key: {response}")
-        output_message = 'Em chưa hiểu rõ yêu cầu của anh/chị. Anh/chị có thể nói lại được không ạ?'
+        print(f"[WARN] Agent response empty or missing 'output'. Suppressing bot reply for this turn.")
+        output_message = ""
     else:
         output_message = response['output']
     
@@ -201,25 +248,27 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
     ).first()
     thread_name = chat_thread.thread_name if chat_thread else None
 
-    human_message = ChatHistory(
-        customer_id=customer_id,
-        thread_id=session_id,
-        thread_name=thread_name,
-        role="human",
-        message=user_input
-    )
-    db.add(human_message)
+    if persist:
+        human_message = ChatHistory(
+            customer_id=customer_id,
+            thread_id=session_id,
+            thread_name=thread_name,
+            role="human",
+            message=user_input
+        )
+        db.add(human_message)
 
-    ai_message = ChatHistory(
-        customer_id=customer_id,
-        thread_id=session_id,
-        thread_name=thread_name,
-        role="bot",
-        message=output_message
-    )
-    db.add(ai_message)
-    
-    db.commit()
+        if output_message:
+            ai_message = ChatHistory(
+                customer_id=customer_id,
+                thread_id=session_id,
+                thread_name=thread_name,
+                role="bot",
+                message=output_message
+            )
+            db.add(ai_message)
+        
+        db.commit()
     
     # Đảm bảo response trả về luôn có 'output'
     response['output'] = output_message

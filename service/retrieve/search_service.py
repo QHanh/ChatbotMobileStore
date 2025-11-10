@@ -9,8 +9,8 @@ from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
+from google import genai
+from google.genai import types
 
 def _get_customer_is_sale(customer_id: str, thread_id: str) -> bool:
     """Kiểm tra xem thread có phải là của khách hàng mua buôn hay không."""
@@ -82,32 +82,41 @@ async def filter_results_with_ai(
         use_langchain_fallback = False
         
         if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
-            print("Sử dụng Google AI SDK gốc để lọc kết quả.")
+            print("Sử dụng Google GenAI SDK để lọc kết quả.")
             try:
-                genai.configure(api_key=llm.google_api_key.get_secret_value())
-                model = genai.GenerativeModel(model_name="gemini-2.0-flash")
+                client = genai.Client(api_key=llm.google_api_key.get_secret_value())
                 full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
-                
-                safety_settings = {
-                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                }
 
-                response = await model.generate_content_async(full_prompt, safety_settings=safety_settings)
-                
-                if response.parts and response.text.strip():
+                safety_settings = [
+                    types.SafetySetting(category='HARM_CATEGORY_HARASSMENT', threshold='BLOCK_NONE'),
+                    types.SafetySetting(category='HARM_CATEGORY_HATE_SPEECH', threshold='BLOCK_NONE'),
+                    types.SafetySetting(category='HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold='BLOCK_NONE'),
+                    types.SafetySetting(category='HARM_CATEGORY_DANGEROUS_CONTENT', threshold='BLOCK_NONE'),
+                ]
+
+                response = await client.aio.models.generate_content(
+                    model='gemini-2.0-flash',
+                    contents=full_prompt,
+                    config=types.GenerateContentConfig(
+                        safety_settings=safety_settings,
+                    ),
+                )
+
+                if getattr(response, 'text', '') and response.text.strip():
                     filtered_results_str = response.text
                 else:
                     finish_reason = 'N/A'
-                    if response.candidates and len(response.candidates) > 0:
-                        finish_reason = response.candidates[0].finish_reason.name
+                    try:
+                        if getattr(response, 'candidates', None):
+                            first = response.candidates[0]
+                            finish_reason = getattr(first, 'finish_reason', 'N/A')
+                    except Exception:
+                        pass
                     print(f"AI response was empty or blocked. Finish reason: {finish_reason}. Fallback to LangChain.")
                     use_langchain_fallback = True
                     
             except Exception as genai_error:
-                print(f"Google AI SDK error: {genai_error}. Fallback to LangChain.")
+                print(f"Google GenAI SDK error: {genai_error}. Fallback to LangChain.")
                 use_langchain_fallback = True
         else:
             use_langchain_fallback = True
