@@ -8,7 +8,6 @@ from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_IND
 from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from google import genai
 from google.genai import types
 
@@ -80,11 +79,19 @@ async def filter_results_with_ai(
     try:
         filtered_results_str = ""
         use_langchain_fallback = False
-        
-        if isinstance(llm, ChatGoogleGenerativeAI) and llm.google_api_key:
+
+        api_key = None
+        try:
+            if hasattr(llm, "google_api_key") and getattr(llm, "google_api_key"):
+                secret = getattr(llm, "google_api_key")
+                api_key = secret.get_secret_value() if hasattr(secret, "get_secret_value") else secret
+        except Exception:
+            api_key = None
+
+        if api_key:
             print("Sử dụng Google GenAI SDK để lọc kết quả.")
             try:
-                client = genai.Client(api_key=llm.google_api_key.get_secret_value())
+                client = genai.Client(api_key=api_key)
                 full_prompt = prompt_template_str.format(history=history_str, query=query, results=results_str)
 
                 safety_settings = [

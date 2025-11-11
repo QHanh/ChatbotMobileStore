@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langgraph.prebuilt import create_react_agent
-from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
@@ -95,8 +95,36 @@ def create_agent_executor(
             try:
                 msgs = state.get("messages", [])
                 if msgs:
-                    last = msgs[-1]
-                    output_text = last.content if hasattr(last, "content") else str(last)
+                    for m in reversed(msgs):
+                        try:
+                            if isinstance(m, AIMessage):
+                                c = getattr(m, "content", None)
+                                has_tool_calls = bool(getattr(m, "tool_calls", None))
+                                if isinstance(c, str) and c.strip():
+                                    output_text = c.strip()
+                                    break
+                                if isinstance(c, list):
+                                    parts = []
+                                    for part in c:
+                                        if isinstance(part, dict):
+                                            t = part.get("text")
+                                            if t:
+                                                parts.append(t)
+                                    if parts:
+                                        output_text = "\n".join(parts).strip()
+                                        if output_text:
+                                            break
+                                if has_tool_calls:
+                                    continue
+                            if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
+                                c = getattr(m, "content", None)
+                                if isinstance(c, str) and c.strip():
+                                    output_text = c.strip()
+                                    break
+                        except Exception:
+                            continue
+                if not output_text and msgs:
+                    output_text = str(msgs[-1])
             except Exception:
                 output_text = ""
             return {"output": output_text, "intermediate_steps": []}
@@ -232,7 +260,7 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         }
 
     print("--- AGENT RESPONSDED ---")
-    # print(response)
+    print(response)
     # print("----------------------")
 
     # Lấy output một cách an toàn

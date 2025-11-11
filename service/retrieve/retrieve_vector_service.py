@@ -1,9 +1,11 @@
 import asyncio
 from typing import List, Dict, Any
-from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from service.data.data_loader_vector_db import DOCUMENT_CLASS_NAME, ensure_document_collection_exists
 from dependencies import get_weaviate_client
 from service.utils.helpers import sanitize_for_weaviate
+import os
+from google import genai
+from google.genai import types
 
 async def retrieve_documents(
     query: str, 
@@ -26,16 +28,36 @@ async def retrieve_documents(
 
         tenant_collection = collection.with_tenant(tenant_id)
         
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
-        query_vector = await embeddings.aembed_query(query)
+        query_vector = None
+        try:
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+            client = genai.Client(api_key=api_key) if api_key else genai.Client()
+            embed_resp = await client.aio.models.embed_content(
+                model="gemini-embedding-001",
+                contents=query,
+                config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY"),
+            )
+            if getattr(embed_resp, "embeddings", None):
+                emb0 = embed_resp.embeddings[0]
+                query_vector = getattr(emb0, "values", None) or getattr(emb0, "embedding", None)
+        except Exception:
+            query_vector = None
 
-        response = tenant_collection.query.hybrid(
-            query=query,
-            vector=query_vector,
-            limit=top_k,
-            alpha=alpha,
-            return_properties=["text", "source"]
-        )
+        if query_vector:
+            response = tenant_collection.query.hybrid(
+                query=query,
+                vector=query_vector,
+                limit=top_k,
+                alpha=alpha,
+                return_properties=["text", "source"]
+            )
+        else:
+            response = tenant_collection.query.hybrid(
+                query=query,
+                limit=top_k,
+                alpha=alpha,
+                return_properties=["text", "source"]
+            )
 
         formatted_results = [
             {
