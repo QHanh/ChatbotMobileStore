@@ -102,7 +102,7 @@ async def filter_results_with_ai(
                 ]
 
                 response = await client.aio.models.generate_content(
-                    model='gemini-2.0-flash',
+                    model='gemini-2.5-flash',
                     contents=full_prompt,
                     config=types.GenerateContentConfig(
                         safety_settings=safety_settings,

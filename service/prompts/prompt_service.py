@@ -7,7 +7,7 @@ from database.database import SystemInstruction, Customer
 def load_instructions(db: Session) -> Dict[str, str]:
     rows = db.query(SystemInstruction).all()
     data = {row.key: row.value for row in rows}
-    print(f"[PROMPT] Loaded SystemInstruction keys: {list(data.keys())}")
+    # print(f"[PROMPT] Loaded SystemInstruction keys: {list(data.keys())}")
     return data
 
 
@@ -30,7 +30,7 @@ def compose_system_prompt(
     
     def _pick(key: str, default_value: str) -> str:
         if key in instr:
-            print(f"[PROMPT] {key}: DB")
+            # print(f"[PROMPT] {key}: DB")
             return instr.get(key, default_value)
         else:
             print(f"[PROMPT] {key}: default")
