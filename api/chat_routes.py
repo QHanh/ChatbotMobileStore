@@ -13,29 +13,33 @@ from service.prompts.prompt_service import compose_system_prompt, load_instructi
 
 router = APIRouter()
 
-async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None) -> str:
-    """Extract text from image using LLM vision capabilities."""
-    if not (image_url or image_base64):
+async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None, image_urls: list[str] | None = None) -> str:
+    """Extract text from one or multiple images using LLM vision capabilities."""
+    image_urls = image_urls or []
+    if image_url:
+        image_urls = [*image_urls, image_url]
+    if not (image_urls or image_base64):
         return ""
     if not api_key:
         raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
 
     try:
         if llm_provider == "google_genai":
-            llm = init_chat_model(model="gemini-2.0-flash-exp", model_provider="google_genai", api_key=api_key)
+            llm = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
         elif llm_provider == "openai":
             llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
         else:
             raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
 
-        image_data = None
-        if image_url:
-            image_data = {"type": "image_url", "image_url": {"url": image_url}}
-        elif image_base64:
+        image_blocks = []
+        for url in image_urls:
+            if url:
+                image_blocks.append({"type": "image_url", "image_url": {"url": url}})
+        if image_base64 and not image_blocks:
             data_url = image_base64.strip()
             if not data_url.startswith("data:"):
                 data_url = f"data:image/png;base64,{data_url}"
-            image_data = {"type": "image_url", "image_url": {"url": data_url}}
+            image_blocks.append({"type": "image_url", "image_url": {"url": data_url}})
 
         instr = load_instructions(db)
         ocr_text_instruction = instr.get(
@@ -43,10 +47,8 @@ async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image
             "Hãy trích xuất (OCR) toàn bộ văn bản có trong ảnh này. Chỉ trả về văn bản được trích xuất, giữ nguyên định dạng và xuống dòng. Nếu không có văn bản nào trong ảnh, hãy trả về chuỗi rỗng."
         )
 
-        message_content = [
-            {"type": "text", "text": ocr_text_instruction},
-            image_data
-        ]
+        message_content = [{"type": "text", "text": ocr_text_instruction}]
+        message_content.extend(image_blocks)
 
         message = HumanMessage(content=message_content)
         resp = await llm.ainvoke([message])
@@ -65,28 +67,32 @@ async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image
         traceback.print_exc()
         raise ValueError(f"Không thể trích xuất văn bản từ ảnh: {str(e)}")
 
-async def _identify_product_from_image(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None) -> str:
-    if not (image_url or image_base64):
+async def _identify_product_from_image(llm_provider: str, api_key: str, db: Session, image_url: str = None, image_base64: str = None, image_urls: list[str] | None = None) -> str:
+    image_urls = image_urls or []
+    if image_url:
+        image_urls = [*image_urls, image_url]
+    if not (image_urls or image_base64):
         return ""
     if not api_key:
         raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
 
     try:
         if llm_provider == "google_genai":
-            llm = init_chat_model(model="gemini-2.0-flash-exp", model_provider="google_genai", api_key=api_key)
+            llm = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
         elif llm_provider == "openai":
             llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
         else:
             raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
 
-        image_data = None
-        if image_url:
-            image_data = {"type": "image_url", "image_url": {"url": image_url}}
-        elif image_base64:
+        image_blocks = []
+        for url in image_urls:
+            if url:
+                image_blocks.append({"type": "image_url", "image_url": {"url": url}})
+        if image_base64 and not image_blocks:
             data_url = image_base64.strip()
             if not data_url.startswith("data:"):
                 data_url = f"data:image/png;base64,{data_url}"
-            image_data = {"type": "image_url", "image_url": {"url": data_url}}
+            image_blocks.append({"type": "image_url", "image_url": {"url": data_url}})
 
         instr = load_instructions(db)
         identify_instruction = instr.get(
@@ -94,10 +100,8 @@ async def _identify_product_from_image(llm_provider: str, api_key: str, db: Sess
             "Hãy quan sát ảnh và xác định đây là sản phẩm gì hoặc tài liệu gì. Trả lời ngắn gọn bằng tiếng Việt với: tên sản phẩm, nhãn hiệu, model/biến thể chính, màu sắc/dung lượng nếu thấy, và một câu mô tả ngắn. Nếu không chắc chắn, trả về 'Không xác định'."
         )
 
-        message_content = [
-            {"type": "text", "text": identify_instruction},
-            image_data,
-        ]
+        message_content = [{"type": "text", "text": identify_instruction}]
+        message_content.extend(image_blocks)
 
         message = HumanMessage(content=message_content)
         resp = await llm.ainvoke([message])
@@ -164,19 +168,22 @@ async def chat(
         
         api_key = request.api_key
         image_url = request.image_url
+        image_urls = (request.image_urls or [])
+        if image_url:
+            image_urls = [*image_urls, image_url]
         image_base64 = request.image_base64
 
         print(f"[CHAT DEBUG] user_input: {user_input}")
-        print(f"[CHAT DEBUG] image_url: {image_url}")
+        print(f"[CHAT DEBUG] image_urls: {image_urls}")
         print(f"[CHAT DEBUG] image_base64 length: {len(image_base64) if image_base64 else 0}")
         print(f"[CHAT DEBUG] image_base64 first 50 chars: {image_base64[:50] if image_base64 else 'None'}")
 
-        if not (user_input or image_url or image_base64):
+        if not (user_input or image_urls or image_base64):
             raise HTTPException(status_code=400, detail="Bạn phải nhập câu hỏi hoặc gửi hình ảnh.")
 
-        if image_url or image_base64:
+        if image_urls or image_base64:
             print(f"[CHAT DEBUG] Calling Product Identification with provider: {llm_provider}")
-            product_info = await _identify_product_from_image(llm_provider, api_key, db, image_url=image_url, image_base64=image_base64)
+            product_info = await _identify_product_from_image(llm_provider, api_key, db, image_urls=image_urls, image_base64=image_base64)
             print(f"[CHAT DEBUG] Product identify result length: {len(product_info)}")
             print(f"[CHAT DEBUG] Product identify result: {product_info[:200] if product_info else 'EMPTY'}")
             instr = load_instructions(db)
