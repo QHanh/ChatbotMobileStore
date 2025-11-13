@@ -1,7 +1,16 @@
 import os
+import sys
 import argparse
+from pathlib import Path
 from typing import Optional, List
 from sqlalchemy.orm import Session
+
+# Ensure project root is on sys.path so `database` package is importable regardless of CWD
+CURRENT_FILE = Path(__file__).resolve()
+PROJECT_ROOT = CURRENT_FILE.parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from database.database import SessionLocal, init_db, Document, DocumentVector
 from google import genai
 from google.genai import types
