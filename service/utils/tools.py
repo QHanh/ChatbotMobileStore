@@ -821,6 +821,10 @@ def create_customer_tools(
     )
     tools.append(store_info_tool)
     
+    # Conversation management tools
+    tools.append(escalate_to_human_tool)
+    tools.append(end_conversation_tool)
+    
     available_tools = []
     
     if product_feature_enabled:

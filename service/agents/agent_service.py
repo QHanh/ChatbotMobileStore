@@ -75,6 +75,20 @@ def create_agent_executor(
             self._agent = agent
             self.tools = tools
             self.system_prompt = system_prompt
+        
+        def _is_internal_error_text(self, text: str) -> bool:
+            if not isinstance(text, str):
+                return False
+            t = text.lower().strip()
+            if not t:
+                return False
+            return (
+                "not a valid tool" in t
+                or "invalid tool" in t
+                or ("error:" in t and "tool" in t)
+                or "try one of [" in t
+                or "traceback" in t
+            )
 
         async def ainvoke(self, data: dict):
             messages = []
@@ -101,8 +115,9 @@ def create_agent_executor(
                                 c = getattr(m, "content", None)
                                 has_tool_calls = bool(getattr(m, "tool_calls", None))
                                 if isinstance(c, str) and c.strip():
-                                    output_text = c.strip()
-                                    break
+                                    if not self._is_internal_error_text(c):
+                                        output_text = c.strip()
+                                        break
                                 if isinstance(c, list):
                                     parts = []
                                     for part in c:
@@ -111,20 +126,24 @@ def create_agent_executor(
                                             if t:
                                                 parts.append(t)
                                     if parts:
-                                        output_text = "\n".join(parts).strip()
-                                        if output_text:
+                                        joined = "\n".join(parts).strip()
+                                        if joined and not self._is_internal_error_text(joined):
+                                            output_text = joined
                                             break
                                 if has_tool_calls:
                                     continue
                             if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
                                 c = getattr(m, "content", None)
                                 if isinstance(c, str) and c.strip():
-                                    output_text = c.strip()
-                                    break
+                                    if not self._is_internal_error_text(c):
+                                        output_text = c.strip()
+                                        break
                         except Exception:
                             continue
                 if not output_text and msgs:
-                    output_text = str(msgs[-1])
+                    last_text = str(msgs[-1])
+                    if not self._is_internal_error_text(last_text):
+                        output_text = last_text
             except Exception:
                 output_text = ""
             return {"output": output_text, "intermediate_steps": []}
