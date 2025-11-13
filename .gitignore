@@ -10,3 +10,4 @@ venv/
 config/credentials.json
 data/
 .venv
+alembic/versions

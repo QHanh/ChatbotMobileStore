@@ -1,8 +1,9 @@
 import os
-from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime, UniqueConstraint
+from sqlalchemy import create_engine, Column, String, Boolean, Text, Integer, LargeBinary, DateTime, UniqueConstraint, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 from datetime import datetime, timezone
+from pgvector.sqlalchemy import Vector
 
 load_dotenv()
 
@@ -116,6 +117,17 @@ class Document(Base):
     file_content = Column(LargeBinary, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class DocumentVector(Base):
+    __tablename__ = "document_vectors"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    customer_id = Column(String, index=True, nullable=False)
+    document_id = Column(Integer, index=True, nullable=False)
+    source = Column(String, nullable=True)
+    text = Column(Text, nullable=False)
+    embedding = Column(Vector(768), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 class ChatbotSettings(Base):
     __tablename__ = "chatbot_settings"
 
@@ -197,7 +209,21 @@ class GraphRAGArtifact(Base):
 
 
 def init_db():
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+        except Exception:
+            pass
     Base.metadata.create_all(bind=engine)
+    with engine.connect() as conn:
+        try:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_document_vectors_customer ON document_vectors (customer_id)"))
+        except Exception:
+            pass
+        try:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_document_vectors_embedding ON document_vectors USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100)"))
+        except Exception:
+            pass
 
 def get_db():
     db = SessionLocal()
