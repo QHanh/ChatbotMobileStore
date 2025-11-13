@@ -50,6 +50,7 @@ class SearchAccessoryInput(BaseModel):
     thuong_hieu: Optional[str] = Field(default=None, description="Thương hiệu/hãng của phụ kiện, ví dụ: 'KAISI', 'RELIFE', '2UUL', 'Oppo'.")
     phan_loai_phu_kien: Optional[str] = Field(default=None, description="Phân loại phụ kiện, ví dụ: 'Kính hiển vi & PK', 'Dụng cụ sửa chữa'.")
     thuoc_tinh_phu_kien: Optional[str] = Field(default=None, description="Thuộc tính phụ kiện, ví dụ: 'màu sắc', 'cỡ', 'loại', 'số mắt',....")
+    cum_dac_trung: Optional[str] = Field(default=None, description="Cụm đặc trưng (brand + model/mã), ví dụ: 'AIFEN A902', 'RELIFE RL-056'. Nếu có, hệ thống sẽ dùng MUST để khớp chính xác theo cụm này.")
     min_gia: Optional[float] = Field(default=None, description="Mức giá tối thiểu.")
     max_gia: Optional[float] = Field(default=None, description="Mức giá tối đa.")
     offset: Optional[int] = Field(default=0, description="Số lượng kết quả bỏ qua, dùng để xem các trang kết quả tiếp theo. Ví dụ offset=10 để xem trang 2.")

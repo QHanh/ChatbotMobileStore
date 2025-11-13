@@ -409,6 +409,7 @@ async def search_accessories_logic(
     thuong_hieu: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
+    cum_dac_trung: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
     offset: Optional[int] = 0,
@@ -423,12 +424,17 @@ async def search_accessories_logic(
     - ten_phu_kien: Ghi NGUYÊN cụm tên người dùng nói, BAO GỒM cả thương hiệu nếu có.
       Ví dụ: "kính hiển vi RELIFE", "đèn kính hiển vi 2UUL".
     - thuong_hieu: Nếu nhận diện được thương hiệu, HÃY điền thêm tham số này (ví dụ: "RELIFE", "2UUL").
+    - cum_dac_trung: BẮT BUỘC điền khi câu hỏi có CỤM ĐẶC TRƯNG (brand + model/mã) như "AIFEN A902", "RELIFE RL-056", "KAISI K-1205", "WYLIE C210", "2UUL DA02".
+      Khi có giá trị này, hệ thống sẽ dùng MUST match chính xác theo cụm.
     - phan_loai_phu_kien, thuoc_tinh_phu_kien, min_gia, max_gia, offset: điền nếu có.
 
     Ví dụ:
     - Input: "có kính hiển vi RELIFE không?"
       -> ten_phu_kien = "kính hiển vi RELIFE"
       -> thuong_hieu = "RELIFE"
+    - Input: "Mũi hàn WYLIE C210 Black King Kong"
+      -> ten_phu_kien = "Mũi hàn WYLIE C210 Black King Kong"
+      -> cum_dac_trung = "WYLIE C210"
     """
     print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho khách hàng: {customer_id} ---")
     results = await search_accessories(
@@ -439,6 +445,7 @@ async def search_accessories_logic(
         thuong_hieu=thuong_hieu,
         phan_loai_phu_kien=phan_loai_phu_kien,
         thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
+        cum_dac_trung=cum_dac_trung,
         min_gia=min_gia,
         max_gia=max_gia,
         offset=offset,
@@ -891,6 +898,14 @@ def create_customer_tools(
             args_schema=SearchAccessoryInput,
             coroutine=customer_search_accessory_func
         )
+
+        # Bổ sung nhắc nhở bắt buộc về cum_dac_trung (kể cả khi có mô tả từ DB)
+        mandatory_note = (
+            "\n\nLƯU Ý BẮT BUỘC: Nếu câu hỏi có CỤM ĐẶC TRƯNG (brand + model/mã), ví dụ: \"AIFEN A902\", \"RELIFE RL-056\", \"KAISI K-1205\", \"WYLIE C210\", \"2UUL DA02\", \n"
+            "hãy ĐIỀN tham số `cum_dac_trung` để hệ thống dùng MUST match chính xác theo cụm."
+        )
+        if "cum_dac_trung" not in (search_accessory_tool.description or ""):
+            search_accessory_tool.description = f"{search_accessory_tool.description or ''}{mandatory_note}"
 
         # Tạo order tool với customer_id và thread_id được bind sẵn
         order_accessory_tool = create_order_accessory_tool_with_db(customer_id=customer_id, thread_id=thread_id)

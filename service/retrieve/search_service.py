@@ -27,6 +27,7 @@ def _get_customer_is_sale(customer_id: str, thread_id: str) -> bool:
         db.close()
     return False
 
+
 async def filter_results_with_ai(
     query: str, 
     results: List[str],
@@ -54,11 +55,20 @@ async def filter_results_with_ai(
             Bạn là một trợ lý AI có nhiệm vụ lọc kết quả tìm kiếm một cách nghiêm ngặt. Dựa trên LỊCH SỬ TRÒ CHUYỆN và CÂU HỎI HIỆN TẠI của người dùng, hãy lọc và chỉ giữ lại những kết quả tìm kiếm THỰC SỰ liên quan.
 
             **QUY TRÌNH LỌC:**
-            1.  **Phân tích câu hỏi:** Xác định các **từ khóa chính** trong câu hỏi của người dùng, đặc biệt chú ý đến **thương hiệu** (ví dụ: KAISI, Apple), **tên model cụ thể** (ví dụ: TX-50S), và các **thuộc tính quan trọng** (ví dụ: "2 mắt", "màu xanh").
-            2.  **Đối chiếu nghiêm ngặt:** So sánh từng kết quả tìm kiếm với các từ khóa chính này. Một kết quả CHỈ được coi là phù hợp nếu nó chứa **TẤT CẢ** các từ khóa chính mà người dùng đã nêu. Ví dụ, nếu người dùng hỏi "kính hiển vi KAISI 2 mắt", kết quả bắt buộc phải chứa cả "KAISI" và "2 mắt".
+            1.  **Phân tích câu hỏi:** Xác định các **từ khóa chính** (thương hiệu, model/mã cụ thể, thuộc tính quan trọng).
+            1b. **Phát hiện CỤM ĐẶC TRƯNG (brand + model/mã):** Ví dụ: "AIFEN A902", "RELIFE RL-056", "KAISI K-1205", "TX-50S". Cụm đặc trưng là sự kết hợp giữa thương hiệu/hãng và mã model/ký hiệu gồm chữ cái và/hoặc số.
+
+            **ƯU TIÊN CHÍNH XÁC THEO CỤM ĐẶC TRƯNG:**
+            -   Nếu câu hỏi có cụm đặc trưng D:
+                -   GIỮ LẠI MỌI kết quả có chứa CHÍNH XÁC D (không phân biệt hoa thường, bỏ qua khoảng trắng và dấu gạch nối) trong tên hiển thị của kết quả, ví dụ dòng "Phụ kiện:" hoặc "Sản phẩm:", hoặc tổ hợp "Thương hiệu"+"mã".
+                -   Các kết quả này được coi là PHÙ HỢP CHẮC CHẮN, không yêu cầu phải chứa thêm các từ khóa phụ khác.
+                -   ĐẶT NHÓM kết quả khớp cụm đặc trưng lên TRƯỚC, giữ nguyên thứ tự xuất hiện ban đầu.
+            -   Chỉ khi KHÔNG có kết quả nào khớp cụm đặc trưng, hãy áp dụng bước 2.
+
+            2.  **Đối chiếu nghiêm ngặt:** So sánh từng kết quả với các từ khóa chính còn lại. Một kết quả CHỈ được coi là phù hợp nếu nó chứa **TẤT CẢ** các từ khóa chính mà người dùng đã nêu.
             
             **QUY TẮC XUẤT KẾT QUẢ:**
-            -   Chỉ trả về các kết quả phù hợp sau khi đã đối chiếu nghiêm ngặt.
+            -   Chỉ trả về các kết quả phù hợp sau khi đã lọc theo các quy tắc trên.
             -   Giữ nguyên định dạng ban đầu của các kết quả được chọn.
             -   Mỗi kết quả phải được phân tách bởi hai dấu xuống dòng.
             -   Nếu không có kết quả nào phù hợp, trả về một chuỗi rỗng.
@@ -403,6 +413,7 @@ async def search_accessories(
     thuong_hieu: Optional[str] = None,
     phan_loai_phu_kien: Optional[str] = None,
     thuoc_tinh_phu_kien: Optional[str] = None,
+    cum_dac_trung: Optional[str] = None,
     min_gia: Optional[float] = None,
     max_gia: Optional[float] = None,
     offset: int = 0,
@@ -438,40 +449,54 @@ async def search_accessories(
 
     if search_terms:
         combined_query = " ".join(search_terms)
-        # Bắt buộc phải có ít nhất 70% từ khóa trong accessory_name
-        base_bool["bool"]["must"].append({
-            "match": {
-                "accessory_name": {
-                    "query": combined_query,
-                    "minimum_should_match": "70%"
-                }
-            }
-        })
         
-        # Ưu tiên cao hơn cho match chính xác
-        base_bool["bool"]["should"].extend([
-            {
+        if cum_dac_trung and str(cum_dac_trung).strip():
+            # Nếu LLM cung cấp cụm đặc trưng: dùng MUST với match_phrase chính xác
+            print(f"[SEARCH] Dùng cum_dac_trung '{cum_dac_trung}' với MUST clause")
+            base_bool["bool"]["must"].append({
                 "match_phrase": {
                     "accessory_name": {
-                        "query": combined_query,
-                        "boost": 10.0
+                        "query": str(cum_dac_trung).strip(),
+                        "boost": 20.0
                     }
                 }
-            },
-            # Tìm kiếm trong các trường khác để tăng điểm (bỏ specifications)
-            {
-                "multi_match": {
-                    "query": combined_query,
-                    "fields": [
-                        "category^3",
-                        "trademark^2",
-                        "properties^1"
-                    ],
-                    "type": "best_fields",
-                    "operator": "or"
+            })
+        else:
+            # Nếu KHÔNG có cụm đặc trưng: dùng logic cũ với minimum_should_match 70%
+            print(f"[SEARCH] Không phát hiện cụm đặc trưng, dùng minimum_should_match 70%")
+            base_bool["bool"]["must"].append({
+                "match": {
+                    "accessory_name": {
+                        "query": combined_query,
+                        "minimum_should_match": "70%"
+                    }
                 }
-            }
-        ])
+            })
+            
+            # Ưu tiên cao hơn cho match chính xác
+            base_bool["bool"]["should"].extend([
+                {
+                    "match_phrase": {
+                        "accessory_name": {
+                            "query": combined_query,
+                            "boost": 10.0
+                        }
+                    }
+                },
+                # Tìm kiếm trong các trường khác để tăng điểm
+                {
+                    "multi_match": {
+                        "query": combined_query,
+                        "fields": [
+                            "category^3",
+                            "trademark^2",
+                            "properties^1"
+                        ],
+                        "type": "best_fields",
+                        "operator": "or"
+                    }
+                }
+            ])
 
     if thuong_hieu:
         base_bool["bool"]["should"].append({
@@ -494,9 +519,6 @@ async def search_accessories(
                 ]
             }
         })
-
-    if ten_phu_kien:
-        base_bool["bool"]["should"].append({"match_phrase": {"accessory_name": {"query": ten_phu_kien, "boost": 10.0}}})
     if thuoc_tinh_phu_kien:
         base_bool["bool"]["should"].append({"match_phrase": {"properties": {"query": thuoc_tinh_phu_kien, "boost": 3.0}}})
 

@@ -71,7 +71,9 @@ def compose_system_prompt(
         "accessory_workflow",
         (
             "-   Khi khách hỏi về **linh kiện / phụ kiện** (ốp lưng, sạc, tai nghe, ...), dùng `search_accessories_tool`. "
-            "Nếu khách chốt mua, dùng `create_order_accessory_tool`."
+            "Nếu khách chốt mua, dùng `create_order_accessory_tool`. "
+            "KHI CÂU HỎI CHỨA CỤM ĐẶC TRƯNG (brand + model/mã) như 'AIFEN A902', 'RELIFE RL-056', 'KAISI K-1205', 'WYLIE C210', '2UUL DA02', "
+            "BẮT BUỘC điền tham số `cum_dac_trung` bằng CHÍNH CỤM đó khi gọi `search_accessories_tool`."
         ),
     )
 
@@ -144,6 +146,9 @@ def compose_system_prompt(
                 workflow_instructions_add,
                 faq_instruction,
                 other_instructions,
+                "\n**QUY TẮC BẮT BUỘC VỀ CỤM ĐẶC TRƯNG (phụ kiện):**\n"
+                "- Khi gọi `search_accessories_tool`, nếu câu hỏi có CỤM ĐẶC TRƯNG (brand + model/mã) như 'AIFEN A902', 'RELIFE RL-056', 'KAISI K-1205', 'WYLIE C210', '2UUL DA02',\n"
+                "  bạn BẮT BUỘC phải điền tham số `cum_dac_trung` bằng chính cụm đó. Nếu không có cụm đặc trưng thì bỏ trống tham số này."
             ],
         )
     )
