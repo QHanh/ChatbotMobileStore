@@ -14,7 +14,7 @@ ELASTIC_HOST = os.getenv("ELASTIC_HOST")
 # FastAPI Config
 APP_CONFIG = {
     "title": "Chatbot Tư Vấn Bán Hàng - Cửa Hàng Điện Thoại Di Động",
-    "description": "RAG Chatbot sử dụng Elasticsearch, Weaviate",
+    "description": "RAG Chatbot sử dụng Elasticsearch và Postgres (pgvector)",
     "version": "1.0.0"
 }
 

@@ -49,14 +49,12 @@ async def lifespan(app: FastAPI):
     print("Application startup...")
     # Initialize all clients on startup
     await dependencies.init_es_client()
-    await dependencies.init_weaviate_client()
     
     yield
     
     # Close all clients on shutdown
     print("Application shutdown...")
     await dependencies.close_es_client()
-    await dependencies.close_weaviate_client()
     print("All clients closed. Shutdown complete.")
 
 app = FastAPI(**APP_CONFIG, lifespan=lifespan)
