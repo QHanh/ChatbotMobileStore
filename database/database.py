@@ -23,6 +23,9 @@ class Customer(Base):
     service_feature_enabled = Column(Boolean, default=True)
     accessory_feature_enabled = Column(Boolean, default=True)
     product_feature_enabled = Column(Boolean, default=True)
+    config_version = Column(Integer, nullable=True)
+    llm_provider = Column(String, nullable=True)
+    llm_model = Column(String, nullable=True)
 
 class StoreInfo(Base):
     __tablename__ = "store_info"
@@ -270,3 +273,34 @@ class PromptVersion(Base):
     __table_args__ = (
         UniqueConstraint('customer_id', 'version', name='uq_prompt_version_customer'),
     )
+
+
+class MCPServer(Base):
+    __tablename__ = "mcp_servers"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    name = Column(String, unique=True, nullable=False)
+    transport = Column(String, nullable=False)  # stdio, http, sse, ...
+    endpoint = Column(String, nullable=True)  # URL hoặc command tuỳ transport
+    auth_ref = Column(String, nullable=True)
+    tags = Column(String, nullable=True)
+    health_status = Column(String, nullable=True)  # unknown, healthy, unhealthy
+    last_checked = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class MCPAgentBinding(Base):
+    __tablename__ = "agent_bindings"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    tenant_id = Column(String, index=True, nullable=False)
+    agent_type = Column(String, nullable=False)  # vision, product, service, accessory, faq, knowledge, store_info, customer_info, order, escalation, closing
+    mcp_server_id = Column(Integer, nullable=False)
+    tool_ids = Column(Text, nullable=True)  # JSON list các tool ids, ví dụ: ["retrieval.search"]
+    defaults = Column(Text, nullable=True)  # JSON object defaults cho agent/tool
+    priority = Column(Integer, default=1, nullable=False)
+    enabled = Column(Boolean, default=True, nullable=False)
+    version = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+

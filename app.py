@@ -20,6 +20,7 @@ from api import (
     graphrag_routes,
     training_routes,
 )
+from mcp import router as mcp_router
 from database.database import init_db
 import dependencies
 import os
@@ -77,6 +78,7 @@ app.include_router(order_routes.router, tags=["Orders"])
 app.include_router(info_store_routes.router, tags=["Store Info"])
 app.include_router(graphrag_routes.router, tags=["GraphRAG"])
 app.include_router(training_routes.router, tags=["Training"])
+app.include_router(mcp_router, tags=["MCP"])
 
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8010, reload=False)

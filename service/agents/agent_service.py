@@ -211,9 +211,16 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
             .replace("{image_text}", image_text)
         )
         faq_context.append(HumanMessage(content=faq_prompt))
+    def _map_history_item_to_message(role: str, message: str) -> BaseMessage:
+        role_norm = (role or "").lower()
+        if role_norm in ("human", "user"):
+            return HumanMessage(content=message or "")
+        if role_norm in ("ai", "assistant", "bot"):
+            return AIMessage(content=message or "")
+        return HumanMessage(content=message or "")
 
-    if history_override is not None:
-        chat_history: List[BaseMessage] = []
+    chat_history: List[BaseMessage] = []
+    if history_override:
         for item in history_override:
             role = getattr(item, 'role', None)
             message = getattr(item, 'message', None)
@@ -221,12 +228,9 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
                 if isinstance(item, dict):
                     role = item.get('role')
                     message = item.get('message')
-            if role == 'human':
-                chat_history.append(HumanMessage(content=message or ""))
-            else:
-                chat_history.append(AIMessage(content=message or ""))
-    else:
-        chat_history = get_session_history(customer_id, session_id, db)
+            if message is None:
+                continue
+            chat_history.append(_map_history_item_to_message(role, message))
     
     user_label = _pick("chat_history_role_user", "Người dùng")
     ai_label = _pick("chat_history_role_ai", "Trợ lí")
