@@ -140,10 +140,6 @@ def create_agent_executor(
                                         break
                         except Exception:
                             continue
-                if not output_text and msgs:
-                    last_text = str(msgs[-1])
-                    if not self._is_internal_error_text(last_text):
-                        output_text = last_text
             except Exception:
                 output_text = ""
             return {"output": output_text, "intermediate_steps": []}

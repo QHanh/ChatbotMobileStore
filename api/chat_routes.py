@@ -175,7 +175,9 @@ async def chat(
 
         print(f"[CHAT DEBUG] user_input: {user_input}")
         if request.history:
-            print(f"[CHAT DEBUG] chat history: {request.history}")
+            print(f"[CHAT DEBUG] chat history (from API request): {request.history}")
+        else:
+            print("[CHAT DEBUG] chat history (auto-retrieve): will be fetched by backend")
         print(f"[CHAT DEBUG] image_urls: {image_urls}")
         print(f"[CHAT DEBUG] image_base64 length: {len(image_base64) if image_base64 else 0}")
         print(f"[CHAT DEBUG] image_base64 first 50 chars: {image_base64[:50] if image_base64 else 'None'}")
