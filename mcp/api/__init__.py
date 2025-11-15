@@ -1,10 +1,12 @@
-from fastapi import APIRouter
+"""API package entrypoint for MCP.
 
-from .mcp_server_routes import router as mcp_server_router
-from .agent_binding_routes import router as agent_binding_router
+Hiện tại toàn bộ HTTP endpoint của MCP (config servers, agent bindings,
+và chat-mcp) được gộp trong ``mcp.api.routes``.
 
-router = APIRouter()
-router.include_router(mcp_server_router)
-router.include_router(agent_binding_router)
+Module này chỉ re-export ``router`` để `from mcp import router` hoặc
+`from mcp.api import router` đều dùng chung một router.
+"""
+
+from .routes import router
 
 __all__ = ["router"]

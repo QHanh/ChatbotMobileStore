@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
+import inspect
+
 from langchain_core.messages import BaseMessage
 
 
@@ -22,6 +24,8 @@ class AgentContext:
     bindings: Any = None
     defaults: Dict[str, Any] = field(default_factory=dict)
     access: Optional[int] = None
+    tools: List[Any] = field(default_factory=list)
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -32,3 +36,27 @@ class AgentResult:
     observations: List[str] = field(default_factory=list)
     used_tools: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+async def call_mcp_tool(tools: List[Any], tool_name: str, args: Dict[str, Any]) -> Any:
+    for tool in tools:
+        name = getattr(tool, "name", None)
+        if name != tool_name:
+            continue
+        ainvoke = getattr(tool, "ainvoke", None)
+        if callable(ainvoke):
+            return await ainvoke(args)
+        invoke = getattr(tool, "invoke", None)
+        if callable(invoke):
+            result = invoke(args)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+        run = getattr(tool, "run", None)
+        if callable(run):
+            result = run(args)
+            if inspect.isawaitable(result):
+                return await result
+            return result
+    return None
+

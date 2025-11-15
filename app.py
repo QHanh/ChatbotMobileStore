@@ -21,7 +21,9 @@ from api import (
     training_routes,
 )
 from mcp import router as mcp_router
-from database.database import init_db
+from mcp.services import MCPClientManager
+from mcp.agents.orchestrator import prewarm_tenant_graph
+from database.database import init_db, SessionLocal, MCPAgentBinding
 import dependencies
 import os
 os.environ["LANGCHAIN_DEBUG"] = "true"
@@ -48,9 +50,19 @@ async def lifespan(app: FastAPI):
     Initializes and closes necessary client connections.
     """
     print("Application startup...")
-    # Initialize all clients on startup
     await dependencies.init_es_client()
-    
+
+    db = SessionLocal()
+    try:
+        client_manager = MCPClientManager()
+        tenant_rows = db.query(MCPAgentBinding.tenant_id).distinct().all()
+        tenant_ids = [row[0] for row in tenant_rows]
+        for tenant_id in tenant_ids:
+            effective_config = client_manager.get_effective_config_for_tenant(db, tenant_id)
+            await prewarm_tenant_graph(db, tenant_id, effective_config)
+    finally:
+        db.close()
+
     yield
     
     # Close all clients on shutdown

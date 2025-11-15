@@ -11,18 +11,32 @@ Giai đoạn này chỉ là skeleton, chưa nối với API /chat-mcp.
 
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 
+import shlex
+
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
-from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from sqlalchemy.orm import Session
 
 from database.database import Customer
 from mcp.services import MCPClientManager
-from mcp.models import EffectiveTenantConfig
+from mcp.services.orchestrator_loader import get_or_build_graph
+from mcp.models import EffectiveAgentConfig, EffectiveTenantConfig, AgentBindingOut
+from service.prompts.prompt_service import load_instructions, compose_system_prompt
 from .base import AgentContext, AgentResult
+from .product_agent import ProductAgent
+from .service_agent import ServiceAgent
+from .accessory_agent import AccessoryAgent
+from .faq_agent import FAQAgent
+from .knowledge_agent import KnowledgeAgent
+from .vision_agent import VisionAgent
+from .store_info_agent import StoreInfoAgent
+from .customer_info_agent import CustomerInfoAgent
+from .order_agent import OrderAgent
+from .escalation_agent import EscalationAgent
+from .closing_agent import ClosingAgent
 
 
 class OrchestratorState(TypedDict):
@@ -40,6 +54,36 @@ class OrchestratorState(TypedDict):
     access: Optional[int]
     agent_type: Optional[str]
     context: Dict[str, Any]
+
+
+AGENT_NODE_MAPPING: Dict[str, str] = {
+    "vision": "vision_agent",
+    "product": "product_agent",
+    "service": "service_agent",
+    "accessory": "accessory_agent",
+    "faq": "faq_agent",
+    "knowledge": "knowledge_agent",
+    "store_info": "store_info_agent",
+    "customer_info": "customer_info_agent",
+    "order": "order_agent",
+    "escalation": "escalation_agent",
+    "closing": "closing_agent",
+}
+
+
+AGENT_CLASS_MAPPING: Dict[str, Any] = {
+    "vision": VisionAgent,
+    "product": ProductAgent,
+    "service": ServiceAgent,
+    "accessory": AccessoryAgent,
+    "faq": FAQAgent,
+    "knowledge": KnowledgeAgent,
+    "store_info": StoreInfoAgent,
+    "customer_info": CustomerInfoAgent,
+    "order": OrderAgent,
+    "escalation": EscalationAgent,
+    "closing": ClosingAgent,
+}
 
 
 def _build_llm_for_customer(customer: Customer, api_key: str):
@@ -66,35 +110,40 @@ def _build_llm_for_customer(customer: Customer, api_key: str):
     return llm
 
 
-async def _build_mcp_tools_for_tenant(
-    db: Session,
-    tenant_id: str,
-    effective_config: EffectiveTenantConfig,
-) -> List[Any]:
-    """Tạo MultiServerMCPClient và load toàn bộ MCP tools cho tenant.
+def _build_agent_prompt_map(db: Session, customer: Customer) -> Dict[str, str]:
+    """Xây map system prompt cho từng agent_type dựa trên SystemInstruction trong DB.
 
-    Skeleton:
-    - Đọc danh sách MCP servers từ cấu hình DB (thông qua MCPClientManager nếu cần).
-    - Khởi tạo MultiServerMCPClient với mapping {server_name: {command/url, transport, ...}}.
-    - Gọi client.get_tools() để lấy danh sách LangChain tools.
-
-    Giai đoạn này chỉ là khung, chưa filter tool theo agent_type.
+    Ưu tiên key dạng ``agent.{agent_type}.system_prompt``. Nếu không có, fallback về
+    ``compose_system_prompt`` hiện tại (prompt tổng cho toàn hệ thống).
     """
-    # TODO: build server_configs từ bảng mcp_servers / agent_bindings cho tenant.
-    server_configs: Dict[str, Dict[str, Any]] = {}
 
-    # Ví dụ cấu trúc (comment minh hoạ, không dùng trực tiếp):
-    # server_configs = {
-    #     "retrieval": {"url": "http://localhost:8001/mcp", "transport": "streamable_http"},
-    #     "vision": {"command": "python", "args": ["/path/to/vision_server.py"], "transport": "stdio"},
-    # }
+    instr = load_instructions(db)
+    base_prompt = compose_system_prompt(
+        db=db,
+        customer_config=customer,
+        product_feature_enabled=True,
+        service_feature_enabled=True,
+        accessory_feature_enabled=True,
+    )
 
-    client = MultiServerMCPClient(server_configs)
-    tools = await client.get_tools()
-    return tools
+    ai_name = customer.ai_name or ""
+    ai_role = customer.ai_role or ""
+
+    def _for(agent_type: str) -> str:
+        key = f"agent.{agent_type}.system_prompt"
+        text = instr.get(key)
+        if text:
+            text = text.replace("{ai_name}", ai_name).replace("{ai_role}", ai_role)
+            return text.strip()
+        return base_prompt
+
+    prompts: Dict[str, str] = {}
+    for t in AGENT_NODE_MAPPING.keys():
+        prompts[t] = _for(t)
+    return prompts
 
 
-def _planner_node(state: OrchestratorState, model) -> OrchestratorState:
+def _planner_node(state: OrchestratorState) -> OrchestratorState:
     """Node planner: dùng LLM để chọn agent_type dựa trên messages + access.
 
     Skeleton: hiện tại planner chỉ dùng một prompt đơn giản để chọn agent,
@@ -102,6 +151,10 @@ def _planner_node(state: OrchestratorState, model) -> OrchestratorState:
     """
     messages = state["messages"]
     access = state.get("access")
+    context = state.get("context") or {}
+    model = context.get("llm")
+    if model is None:
+        raise ValueError("Thiếu LLM trong context của orchestrator.")
 
     system = SystemMessage(
         content=(
@@ -134,20 +187,76 @@ def _route_from_planner(state: OrchestratorState) -> str:
     """Hàm route dùng cho add_conditional_edges từ node planner."""
     agent_type = state.get("agent_type") or "product"
     # Map agent_type về tên node trong graph
-    mapping = {
-        "vision": "vision_agent",
-        "product": "product_agent",
-        "service": "service_agent",
-        "accessory": "accessory_agent",
-        "faq": "faq_agent",
-        "knowledge": "knowledge_agent",
-        "store_info": "store_info_agent",
-        "customer_info": "customer_info_agent",
-        "order": "order_agent",
-        "escalation": "escalation_agent",
-        "closing": "closing_agent",
-    }
-    return mapping.get(agent_type, "product_agent")
+    return AGENT_NODE_MAPPING.get(agent_type, "product_agent")
+
+
+def _agent_node_factory(agent_type: str, tools_for_agent: List[Any]):
+    AgentCls = AGENT_CLASS_MAPPING.get(agent_type)
+
+    async def node_fn(state: OrchestratorState) -> OrchestratorState:
+        messages = list(state["messages"])
+        context = state.get("context") or {}
+        agent_prompts_ctx = context.get("agent_prompts", {})
+        system_prompt = agent_prompts_ctx.get(agent_type, "")
+
+        history_messages: List[BaseMessage] = messages[:-1] if messages else []
+        last_message: Optional[BaseMessage] = messages[-1] if messages else None
+        user_input = ""
+        if isinstance(last_message, HumanMessage):
+            user_input = last_message.content or ""
+        elif last_message is not None:
+            content = getattr(last_message, "content", "")
+            if isinstance(content, str):
+                user_input = content
+
+        if AgentCls is None:
+            tool_node = ToolNode(tools_for_agent)
+            effective_messages = messages
+            if system_prompt:
+                effective_messages = [SystemMessage(content=system_prompt)] + effective_messages
+            result = tool_node.invoke({"messages": effective_messages})
+            new_messages = result.get("messages", effective_messages)
+            return {
+                **state,
+                "messages": new_messages,
+            }
+
+        metadata: Dict[str, Any] = {}
+        raw_meta = context.get("metadata") or {}
+        if isinstance(raw_meta, dict):
+            metadata.update(raw_meta)
+        thread_id = context.get("thread_id")
+        if thread_id is not None:
+            metadata.setdefault("thread_id", thread_id)
+        llm_obj = context.get("llm")
+        if llm_obj is not None:
+            metadata.setdefault("llm", llm_obj)
+        if system_prompt:
+            metadata.setdefault("system_prompt", system_prompt)
+
+        agent_context = AgentContext(
+            tenant_id=state["tenant_id"],
+            user_input=user_input,
+            history=history_messages,
+            bindings=None,
+            defaults={},
+            access=state.get("access"),
+            tools=tools_for_agent,
+            metadata=metadata,
+        )
+
+        agent = AgentCls()
+        result: AgentResult = await agent.run(agent_context)  # type: ignore[call-arg]
+
+        new_messages = list(messages)
+        if result.answer:
+            new_messages.append(AIMessage(content=result.answer))
+        return {
+            **state,
+            "messages": new_messages,
+        }
+
+    return node_fn
 
 
 async def run_orchestrator_react(
@@ -159,6 +268,7 @@ async def run_orchestrator_react(
     api_key: str,
     effective_config: EffectiveTenantConfig,
     mcp_client_manager: MCPClientManager,
+    thread_id: Optional[str] = None,
 ) -> AgentResult:
     """Điểm vào chính cho orchestrator ReAct dùng MCP.
 
@@ -175,76 +285,36 @@ async def run_orchestrator_react(
         raise ValueError(f"Không tìm thấy khách hàng: {tenant_id}")
 
     llm = _build_llm_for_customer(customer, api_key)
-    tools = await _build_mcp_tools_for_tenant(db, tenant_id, effective_config)
+    config_version = customer.config_version or 0
+    cache_key = f"{tenant_id}:{config_version}"
 
-    # Khởi tạo state ban đầu
-    initial_messages: List[BaseMessage] = [HumanMessage(content=user_input)]
+    initial_messages: List[BaseMessage] = []
+    if history:
+        initial_messages.extend(list(history))
+    initial_messages.append(HumanMessage(content=user_input))
+
+    agent_prompts = _build_agent_prompt_map(db, customer)
+
+    graph = await get_or_build_graph(
+        cache_key=cache_key,
+        effective_config=effective_config,
+        agent_node_mapping=AGENT_NODE_MAPPING,
+        planner_node=_planner_node,
+        route_from_planner=_route_from_planner,
+        agent_node_factory=_agent_node_factory,
+    )
+
     initial_state: OrchestratorState = {
         "messages": initial_messages,
         "tenant_id": tenant_id,
         "access": access,
         "agent_type": None,
-        "context": {},
+        "context": {
+            "llm": llm,
+            "agent_prompts": agent_prompts,
+            "thread_id": thread_id,
+        },
     }
-
-    # Xây dựng graph skeleton
-    builder = StateGraph(OrchestratorState)
-
-    # Node planner
-    def planner_wrapper(state: OrchestratorState) -> OrchestratorState:
-        return _planner_node(state, llm)
-
-    builder.add_node("planner", planner_wrapper)
-
-    # Node tools chung (dùng ToolNode để minh hoạ gọi MCP tools trực tiếp)
-    tool_node = ToolNode(tools)
-
-    def tools_node_wrapper(state: OrchestratorState) -> OrchestratorState:
-        # Chạy tools_condition để quyết định có cần gọi tool hay không.
-        # Ở skeleton này, ta luôn cho phép gọi tool một lần.
-        result = tool_node.invoke({"messages": state["messages"]})
-        messages = result.get("messages", [])
-        return {
-            **state,
-            "messages": messages,
-        }
-
-    # Gắn tạm tất cả agent node về cùng một implementation chung cho skeleton.
-    for node_name in [
-        "vision_agent",
-        "product_agent",
-        "service_agent",
-        "accessory_agent",
-        "faq_agent",
-        "knowledge_agent",
-        "store_info_agent",
-        "customer_info_agent",
-        "order_agent",
-        "escalation_agent",
-        "closing_agent",
-    ]:
-        builder.add_node(node_name, tools_node_wrapper)
-
-    builder.add_edge(START, "planner")
-    builder.add_conditional_edges("planner", _route_from_planner)
-
-    # Mặc định, sau khi chạy agent node xong thì kết thúc.
-    for node_name in [
-        "vision_agent",
-        "product_agent",
-        "service_agent",
-        "accessory_agent",
-        "faq_agent",
-        "knowledge_agent",
-        "store_info_agent",
-        "customer_info_agent",
-        "order_agent",
-        "escalation_agent",
-        "closing_agent",
-    ]:
-        builder.add_edge(node_name, END)
-
-    graph = builder.compile()
 
     final_state: OrchestratorState = await graph.ainvoke(initial_state)
     final_messages = final_state.get("messages", [])
@@ -257,3 +327,23 @@ async def run_orchestrator_react(
             break
 
     return AgentResult(answer=answer, observations=[], used_tools=[])
+
+
+async def prewarm_tenant_graph(
+    db: Session,
+    tenant_id: str,
+    effective_config: EffectiveTenantConfig,
+) -> None:
+    customer = db.query(Customer).filter(Customer.customer_id == tenant_id).first()
+    if not customer:
+        return
+    config_version = customer.config_version or 0
+    cache_key = f"{tenant_id}:{config_version}"
+    await get_or_build_graph(
+        cache_key=cache_key,
+        effective_config=effective_config,
+        agent_node_mapping=AGENT_NODE_MAPPING,
+        planner_node=_planner_node,
+        route_from_planner=_route_from_planner,
+        agent_node_factory=_agent_node_factory,
+    )
