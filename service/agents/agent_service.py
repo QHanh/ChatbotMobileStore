@@ -153,6 +153,16 @@ def create_agent_executor(
                         except Exception:
                             continue
 
+                # Nếu không tìm thấy output hợp lệ, in toàn bộ state["messages"] để debug
+                if not output_text:
+                    print("[AGENT STATE MESSAGES] total=", len(msgs))
+                    for idx, msg in enumerate(msgs):
+                        try:
+                            content = getattr(msg, "content", msg)
+                            print(f"[AGENT STATE MSG #{idx}] {type(msg).__name__}: {content}")
+                        except Exception as e2:
+                            print(f"[AGENT STATE MSG #{idx} ERROR] {e2}")
+
                 # Nếu không tìm thấy output hợp lệ nhưng có text lỗi nội bộ, chỉ log ra để debug
                 if not output_text and last_internal_error_text:
                     print("[AGENT INTERNAL ERROR TEXT]", last_internal_error_text)
