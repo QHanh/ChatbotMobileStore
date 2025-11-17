@@ -107,6 +107,7 @@ def create_agent_executor(
 
             state = await self._agent.ainvoke({"messages": messages})
             output_text = ""
+            last_internal_error_text = ""
             try:
                 msgs = state.get("messages", [])
                 if msgs:
@@ -117,8 +118,11 @@ def create_agent_executor(
                                 c = getattr(m, "content", None)
                                 has_tool_calls = bool(getattr(m, "tool_calls", None))
                                 if isinstance(c, str) and c.strip():
-                                    if not self._is_internal_error_text(c):
-                                        output_text = c.strip()
+                                    text_val = c.strip()
+                                    if self._is_internal_error_text(text_val):
+                                        last_internal_error_text = text_val
+                                    else:
+                                        output_text = text_val
                                         break
                                 if isinstance(c, list):
                                     parts = []
@@ -129,20 +133,31 @@ def create_agent_executor(
                                                 parts.append(t)
                                     if parts:
                                         joined = "\n".join(parts).strip()
-                                        if joined and not self._is_internal_error_text(joined):
-                                            output_text = joined
-                                            break
+                                        if joined:
+                                            if self._is_internal_error_text(joined):
+                                                last_internal_error_text = joined
+                                            else:
+                                                output_text = joined
+                                                break
                                 if has_tool_calls:
                                     continue
                             if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
                                 c = getattr(m, "content", None)
                                 if isinstance(c, str) and c.strip():
-                                    if not self._is_internal_error_text(c):
-                                        output_text = c.strip()
+                                    text_val = c.strip()
+                                    if self._is_internal_error_text(text_val):
+                                        last_internal_error_text = text_val
+                                    else:
+                                        output_text = text_val
                                         break
                         except Exception:
                             continue
-            except Exception:
+
+                # Nếu không tìm thấy output hợp lệ nhưng có text lỗi nội bộ, chỉ log ra để debug
+                if not output_text and last_internal_error_text:
+                    print("[AGENT INTERNAL ERROR TEXT]", last_internal_error_text)
+            except Exception as e:
+                print(f"[AGENT ERROR] Failed to extract output from state: {e}")
                 output_text = ""
             return {"output": output_text, "intermediate_steps": []}
 
