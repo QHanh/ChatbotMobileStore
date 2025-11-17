@@ -21,9 +21,9 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from sqlalchemy.orm import Session
 
 from database.database import Customer
-from mcp.services import MCPClientManager
-from mcp.services.orchestrator_loader import get_or_build_graph
-from mcp.models import EffectiveAgentConfig, EffectiveTenantConfig, AgentBindingOut
+from chat_mcp.services import MCPClientManager
+from chat_mcp.services.orchestrator_loader import get_or_build_graph
+from chat_mcp.models import EffectiveAgentConfig, EffectiveTenantConfig, AgentBindingOut
 from service.prompts.prompt_service import load_instructions, compose_system_prompt
 from .base import AgentContext, AgentResult
 from .product_agent import ProductAgent

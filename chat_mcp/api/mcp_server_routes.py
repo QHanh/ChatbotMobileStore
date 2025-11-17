@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database.database import MCPServer, MCPAgentBinding, get_db
-from mcp.models import MCPServerCreate, MCPServerOut, MCPServerUpdate, ProbeResult
+from chat_mcp.models import MCPServerCreate, MCPServerOut, MCPServerUpdate, ProbeResult
 
 router = APIRouter()
 

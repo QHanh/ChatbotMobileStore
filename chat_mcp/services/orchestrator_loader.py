@@ -8,7 +8,7 @@ from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
-from mcp.models import EffectiveTenantConfig
+from chat_mcp.models import EffectiveTenantConfig
 
 
 State = Dict[str, Any]

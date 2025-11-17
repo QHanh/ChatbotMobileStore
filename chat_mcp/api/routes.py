@@ -21,9 +21,9 @@ from service.models.schemas import ChatbotRequest
 from database.database import get_db, ChatCustomer, ChatThread
 from service.prompts.prompt_service import load_instructions
 from api.chat_routes import _identify_product_from_image
-from mcp.services import MCPClientManager
-from mcp.models import EffectiveTenantConfig
-from mcp.agents.orchestrator import run_orchestrator_react
+from chat_mcp.services import MCPClientManager
+from chat_mcp.models import EffectiveTenantConfig
+from chat_mcp.agents.orchestrator import run_orchestrator_react
 
 from .mcp_server_routes import router as mcp_server_router
 from .agent_binding_routes import router as agent_binding_router

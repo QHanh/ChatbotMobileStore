@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy.orm import Session
 
 from database.database import MCPAgentBinding, MCPServer
-from mcp.models import AgentBindingOut, EffectiveAgentConfig, EffectiveTenantConfig, MCPServerRef
+from chat_mcp.models import AgentBindingOut, EffectiveAgentConfig, EffectiveTenantConfig, MCPServerRef
 
 
 # Quản lý client MCP và cache cấu hình/binding theo tenant.

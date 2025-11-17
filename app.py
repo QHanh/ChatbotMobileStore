@@ -20,9 +20,9 @@ from api import (
     graphrag_routes,
     training_routes,
 )
-from mcp import router as mcp_router
-from mcp.services import MCPClientManager
-from mcp.agents.orchestrator import prewarm_tenant_graph
+from chat_mcp import router as mcp_router
+from chat_mcp.services import MCPClientManager
+from chat_mcp.agents.orchestrator import prewarm_tenant_graph
 from database.database import init_db, SessionLocal, MCPAgentBinding
 import dependencies
 import os

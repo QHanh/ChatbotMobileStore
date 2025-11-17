@@ -101,6 +101,7 @@ def create_agent_executor(
             if chat_history:
                 messages.extend(chat_history)
             input_text = data.get("input", "")
+            base_len = len(messages)
             if input_text:
                 messages.append(HumanMessage(content=input_text))
 
@@ -109,7 +110,8 @@ def create_agent_executor(
             try:
                 msgs = state.get("messages", [])
                 if msgs:
-                    for m in reversed(msgs):
+                    new_msgs = msgs[base_len:]
+                    for m in reversed(new_msgs):
                         try:
                             if isinstance(m, AIMessage):
                                 c = getattr(m, "content", None)

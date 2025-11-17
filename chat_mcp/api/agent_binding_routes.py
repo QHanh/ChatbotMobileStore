@@ -6,14 +6,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database.database import MCPAgentBinding, MCPServer, Customer, get_db
-from mcp.models import (
+from chat_mcp.models import (
     AgentBindingCreate,
     AgentBindingOut,
     AgentBindingUpdate,
     EffectiveAgentConfig,
     EffectiveTenantConfig,
 )
-from mcp.services import MCPClientManager
+from chat_mcp.services import MCPClientManager
 
 router = APIRouter()
 client_manager = MCPClientManager()
