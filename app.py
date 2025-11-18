@@ -57,9 +57,21 @@ async def lifespan(app: FastAPI):
         client_manager = MCPClientManager()
         tenant_rows = db.query(MCPAgentBinding.tenant_id).distinct().all()
         tenant_ids = [row[0] for row in tenant_rows]
+        print(f"[MCP] Startup: found tenants {tenant_ids}")
+        mcp_errors = []
         for tenant_id in tenant_ids:
-            effective_config = client_manager.get_effective_config_for_tenant(db, tenant_id)
-            await prewarm_tenant_graph(db, tenant_id, effective_config)
+            try:
+                effective_config = client_manager.get_effective_config_for_tenant(db, tenant_id)
+                await prewarm_tenant_graph(db, tenant_id, effective_config)
+                print(f"[MCP] Prewarm success for tenant {tenant_id}")
+            except Exception as e:
+                error_msg = f"[MCP] Error during prewarm for tenant {tenant_id}: {e}"
+                print(error_msg)
+                mcp_errors.append(error_msg)
+        if not mcp_errors:
+            print("[MCP] Startup completed successfully for all tenants")
+        else:
+            print(f"[MCP] Startup completed with {len(mcp_errors)} error(s)")
     finally:
         db.close()
 

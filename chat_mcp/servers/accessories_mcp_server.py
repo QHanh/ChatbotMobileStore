@@ -432,6 +432,14 @@ async def search_accessories(
          if original_query and llm:
              formatted_hits = await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
 
+         try:
+             print(
+                 f"[ACCESSORIES_MCP] search_accessories result count={len(formatted_hits)} "
+                 f"for customer_id='{customer_id}', thread_id='{thread_id}', original_query={original_query!r}"
+             )
+         except Exception:
+             pass
+
          return formatted_hits
 
      except Exception as e:
@@ -482,8 +490,25 @@ async def accessories_search(
             llm=None,
             chat_history=None,
         )
+
+        try:
+            print(
+                f"[ACCESSORIES_MCP] accessories_search called with customer_id={customer_id!r}, "
+                f"thread_id={thread_id!r}, query={query!r}, offset={offset}, cum_dac_trung={cum_dac_trung!r}, "
+                f"results_len={len(results) if isinstance(results, list) else 'N/A'}"
+            )
+        except Exception:
+            pass
+
         return {"results": results}
     except Exception as e:
+        try:
+            print(
+                f"[ACCESSORIES_MCP] accessories_search error for customer_id={customer_id!r}, "
+                f"thread_id={thread_id!r}, query={query!r}: {e}"
+            )
+        except Exception:
+            pass
         return {"error": str(e)}
 
 
