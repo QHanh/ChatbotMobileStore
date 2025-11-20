@@ -22,39 +22,28 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from sqlalchemy.orm import Session
 
 from database.database import Customer
+from chat_mcp.states import ChatState
 from chat_mcp.services import MCPClientManager
 from chat_mcp.services.orchestrator_loader import get_or_build_graph
 from chat_mcp.models import EffectiveAgentConfig, EffectiveTenantConfig, AgentBindingOut
 from service.prompts.prompt_service import load_instructions, compose_system_prompt
 from .base import AgentContext, AgentResult
-from .product_agent import ProductAgent
-from .service_agent import ServiceAgent
-from .accessory_agent import AccessoryAgent
-from .faq_agent import FAQAgent
-from .knowledge_agent import KnowledgeAgent
-from .vision_agent import VisionAgent
-from .store_info_agent import StoreInfoAgent
-from .customer_info_agent import CustomerInfoAgent
-from .order_agent import OrderAgent
-from .escalation_agent import EscalationAgent
-from .closing_agent import ClosingAgent
+from chat_mcp.nodes.product_node import make_product_agent_node
+from chat_mcp.nodes.service_node import make_service_agent_node
+from chat_mcp.nodes.accessory_node import make_accessory_agent_node
+from chat_mcp.nodes.faq_node import make_faq_agent_node
+from chat_mcp.nodes.knowledge_node import make_knowledge_agent_node
+from chat_mcp.nodes.vision_node import make_vision_agent_node
+from chat_mcp.nodes.store_info_node import make_store_info_agent_node
+from chat_mcp.nodes.customer_info_node import make_customer_info_agent_node
+from chat_mcp.nodes.order_node import make_order_agent_node
+from chat_mcp.nodes.escalation_node import make_escalation_agent_node
+from chat_mcp.nodes.closing_node import make_closing_agent_node
 
 
-class OrchestratorState(TypedDict):
-    """State cho LangGraph orchestrator.
-
-    - messages: lịch sử message hiện tại (System + lịch sử + lượt hỏi hiện tại + quan sát).
-    - tenant_id: định danh tenant.
-    - access: quyền truy cập hiện tại.
-    - agent_type: agent được planner chọn (vision/product/service/accessory/faq/knowledge/... ).
-    - context: thông tin bổ sung cho agent (bindings, defaults...).
-    """
-
-    messages: List[BaseMessage]
-    tenant_id: str
-    access: Optional[int]
-    agent_type: Optional[str]
-    context: Dict[str, Any]
+# Dùng ChatState làm state chuẩn cho orchestrator để toàn bộ workflow LangGraph
+# chạy trên một kiểu state thống nhất (đa kênh, multi-tenant).
+OrchestratorState = ChatState
 
 
 AGENT_NODE_MAPPING: Dict[str, str] = {
@@ -69,21 +58,6 @@ AGENT_NODE_MAPPING: Dict[str, str] = {
     "order": "order_agent",
     "escalation": "escalation_agent",
     "closing": "closing_agent",
-}
-
-
-AGENT_CLASS_MAPPING: Dict[str, Any] = {
-    "vision": VisionAgent,
-    "product": ProductAgent,
-    "service": ServiceAgent,
-    "accessory": AccessoryAgent,
-    "faq": FAQAgent,
-    "knowledge": KnowledgeAgent,
-    "store_info": StoreInfoAgent,
-    "customer_info": CustomerInfoAgent,
-    "order": OrderAgent,
-    "escalation": EscalationAgent,
-    "closing": ClosingAgent,
 }
 
 
@@ -119,6 +93,60 @@ def _get_context_from_state(state: OrchestratorState) -> Dict[str, Any]:
     if not isinstance(context, dict):
         return {}
     return context
+
+
+def _resolve_user_input(state: OrchestratorState, config: RunnableConfig) -> str:
+    """Chuẩn hoá cách lấy user_input từ state + config.
+
+    Ưu tiên:
+    1. HumanMessage cuối cùng trong messages (nếu content là str).
+    2. Các key tường minh trong config/state/context:
+       - config['configurable']['user_input']
+       - state['user_input']
+       - state['input']['user_input'] (nếu LangGraph bọc state)
+       - context['raw_user_input']
+       - context['metadata']['user_input']
+    Luôn trả về string (có thể rỗng) để tránh lỗi None.
+    """
+
+    messages = _get_messages_from_state(state)
+    if messages:
+        last_msg = messages[-1]
+        if isinstance(last_msg, HumanMessage) and isinstance(getattr(last_msg, "content", None), str):
+            raw = (last_msg.content or "").strip()
+            if raw:
+                return raw
+
+    configurable: Dict[str, Any] = {}
+    try:
+        configurable = (config or {}).get("configurable") or {}
+    except Exception:
+        configurable = {}
+
+    raw_ui: Any = configurable.get("user_input")
+    if not isinstance(raw_ui, str) or not raw_ui.strip():
+        raw_ui = state.get("user_input")
+    if not isinstance(raw_ui, str) or not raw_ui.strip():
+        inner = state.get("input")
+        if isinstance(inner, dict):
+            candidate = inner.get("user_input")
+            if isinstance(candidate, str) and candidate.strip():
+                raw_ui = candidate
+    ctx = _get_context_from_state(state)
+    if (not isinstance(raw_ui, str)) or (not raw_ui.strip()):
+        candidate = ctx.get("raw_user_input")
+        if isinstance(candidate, str) and candidate.strip():
+            raw_ui = candidate
+    if (not isinstance(raw_ui, str)) or (not raw_ui.strip()):
+        meta = ctx.get("metadata") or {}
+        if isinstance(meta, dict):
+            candidate = meta.get("user_input")
+            if isinstance(candidate, str) and candidate.strip():
+                raw_ui = candidate
+
+    if isinstance(raw_ui, str):
+        return raw_ui.strip()
+    return ""
 
 
 def _get_tenant_id_from_state(state: OrchestratorState) -> str:
@@ -355,51 +383,9 @@ def _planner_node(state: OrchestratorState, config: RunnableConfig) -> Orchestra
 
     allowed_str = ", ".join(allowed_agents)
 
-    # Lấy text câu hỏi cuối cùng để áp dụng một số rule đơn giản.
-    last_message: Optional[BaseMessage] = messages[-1] if messages else None
-    last_text = ""
-
-    # 1) Ưu tiên lấy từ HumanMessage cuối cùng nếu có.
-    if isinstance(last_message, HumanMessage) and isinstance(last_message.content, str):
-        raw = (last_message.content or "").strip()
-        if raw:
-            last_text = raw.lower()
-
-    # 2) Nếu vẫn trống, tìm embedded user_input trong SystemMessage.
-    if not last_text:
-        for msg in messages:
-            if isinstance(msg, SystemMessage) and isinstance(msg.content, str):
-                content = msg.content
-                if "[INTERNAL_USER_INPUT]" in content and "[/INTERNAL_USER_INPUT]" in content:
-                    start = content.find("[INTERNAL_USER_INPUT]") + len("[INTERNAL_USER_INPUT]")
-                    end = content.find("[/INTERNAL_USER_INPUT]")
-                    if start < end:
-                        embedded_ui = content[start:end].strip()
-                        if embedded_ui:
-                            last_text = embedded_ui.lower()
-                            break
-
-    # 3) Fallback cuối: config/state keys.
-    if not last_text:
-        raw_ui: Any = configurable.get("user_input")
-        if not isinstance(raw_ui, str) or not raw_ui.strip():
-            raw_ui = state.get("user_input")
-        if not isinstance(raw_ui, str) or not raw_ui.strip():
-            inner = state.get("input")
-            if isinstance(inner, dict):
-                raw_ui = inner.get("user_input")
-        if not isinstance(raw_ui, str) or not raw_ui.strip():
-            raw_ctx = context.get("raw_user_input")
-            if isinstance(raw_ctx, str) and raw_ctx.strip():
-                raw_ui = raw_ctx
-        if not isinstance(raw_ui, str) or not raw_ui.strip():
-            meta = context.get("metadata") or {}
-            if isinstance(meta, dict):
-                meta_ui = meta.get("user_input")
-                if isinstance(meta_ui, str) and meta_ui.strip():
-                    raw_ui = meta_ui
-        if isinstance(raw_ui, str) and raw_ui.strip():
-            last_text = raw_ui.strip().lower()
+    # Chuẩn hoá text câu hỏi cuối cùng để áp dụng một số rule đơn giản.
+    user_input_text = _resolve_user_input(state, config)
+    last_text = user_input_text.strip().lower()
 
     print(
         f"[ORCH-PLANNER] Debug: allowed_agents={allowed_agents}, "
@@ -535,160 +521,36 @@ def _make_agent_node_factory_for_tenant(tenant_id: str):
     """
 
     def factory(agent_type: str, tools_for_agent: List[Any]):
-        AgentCls = AGENT_CLASS_MAPPING.get(agent_type)
-        print(f"[ORCH] Creating agent node for agent_type={agent_type!r} with {len(tools_for_agent)} tools")
+        print(
+            f"[ORCH] Creating agent node for agent_type={agent_type!r} "
+            f"with {len(tools_for_agent)} tools"
+        )
 
-        async def node_fn(state: OrchestratorState, config: RunnableConfig) -> OrchestratorState:
-            # Debug: xem state mà agent node nhận được sau planner.
-            try:
-                print(
-                    f"[ORCH-AGENT] entry state keys for agent_type={agent_type!r}: "
-                    f"{list(state.keys())}"
-                )
-            except Exception:
-                pass
+        if agent_type == "product":
+            return make_product_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "service":
+            return make_service_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "accessory":
+            return make_accessory_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "faq":
+            return make_faq_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "knowledge":
+            return make_knowledge_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "store_info":
+            return make_store_info_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "customer_info":
+            return make_customer_info_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "order":
+            return make_order_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "escalation":
+            return make_escalation_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "closing":
+            return make_closing_agent_node(tenant_id, tools_for_agent)
+        if agent_type == "vision":
+            return make_vision_agent_node(tenant_id, tools_for_agent)
 
-            # Lấy runtime config cho request hiện tại.
-            configurable: Dict[str, Any] = {}
-            try:
-                configurable = (config or {}).get("configurable") or {}
-            except Exception:
-                configurable = {}
-
-            messages = list(_get_messages_from_state(state))
-            context = _get_context_from_state(state)
-            agent_prompts_ctx = context.get("agent_prompts", {})
-            system_prompt = agent_prompts_ctx.get(agent_type, "")
-
-            history_messages: List[BaseMessage] = messages[:-1] if messages else []
-            last_message: Optional[BaseMessage] = messages[-1] if messages else None
-            user_input = ""
-            if isinstance(last_message, HumanMessage) and isinstance(last_message.content, str):
-                user_input = last_message.content or ""
-            elif last_message is not None:
-                content = getattr(last_message, "content", "")
-                if isinstance(content, str):
-                    user_input = content
-
-            # Fallback: nếu vẫn chưa có user_input, tìm từ embedded SystemMessage.
-            if not user_input:
-                for msg in messages:
-                    if isinstance(msg, SystemMessage) and isinstance(msg.content, str):
-                        content = msg.content
-                        if "[INTERNAL_USER_INPUT]" in content and "[/INTERNAL_USER_INPUT]" in content:
-                            start = content.find("[INTERNAL_USER_INPUT]") + len("[INTERNAL_USER_INPUT]")
-                            end = content.find("[/INTERNAL_USER_INPUT]")
-                            if start < end:
-                                embedded_ui = content[start:end].strip()
-                                if embedded_ui:
-                                    user_input = embedded_ui
-                                    break
-
-            # Fallback cuối: config/state keys.
-            if not user_input:
-                raw_ui: Any = configurable.get("user_input")
-                if not isinstance(raw_ui, str) or not raw_ui.strip():
-                    raw_ui = state.get("user_input")
-                if not isinstance(raw_ui, str) or not raw_ui.strip():
-                    inner = state.get("input")
-                    if isinstance(inner, dict):
-                        raw_ui = inner.get("user_input")
-                if not isinstance(raw_ui, str) or not raw_ui.strip():
-                    raw_ctx = context.get("raw_user_input")
-                    if isinstance(raw_ctx, str) and raw_ctx.strip():
-                        raw_ui = raw_ctx
-                if not isinstance(raw_ui, str) or not raw_ui.strip():
-                    meta = context.get("metadata") or {}
-                    if isinstance(meta, dict):
-                        meta_ui = meta.get("user_input")
-                        if isinstance(meta_ui, str) and meta_ui.strip():
-                            raw_ui = meta_ui
-                if isinstance(raw_ui, str):
-                    user_input = raw_ui
-
-            try:
-                print(
-                    f"[ORCH-AGENT] agent_type={agent_type!r} resolved user_input={user_input!r}, "
-                    f"state_user_input={state.get('user_input')!r}"
-                )
-            except Exception:
-                pass
-
-            if AgentCls is not None:
-                print(
-                    f"[ORCH] Running agent={AgentCls.__name__} for agent_type={agent_type!r} "
-                    f"(tenant_id={tenant_id}) with {len(tools_for_agent)} tools"
-                )
-
-            if AgentCls is None:
-                tool_node = ToolNode(tools_for_agent)
-                effective_messages = messages
-                if system_prompt:
-                    effective_messages = [SystemMessage(content=system_prompt)] + effective_messages
-                result = tool_node.invoke({"messages": effective_messages})
-                new_messages = result.get("messages", effective_messages)
-                return {
-                    **state,
-                    "messages": new_messages,
-                }
-
-            metadata: Dict[str, Any] = {}
-            raw_meta = context.get("metadata") or {}
-            if isinstance(raw_meta, dict):
-                metadata.update(raw_meta)
-            thread_id = context.get("thread_id")
-            if not thread_id:
-                thread_id = state.get("thread_id")
-            if not thread_id:
-                inner = state.get("input")
-                if isinstance(inner, dict):
-                    thread_id = inner.get("thread_id")
-            if not thread_id:
-                thread_id = configurable.get("thread_id")
-            if thread_id:
-                metadata.setdefault("thread_id", thread_id)
-            llm_obj = context.get("llm")
-            if llm_obj is not None:
-                metadata.setdefault("llm", llm_obj)
-            if system_prompt:
-                metadata.setdefault("system_prompt", system_prompt)
-            metadata.setdefault("tenant_id", tenant_id)
-
-            # Đảm bảo metadata cũng mang theo user_input để agent dùng khi cần.
-            if "user_input" not in metadata and user_input:
-                metadata["user_input"] = user_input
-
-            try:
-                print(
-                    f"[ORCH-AGENT] agent_type={agent_type!r} metadata.thread_id={metadata.get('thread_id')!r}, "
-                    f"state_thread_id={state.get('thread_id')!r}, context_thread_id={context.get('thread_id')!r}"
-                )
-            except Exception:
-                pass
-
-            agent_context = AgentContext(
-                tenant_id=tenant_id,
-                user_input=user_input,
-                history=history_messages,
-                bindings=None,
-                defaults={},
-                access=state.get("access"),
-                tools=tools_for_agent,
-                metadata=metadata,
-            )
-
-            agent = AgentCls()
-            result: AgentResult = await agent.run(agent_context)  # type: ignore[call-arg]
-
-            new_messages = list(messages)
-            if result.answer:
-                new_messages.append(AIMessage(content=result.answer))
-            return {
-                **state,
-                "messages": new_messages,
-            }
-
-        return node_fn
+        # Fallback: nếu agent_type không khớp, dùng product_node như default.
+        return make_product_agent_node(tenant_id, tools_for_agent)
 
     return factory
 
@@ -739,15 +601,11 @@ async def run_orchestrator_react(
     initial_messages: List[BaseMessage] = []
     if history:
         initial_messages.extend(list(history))
-    
-    # Đảm bảo user_input luôn có trong messages dưới dạng HumanMessage cuối cùng.
+
+    # Đảm bảo user_input luôn xuất hiện rõ ràng dưới dạng HumanMessage cuối cùng.
+    # Các node phía sau sẽ ưu tiên đọc từ message này thay vì phải dùng workaround.
     human_msg = HumanMessage(content=user_input)
     initial_messages.append(human_msg)
-    
-    # WORKAROUND: LangGraph có thể không truyền state keys vào node đúng cách,
-    # nên mình cũng embed user_input vào một SystemMessage ẩn để node đọc được.
-    embedded_system = SystemMessage(content=f"[INTERNAL_USER_INPUT]{user_input}[/INTERNAL_USER_INPUT]")
-    initial_messages.insert(0, embedded_system)
 
     agent_prompts = _build_agent_prompt_map(db, customer)
     print(f"[ORCH] Built agent_prompts for agent_types={list(agent_prompts.keys())}")
@@ -756,7 +614,6 @@ async def run_orchestrator_react(
     graph = await get_or_build_graph(
         cache_key=cache_key,
         effective_config=effective_config,
-        agent_node_mapping=AGENT_NODE_MAPPING,
         planner_node=_planner_node,
         route_from_planner=_route_from_planner,
         agent_node_factory=_make_agent_node_factory_for_tenant(tenant_id),
@@ -804,13 +661,19 @@ async def run_orchestrator_react(
         }
     }
 
-    print(
-        f"[ORCH] Invoking graph.ainvoke with messages_len={len(initial_messages)}, "
+    print(f"[ORCH] Invoking graph.ainvoke with messages_len={len(initial_messages)}, "
         f"access={access}, tenant_id={tenant_id!r}, configurable_keys={list(runtime_config['configurable'].keys())}"
     )
     final_state: OrchestratorState = await graph.ainvoke(initial_state, config=runtime_config)
     print("[ORCH] Graph execution finished, processing final_state")
+    print(f"[ORCH] final_state keys: {list(final_state.keys())}")
+    
     final_messages = final_state.get("messages", [])
+    print(f"[ORCH] final_messages length: {len(final_messages)}")
+    for i, msg in enumerate(final_messages):
+        print(f"[ORCH] Msg {i}: type={type(msg).__name__}, content_len={len(msg.content) if hasattr(msg, 'content') else 0}")
+        if isinstance(msg, AIMessage):
+             print(f"[ORCH] Msg {i} content (first 100): {msg.content[:100]!r}")
 
     # Lấy câu trả lời cuối cùng từ chuỗi messages
     answer = ""
@@ -839,7 +702,6 @@ async def prewarm_tenant_graph(
     await get_or_build_graph(
         cache_key=cache_key,
         effective_config=effective_config,
-        agent_node_mapping=AGENT_NODE_MAPPING,
         planner_node=_planner_node,
         route_from_planner=_route_from_planner,
         agent_node_factory=_make_agent_node_factory_for_tenant(tenant_id),

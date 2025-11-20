@@ -43,20 +43,24 @@ async def call_mcp_tool(tools: List[Any], tool_name: str, args: Dict[str, Any]) 
         name = getattr(tool, "name", None)
         if name != tool_name:
             continue
-        ainvoke = getattr(tool, "ainvoke", None)
-        if callable(ainvoke):
-            return await ainvoke(args)
-        invoke = getattr(tool, "invoke", None)
-        if callable(invoke):
-            result = invoke(args)
-            if inspect.isawaitable(result):
-                return await result
-            return result
-        run = getattr(tool, "run", None)
-        if callable(run):
-            result = run(args)
-            if inspect.isawaitable(result):
-                return await result
-            return result
+        try:
+            ainvoke = getattr(tool, "ainvoke", None)
+            if callable(ainvoke):
+                return await ainvoke(args)
+            invoke = getattr(tool, "invoke", None)
+            if callable(invoke):
+                result = invoke(args)
+                if inspect.isawaitable(result):
+                    return await result
+                return result
+            run = getattr(tool, "run", None)
+            if callable(run):
+                result = run(args)
+                if inspect.isawaitable(result):
+                    return await result
+                return result
+        except Exception as e:
+            print(f"Error calling MCP tool '{tool_name}': {e}")
+            return {"error": str(e)}
     return None
 

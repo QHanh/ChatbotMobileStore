@@ -291,6 +291,22 @@ async def search_products(
     if price_range: query["bool"]["filter"].append({"range": {"gia": price_range}})
 
     try:
+        try:
+            print(
+                "[ES-DEBUG] search_products query=",
+                json.dumps(
+                    {
+                        "index": PRODUCTS_INDEX,
+                        "routing": sanitized_customer_id,
+                        "from": offset,
+                        "query": query,
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+        except Exception:
+            pass
+
         response = await es_client.search(
             index=PRODUCTS_INDEX,
             query=query,
@@ -348,6 +364,22 @@ async def search_services(
     if price_range: query["bool"]["filter"].append({"range": {"gia": price_range}})
 
     try:
+        try:
+            print(
+                "[ES-DEBUG] search_services query=",
+                json.dumps(
+                    {
+                        "index": SERVICES_INDEX,
+                        "routing": sanitized_customer_id,
+                        "from": offset,
+                        "query": query,
+                    },
+                    ensure_ascii=False,
+                ),
+            )
+        except Exception:
+            pass
+
         response = await es_client.search(
             index=SERVICES_INDEX,
             query=query,

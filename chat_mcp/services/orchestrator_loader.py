@@ -2,16 +2,20 @@ from typing import Any, Callable, Dict, List
 
 import asyncio
 import shlex
+import inspect
+from contextlib import AsyncExitStack
 
 from langchain_core.messages import SystemMessage
 from langgraph.graph import START, END, StateGraph
 from langgraph.prebuilt import ToolNode
 from langchain_mcp_adapters.client import MultiServerMCPClient
+from langchain_mcp_adapters.tools import load_mcp_tools
 
 from chat_mcp.models import EffectiveTenantConfig
+from chat_mcp.states import ChatState
 
 
-State = Dict[str, Any]
+State = ChatState
 PlannerNodeFn = Callable[[State], State]
 RouteFn = Callable[[State], str]
 AgentNodeFactory = Callable[[str, List[Any]], Callable[[State], Any]]
@@ -66,13 +70,32 @@ async def _build_mcp_tools_for_tenant(
 
     if not server_configs:
         print("[ORCH-LOADER] No MCP server configs found; returning empty agent_tools")
-        return {}
+        return {}, None
 
     print(f"[ORCH-LOADER] MCP server configs: {server_configs}")
     print(f"[ORCH-LOADER] Building MultiServerMCPClient with servers={list(server_configs.keys())}")
     client = MultiServerMCPClient(server_configs)
-    tools = await client.get_tools()
-    print(f"[ORCH-LOADER] MultiServerMCPClient.get_tools returned {len(tools)} tools")
+    
+    exit_stack = AsyncExitStack()
+    try:
+        tools = []
+        for name in client.connections:
+            print(f"[ORCH-LOADER] Connecting to server '{name}'...")
+            session = await exit_stack.enter_async_context(client.session(name))
+            server_tools = await load_mcp_tools(
+                session, 
+                server_name=name,
+                callbacks=client.callbacks,
+                tool_interceptors=client.tool_interceptors
+            )
+            tools.extend(server_tools)
+            print(f"[ORCH-LOADER] Loaded {len(server_tools)} tools from '{name}'")
+            
+        print(f"[ORCH-LOADER] Total tools loaded: {len(tools)}")
+    except Exception as e:
+        print(f"[ORCH-LOADER] Error loading tools: {e}")
+        await exit_stack.aclose()
+        raise e
 
     tool_by_name: Dict[str, Any] = {}
     for tool in tools:
@@ -113,56 +136,123 @@ async def _build_mcp_tools_for_tenant(
             f"assigned {len(selected)} tools"
         )
 
-    return agent_tools
+    return agent_tools, exit_stack
 
+
+from typing import Any, Dict, List, Optional, TypedDict, Annotated
+import operator
+
+# OrchestratorState alias dùng chung ChatState để toàn bộ graph vận hành
+# trên một kiểu state đa kênh/multi-tenant thống nhất.
+OrchestratorState = ChatState
 
 async def get_or_build_graph(
     cache_key: str,
     effective_config: EffectiveTenantConfig,
-    agent_node_mapping: Dict[str, str],
     planner_node: PlannerNodeFn,
     route_from_planner: RouteFn,
     agent_node_factory: AgentNodeFactory,
 ) -> Any:
     print(f"[ORCH-LOADER] get_or_build_graph called, cache_key={cache_key}")
     async with _GRAPH_LOCKS.setdefault(cache_key, asyncio.Lock()):
-        graph = _GRAPH_CACHE.get(cache_key)
-        if graph is None:
+        cached_data = _GRAPH_CACHE.get(cache_key)
+        if cached_data is None:
             print(f"[ORCH-LOADER] Cache miss for {cache_key}, building graph and loading tools...")
-            agent_tools = await _build_mcp_tools_for_tenant(effective_config)
+            agent_tools, exit_stack = await _build_mcp_tools_for_tenant(effective_config)
             summary = {k: len(v) for k, v in agent_tools.items()}
             print(f"[ORCH-LOADER] agent_tools summary for {cache_key}: {summary}")
 
-            builder = StateGraph(dict)
+            builder = StateGraph(OrchestratorState)
 
+            # Node planner
             builder.add_node("planner", planner_node)
 
-            def make_agent_node(agent_type: str, node_name: str) -> None:
-                tools_for_agent = agent_tools.get(agent_type, [])
-                node_fn = agent_node_factory(agent_type, tools_for_agent)
-                builder.add_node(node_name, node_fn)
+            # Node cho từng agent_type (làm phẳng, không dùng map trung gian).
+            vision_tools = agent_tools.get("vision", [])
+            vision_node = agent_node_factory("vision", vision_tools)
+            builder.add_node("vision_agent", vision_node)
 
-            for agent_type, node_name in agent_node_mapping.items():
-                make_agent_node(agent_type, node_name)
+            product_tools = agent_tools.get("product", [])
+            product_node = agent_node_factory("product", product_tools)
+            builder.add_node("product_agent", product_node)
 
+            service_tools = agent_tools.get("service", [])
+            service_node = agent_node_factory("service", service_tools)
+            builder.add_node("service_agent", service_node)
+
+            accessory_tools = agent_tools.get("accessory", [])
+            accessory_node = agent_node_factory("accessory", accessory_tools)
+            builder.add_node("accessory_agent", accessory_node)
+
+            faq_tools = agent_tools.get("faq", [])
+            faq_node = agent_node_factory("faq", faq_tools)
+            builder.add_node("faq_agent", faq_node)
+
+            knowledge_tools = agent_tools.get("knowledge", [])
+            knowledge_node = agent_node_factory("knowledge", knowledge_tools)
+            builder.add_node("knowledge_agent", knowledge_node)
+
+            store_info_tools = agent_tools.get("store_info", [])
+            store_info_node = agent_node_factory("store_info", store_info_tools)
+            builder.add_node("store_info_agent", store_info_node)
+
+            customer_info_tools = agent_tools.get("customer_info", [])
+            customer_info_node = agent_node_factory("customer_info", customer_info_tools)
+            builder.add_node("customer_info_agent", customer_info_node)
+
+            order_tools = agent_tools.get("order", [])
+            order_node = agent_node_factory("order", order_tools)
+            builder.add_node("order_agent", order_node)
+
+            escalation_tools = agent_tools.get("escalation", [])
+            escalation_node = agent_node_factory("escalation", escalation_tools)
+            builder.add_node("escalation_agent", escalation_node)
+
+            closing_tools = agent_tools.get("closing", [])
+            closing_node = agent_node_factory("closing", closing_tools)
+            builder.add_node("closing_agent", closing_node)
+
+            # Edge từ START tới planner và từ planner tới các agent node (conditional).
             builder.add_edge(START, "planner")
             builder.add_conditional_edges("planner", route_from_planner)
 
-            for node_name in agent_node_mapping.values():
+            # Mặc định: sau mỗi agent node thì kết thúc workflow.
+            for node_name in [
+                "vision_agent",
+                "product_agent",
+                "service_agent",
+                "accessory_agent",
+                "faq_agent",
+                "knowledge_agent",
+                "store_info_agent",
+                "customer_info_agent",
+                "order_agent",
+                "escalation_agent",
+                "closing_agent",
+            ]:
                 builder.add_edge(node_name, END)
 
             graph = builder.compile()
-            _GRAPH_CACHE[cache_key] = graph
+            _GRAPH_CACHE[cache_key] = {"graph": graph, "exit_stack": exit_stack}
             print(f"[ORCH-LOADER] Graph compiled and cached for {cache_key}")
+            return graph
         else:
             print(f"[ORCH-LOADER] Cache hit for {cache_key}, reusing existing graph")
+            return cached_data["graph"]
 
-    return graph
 
-
-def invalidate_graph_cache_for_tenant(tenant_id: str) -> None:
+async def invalidate_graph_cache_for_tenant(tenant_id: str) -> None:
     prefix = f"{tenant_id}:"
     keys = [key for key in list(_GRAPH_CACHE.keys()) if key.startswith(prefix)]
     for key in keys:
-        _GRAPH_CACHE.pop(key, None)
+        data = _GRAPH_CACHE.pop(key, None)
+        if data and isinstance(data, dict):
+            exit_stack = data.get("exit_stack")
+            if exit_stack:
+                print(f"[ORCH-LOADER] Closing MCP sessions for {key}")
+                try:
+                    await exit_stack.aclose()
+                except Exception as e:
+                    print(f"[ORCH-LOADER] Error closing MCP sessions: {e}")
+
         _GRAPH_LOCKS.pop(key, None)

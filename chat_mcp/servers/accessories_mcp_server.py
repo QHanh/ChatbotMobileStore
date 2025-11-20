@@ -13,6 +13,7 @@ from database.database import CustomerIsSale, SessionLocal
 from service.prompts.prompt_service import load_instructions
 from service.data.data_loader_elastic_search import ACCESSORIES_INDEX
 from service.utils.helpers import sanitize_for_es
+from service.retrieve.search_service import search_accessories as core_search_accessories
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from google import genai
@@ -458,7 +459,9 @@ async def _get_es_client() -> AsyncElasticsearch:
     return _es_client
 
 
-@mcp.tool()
+from chat_mcp.core.constants import TOOL_ACCESSORIES_SEARCH
+
+@mcp.tool(name=TOOL_ACCESSORIES_SEARCH)
 async def accessories_search(
     customer_id: str,
     thread_id: str,
@@ -474,7 +477,7 @@ async def accessories_search(
 
     es = await _get_es_client()
     try:
-        results = await search_accessories(
+        results = await core_search_accessories(
             es_client=es,
             customer_id=customer_id,
             thread_id=thread_id,
