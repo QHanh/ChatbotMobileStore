@@ -153,6 +153,15 @@ def create_agent_executor(
                                         f"[AGENT DEBUG] Attempt {attempt}: AIMessage content_type={type(c).__name__}, "
                                         f"has_tool_calls={has_tool_calls}"
                                     )
+                                    # In preview nội dung thô của AIMessage nếu là chuỗi
+                                    if isinstance(c, str):
+                                        try:
+                                            preview = c if len(c) <= 300 else c[:300] + "..."
+                                            print(
+                                                f"[AGENT DEBUG] Attempt {attempt}: AIMessage raw text preview = {preview!r}"
+                                            )
+                                        except Exception:
+                                            pass
                                     # content dạng chuỗi đơn giản
                                     if isinstance(c, str) and c.strip():
                                         text_val = c.strip()
@@ -162,6 +171,9 @@ def create_agent_executor(
                                             output_text = text_val
                                             print(f"[AGENT DEBUG] Attempt {attempt}: using string content as output")
                                             break
+                                    elif isinstance(c, str):
+                                        # Chuỗi nhưng rỗng / toàn khoảng trắng
+                                        print(f"[AGENT DEBUG] Attempt {attempt}: AIMessage string content is empty/whitespace, skipping")
                                     # content dạng list (structured content), gom các phần text lại
                                     if isinstance(c, list):
                                         parts = []
