@@ -806,7 +806,7 @@ def create_customer_tools(
     # Always include document retrieval tool
     graphrag_tool_func = partial(graphrag_search_logic, customer_id=customer_id)
     graphrag_search_tool = StructuredTool.from_function(
-        func=graphrag_tool_func,
+        func=graphrag_search_logic,
         name="graphrag_search_tool",
         description=instr.get(
             "tool.graphrag_search.description",
@@ -843,7 +843,7 @@ def create_customer_tools(
         customer_search_product_func = partial(search_products_logic, es_client=es_client, customer_id=customer_id, llm=llm)
         
         search_product_tool = StructuredTool.from_function(
-            func=customer_search_product_func,
+            func=search_products_logic,
             name="search_products_tool",
             description=instr.get(
                 "tool.search_products.description",
@@ -868,7 +868,7 @@ def create_customer_tools(
         customer_search_service_func = partial(search_services_logic, es_client=es_client, customer_id=customer_id, llm=llm)
         
         search_service_tool = StructuredTool.from_function(
-            func=customer_search_service_func,
+            func=search_services_logic,
             name="search_services_tool",
             description=instr.get(
                 "tool.search_services.description",
@@ -894,7 +894,7 @@ def create_customer_tools(
         customer_search_accessory_func = partial(search_accessories_logic, es_client=es_client, customer_id=customer_id, llm=llm)
         
         search_accessory_tool = StructuredTool.from_function(
-            func=customer_search_accessory_func,
+            func=search_accessories_logic,
             name="search_accessories_tool",
             description=instr.get(
                 "tool.search_accessories.description",
