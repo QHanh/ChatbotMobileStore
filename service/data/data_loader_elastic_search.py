@@ -1,14 +1,16 @@
 import pandas as pd
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, AsyncElasticsearch, NotFoundError
 from elasticsearch.helpers import async_bulk
 import numpy as np
 import warnings
 import io
+import os
 from service.utils.helpers import sanitize_for_es
 from typing import List, Dict, Any
-from elasticsearch import AsyncElasticsearch
 from datetime import datetime, timezone
 import hashlib
+from google import genai
+from google.genai import types
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -32,14 +34,31 @@ def get_shared_index_mapping(data_type: str):
             "dung_luong": {"type": "keyword"},
             "tinh_trang_may": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "loai_thiet_bi": {"type": "keyword"},
-            "gia": {"type": "double"}, "gia_buon": {"type": "double"}, "ton_kho": {"type": "integer"}   
+            "gia": {"type": "double"},
+            "gia_buon": {"type": "double"},
+            "ton_kho": {"type": "integer"},
+            # Vector embedding cho tên thiết bị (model) để dùng hybrid search trong Elasticsearch
+            "model_embedding": {
+                "type": "dense_vector",
+                "dims": 768,
+                "index": True,
+                "similarity": "cosine",
+            },
         }
     elif data_type == "service":
         specific_properties = {
             "ma_dich_vu": {"type": "keyword"},
             "ten_dich_vu": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "ten_san_pham": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
-            "gia": {"type": "double"}, "gia_buon": {"type": "double"}
+            "gia": {"type": "double"},
+            "gia_buon": {"type": "double"},
+            # Vector embedding cho tên dịch vụ
+            "ten_dich_vu_embedding": {
+                "type": "dense_vector",
+                "dims": 768,
+                "index": True,
+                "similarity": "cosine",
+            },
         }
     elif data_type == "accessory":
         specific_properties = {
@@ -54,7 +73,14 @@ def get_shared_index_mapping(data_type: str):
             "inventory": {"type": "integer"},
             "specifications": {"type": "text"},
             "avatar_images": {"type": "keyword"},
-            "link_accessory": {"type": "keyword"}
+            "link_accessory": {"type": "keyword"},
+            # Vector embedding cho tên phụ kiện
+            "accessory_name_embedding": {
+                "type": "dense_vector",
+                "dims": 768,
+                "index": True,
+                "similarity": "cosine",
+            },
         }
     elif data_type == "faq":
         specific_properties = {
@@ -109,7 +135,8 @@ async def process_and_index_data(
     customer_id: str,
     index_name: str, 
     file_content: bytes, 
-    columns_config: dict
+    columns_config: dict,
+    embed_name_field: str | None = None,
 ):
     """
     Hàm tổng quát để đọc, xử lý và nạp dữ liệu vào một index chia sẻ.
@@ -158,13 +185,24 @@ async def process_and_index_data(
         product_id = doc.get(renamed_id_field)
         if product_id is None:
             continue
+
+        # Nếu được cấu hình, embed tên và lưu vào <field>_embedding
+        if embed_name_field:
+            try:
+                name_value = doc.get(embed_name_field)
+                if name_value is not None:
+                    embedding = await _embed_name_with_google(str(name_value))
+                    doc[f"{embed_name_field}_embedding"] = embedding
+            except Exception as e:
+                print(f"⚠️ Lỗi embed cho document {product_id}: {e}")
+
         sanitized_product_id = sanitize_for_es(str(product_id))
 
         action = {
             "_index": index_name,
             "_id": f"{sanitized_customer_id}_{sanitized_product_id}",
             "_source": doc,
-            "routing": sanitized_customer_id
+            "routing": sanitized_customer_id,
         }
         actions.append(action)
 
@@ -187,6 +225,43 @@ async def process_and_index_data(
     except Exception as e:
         raise IOError(f"Lỗi trong quá trình bulk indexing: {e}")
 
+
+_genai_client: genai.Client | None = None
+
+
+def _get_genai_client() -> genai.Client:
+    """Khởi tạo client Google GenAI dùng chung trong module."""
+    global _genai_client
+    if _genai_client is not None:
+        return _genai_client
+
+    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    _genai_client = genai.Client(api_key=api_key) if api_key else genai.Client()
+    return _genai_client
+
+
+async def _embed_name_with_google(text: str) -> List[float]:
+    """Tạo embedding cho tên (sản phẩm/dịch vụ/phụ kiện) bằng Google Gemini.
+
+    Trả về list[float] để lưu trực tiếp vào trường dense_vector trong Elasticsearch.
+    """
+    if not text or not str(text).strip():
+        return []
+
+    try:
+        client = _get_genai_client()
+        resp = await client.aio.models.embed_content(
+            model="gemini-embedding-001",
+            contents=str(text),
+            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),
+        )
+        if getattr(resp, "embeddings", None):
+            emb0 = resp.embeddings[0]
+            return getattr(emb0, "values", None) or getattr(emb0, "embedding", None) or []
+    except Exception as e:
+        print(f"[EMBED] Lỗi khi tạo embedding cho tên '{text}': {e}")
+    return []
+
 async def index_single_document(es_client: Elasticsearch, index_name: str, customer_id: str, doc_id: str, doc_body: dict):
     """
     Nạp (hoặc ghi đè) một bản ghi duy nhất vào index chia sẻ với routing.
@@ -207,6 +282,72 @@ async def index_single_document(es_client: Elasticsearch, index_name: str, custo
         return response
     except Exception as e:
         raise IOError(f"Lỗi khi nạp bản ghi đơn: {e}")
+
+
+async def upsert_document_with_name_embedding(
+    es_client: Elasticsearch,
+    index_name: str,
+    customer_id: str,
+    doc_id: str,
+    doc_body: dict,
+    name_field: str,
+):
+    """Tạo mới hoặc cập nhật một document kèm vector embedding cho trường tên.
+
+    - Nếu document đã tồn tại và tên KHÔNG đổi → giữ nguyên embedding cũ.
+    - Nếu document mới hoặc tên thay đổi → tạo embedding mới bằng Google Gemini.
+    """
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    sanitized_doc_id = sanitize_for_es(doc_id)
+    composite_id = f"{sanitized_customer_id}_{sanitized_doc_id}"
+
+    existing_source: Dict[str, Any] | None = None
+    try:
+        existing = await es_client.get(
+            index=index_name,
+            id=composite_id,
+            routing=sanitized_customer_id,
+        )
+        if existing and existing.get("found"):
+            existing_source = existing.get("_source", {})
+    except NotFoundError:
+        # Document chưa tồn tại: để existing_source = None để tạo mới
+        existing_source = None
+    except Exception as e:
+        # Các lỗi khác: log lại nhưng không chặn flow upsert
+        print(f"[UPSERT] Lỗi khi kiểm tra document {composite_id}: {e}")
+        existing_source = None
+
+    new_name = doc_body.get(name_field)
+    old_name = existing_source.get(name_field) if existing_source else None
+    old_embedding = (
+        existing_source.get(f"{name_field}_embedding") if existing_source else None
+    )
+
+    # Quyết định có cần re-embed hay không
+    embedding = old_embedding
+    try:
+        if (new_name or "").strip() != (old_name or "").strip():
+            embedding = await _embed_name_with_google(str(new_name) if new_name else "")
+    except Exception as e:
+        print(f"⚠️ Lỗi khi embed lại cho document {doc_id}: {e}")
+
+    doc_body["customer_id"] = sanitized_customer_id
+    if embedding is not None:
+        doc_body[f"{name_field}_embedding"] = embedding
+
+    try:
+        response = await es_client.index(
+            index=index_name,
+            id=composite_id,
+            document=doc_body,
+            routing=sanitized_customer_id,
+            refresh=True,
+        )
+        return response
+    except Exception as e:
+        raise IOError(f"Lỗi khi upsert bản ghi kèm embedding: {e}")
 
 async def delete_single_document(es_client: Elasticsearch, index_name: str, customer_id: str, doc_id: str):
     """
@@ -335,11 +476,100 @@ async def process_and_upsert_file_data(
     )
     return success, failed
 
+async def process_and_upsert_file_data_with_embedding(
+    es_client: Elasticsearch,
+    customer_id: str,
+    index_name: str,
+    file_content: bytes,
+    columns_config: dict,
+    embed_name_field: str,
+    name_field: str,
+):
+    """Đọc file Excel và UP SERT từng dòng bằng upsert_document_with_name_embedding.
+
+    - KHÔNG xóa dữ liệu cũ của customer.
+    - Chỉ re-embed khi trường tên (name_field) thay đổi.
+    - embed_name_field là tên cột SAU khi rename (ví dụ: 'model', 'ten_dich_vu', 'accessory_name').
+    """
+
+    try:
+        df = pd.read_excel(io.BytesIO(file_content))
+
+        config_cols = columns_config.get("names", [])
+        rename_map = columns_config.get("rename_map", {})
+
+        missing_cols = [col for col in config_cols if col not in df.columns]
+        if missing_cols:
+            raise ValueError(
+                f"Các cột sau không tìm thấy trong file Excel: {', '.join(missing_cols)}"
+            )
+
+        df = df[config_cols]
+
+        for col in columns_config.get("required", []):
+            if pd.api.types.is_string_dtype(df[col]):
+                df[col] = df[col].str.strip()
+            df[col] = df[col].replace(r"^\s*$", np.nan, regex=True)
+
+        df = df.dropna(subset=columns_config["required"])
+
+        for col, dtype in columns_config.get("numerics", {}).items():
+            if dtype == float:
+                df[col] = (
+                    pd.to_numeric(df[col].astype(str).str.replace(",", ""), errors="coerce")
+                    .fillna(0)
+                    .astype(float)
+                )
+            elif dtype == int:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+
+        if rename_map:
+            df.rename(columns=rename_map, inplace=True)
+
+        df = df.where(pd.notnull(df), None).replace({np.nan: None})
+    except Exception as e:
+        raise ValueError(f"Lỗi đọc hoặc xử lý file Excel: {e}")
+
+    documents = df.to_dict("records")
+    if not documents:
+        return 0, 0
+
+    original_id_field = columns_config.get("id_field")
+    renamed_id_field = columns_config.get("rename_map", {}).get(
+        original_id_field, original_id_field
+    )
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+    success = 0
+    failed_items: list[dict[str, Any]] = []
+
+    for doc in documents:
+        doc_id = doc.get(renamed_id_field)
+        if not doc_id:
+            failed_items.append({"id": None, "error": f"Thiếu '{renamed_id_field}'."})
+            continue
+
+        try:
+            # upsert_document_with_name_embedding sẽ tự xử lý re-embed khi tên đổi
+            await upsert_document_with_name_embedding(
+                es_client=es_client,
+                index_name=index_name,
+                customer_id=sanitized_customer_id,
+                doc_id=str(doc_id),
+                doc_body=doc,
+                name_field=name_field,
+            )
+            success += 1
+        except Exception as item_e:
+            failed_items.append({"id": str(doc_id), "error": str(item_e)})
+
+    return success, failed_items
+
 async def delete_documents_by_customer(
     es_client: Elasticsearch, 
     index_name: str, 
     customer_id: str
-) -> dict:
+):
     """
     Xóa tất cả các document của một customer_id cụ thể khỏi một index.
     """

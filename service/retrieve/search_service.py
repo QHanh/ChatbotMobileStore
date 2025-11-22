@@ -1,10 +1,18 @@
 from elasticsearch import AsyncElasticsearch
 from typing import Optional, List, Dict, Any
 import json
+import os
+import aiohttp
 from sqlalchemy.orm import Session
 from database.database import CustomerIsSale, SessionLocal
 from service.prompts.prompt_service import load_instructions
-from service.data.data_loader_elastic_search import PRODUCTS_INDEX, SERVICES_INDEX, ACCESSORIES_INDEX, FAQ_INDEX
+from service.data.data_loader_elastic_search import (
+    PRODUCTS_INDEX,
+    SERVICES_INDEX,
+    ACCESSORIES_INDEX,
+    FAQ_INDEX,
+    _embed_name_with_google,
+)
 from service.utils.helpers import sanitize_for_es
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -152,6 +160,66 @@ async def filter_results_with_ai(
     except Exception as e:
         print(f"Lỗi khi lọc kết quả bằng AI: {e}")
         return results
+
+
+JINA_RERANK_MODEL = "jina-reranker-v3"
+
+
+async def rerank_with_jina(query: str, docs: List[str], top_n: int = 10) -> List[int]:
+    """Rerank danh sách văn bản bằng Jina Reranker v3, trả về danh sách index ưu tiên.
+
+    - Nếu thiếu API key hoặc lỗi gọi API, hàm sẽ fallback trả về index gốc (0..top_n-1).
+    """
+    if not docs:
+        return []
+
+    api_key = os.getenv("JINA_API_KEY")
+    if not api_key:
+        print("[JINA_RERANK] JINA_API_KEY is not set. Skip reranking.")
+        return list(range(min(top_n, len(docs))))
+
+    url = "https://api.jina.ai/v1/rerank"
+    payload = {
+        "model": JINA_RERANK_MODEL,
+        "query": query,
+        "documents": docs,
+        "top_n": min(top_n, len(docs)),
+        "return_documents": False,
+    }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        timeout = aiohttp.ClientTimeout(total=15)
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.post(url, json=payload, headers=headers) as resp:
+                text = await resp.text()
+                if resp.status != 200:
+                    print(f"[JINA_RERANK] HTTP {resp.status}: {text}")
+                    return list(range(min(top_n, len(docs))))
+                try:
+                    data = json.loads(text)
+                except Exception:
+                    print("[JINA_RERANK] Failed to parse JSON response from Jina.")
+                    return list(range(min(top_n, len(docs))))
+
+        results = data.get("results") or data.get("reranked_documents") or []
+        indices: List[int] = []
+        for item in results:
+            idx = item.get("index")
+            if isinstance(idx, int) and 0 <= idx < len(docs):
+                indices.append(idx)
+
+        if not indices:
+            return list(range(min(top_n, len(docs))))
+        return indices
+    except Exception as e:
+        print(f"[JINA_RERANK] Error calling Jina rerank API: {e}")
+        return list(range(min(top_n, len(docs))))
+
 
 def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False, show_specifications: bool = True) -> List[str]:
     """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
@@ -481,54 +549,32 @@ async def search_accessories(
 
     if search_terms:
         combined_query = " ".join(search_terms)
-        
-        if cum_dac_trung and str(cum_dac_trung).strip():
-            # Nếu LLM cung cấp cụm đặc trưng: dùng MUST với match_phrase chính xác
-            print(f"[SEARCH] Dùng cum_dac_trung '{cum_dac_trung}' với MUST clause")
-            base_bool["bool"]["must"].append({
-                "match_phrase": {
-                    "accessory_name": {
-                        "query": str(cum_dac_trung).strip(),
-                        "boost": 20.0
-                    }
-                }
-            })
-        else:
-            # Nếu KHÔNG có cụm đặc trưng: dùng logic cũ với minimum_should_match 70%
-            print(f"[SEARCH] Không phát hiện cụm đặc trưng, dùng minimum_should_match 70%")
-            base_bool["bool"]["must"].append({
+        print(f"[ACCESSORY_SEARCH] combined_query: '{combined_query}'")
+
+        base_bool["bool"]["must"].append(
+            {
                 "match": {
                     "accessory_name": {
-                        "query": combined_query,
-                        "minimum_should_match": "70%"
+                        "query": combined_query
                     }
                 }
-            })
-            
-            # Ưu tiên cao hơn cho match chính xác
-            base_bool["bool"]["should"].extend([
-                {
-                    "match_phrase": {
-                        "accessory_name": {
-                            "query": combined_query,
-                            "boost": 10.0
-                        }
-                    }
-                },
-                # Tìm kiếm trong các trường khác để tăng điểm
-                {
-                    "multi_match": {
-                        "query": combined_query,
-                        "fields": [
-                            "category^3",
-                            "trademark^2",
-                            "properties^1"
-                        ],
-                        "type": "best_fields",
-                        "operator": "or"
-                    }
+            }
+        )
+
+        base_bool["bool"]["should"].append(
+            {
+                "multi_match": {
+                    "query": combined_query,
+                    "fields": [
+                        "category",
+                        "trademark",
+                        "properties",
+                    ],
+                    "type": "best_fields",
+                    "operator": "or",
                 }
-            ])
+            }
+        )
 
     if thuong_hieu:
         base_bool["bool"]["should"].append({
@@ -567,13 +613,23 @@ async def search_accessories(
             collapse={"field": "accessory_code.keyword"}
         )
         hits = [hit['_source'] for hit in response['hits']['hits']]
+        # Strip embedding fields to avoid sending large vectors forward
+        for _item in hits:
+            for _k in list(_item.keys()):
+                if _k.endswith("_embedding"):
+                    del _item[_k]
         num_hits = len(hits)
         print(f"Tìm thấy {num_hits} phụ kiện phù hợp cho khách hàng '{customer_id}'.")
         
         is_sale = _get_customer_is_sale(customer_id, thread_id)
         # Chỉ hiển thị specifications nếu có <= 5 kết quả
-        show_specs = num_hits <= 5
-        formatted_hits = _format_results_for_agent(hits, is_sale, show_specs)
+        top_hits = hits[:5]
+        rest_hits = hits[5:]
+        formatted_hits: List[str] = []
+        if top_hits:
+            formatted_hits.extend(_format_results_for_agent(top_hits, is_sale, True))
+        if rest_hits:
+            formatted_hits.extend(_format_results_for_agent(rest_hits, is_sale, False))
 
         if original_query and llm:
             formatted_hits = await filter_results_with_ai(original_query, formatted_hits, llm, chat_history)
@@ -615,6 +671,506 @@ async def search_faqs(
     except Exception as e:
         print(f"Lỗi khi tìm kiếm FAQ: {e}")
         return []
+
+async def hybrid_search_products(
+    es_client: AsyncElasticsearch,
+    customer_id: str,
+    thread_id: str,
+    query: str,
+    offset: int = 0,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None,
+) -> List[str]:
+    """Hybrid search dành riêng cho sản phẩm dùng chính tính năng hybrid (BM25 + vector) của Elasticsearch.
+
+    - Vector: trường ``model_embedding`` (dense_vector) được tạo từ tên thiết bị ``model`` bằng Google Gemini.
+    - Lexical: match trên trường ``model`` và filter theo ``customer_id`` / khoảng giá.
+    - Nếu không tạo được embedding, fallback về hàm ``search_products`` cũ (chỉ BM25).
+    """
+    if not es_client:
+        return ["Không thể kết nối đến Elasticsearch."]
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+
+    # 1) Tạo embedding cho truy vấn
+    query_vector: List[float] = []
+    try:
+        query_vector = await _embed_name_with_google(query)
+    except Exception as e:
+        print(f"[HYBRID_PRODUCTS] Lỗi tạo embedding cho query '{query}': {e}")
+        query_vector = []
+
+    # 2) Nếu không có vector → fallback BM25 như cũ
+    if not query_vector:
+        try:
+            results = await search_products(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                model=query,
+                mau_sac=None,
+                dung_luong=None,
+                tinh_trang_may=None,
+                loai_thiet_bi=None,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=query if llm else None,
+                llm=llm,
+                chat_history=chat_history,
+            )
+        except Exception as e:
+            print(f"[HYBRID_PRODUCTS] Lỗi fallback search_products: {e}")
+            return []
+
+        if not isinstance(results, list):
+            return []
+        return [r.strip() for r in results if isinstance(r, str) and r.strip()]
+
+    # 3) Hybrid search: knn + lexical query
+    price_range: Dict[str, float] = {}
+    if min_gia is not None:
+        price_range["gte"] = min_gia
+    if max_gia is not None:
+        price_range["lte"] = max_gia
+
+    bool_query: Dict[str, Any] = {
+        "filter": [
+            {"term": {"customer_id": sanitized_customer_id}},
+        ],
+        "should": [
+            {"match": {"model": query}},
+            {"match_phrase": {"model": {"query": query, "boost": 2.0}}},
+        ],
+        "minimum_should_match": 1,
+    }
+    if price_range:
+        bool_query["filter"].append({"range": {"gia": price_range}})
+
+    try:
+        response = await es_client.search(
+            index=PRODUCTS_INDEX,
+            knn={
+                "field": "model_embedding",
+                "query_vector": query_vector,
+                "k": 20,
+                "num_candidates": 50,
+            },
+            query={"bool": bool_query},
+            routing=sanitized_customer_id,
+            size=20,
+        )
+
+        hits = [hit["_source"] for hit in response["hits"]["hits"]]
+        # Strip embedding fields to avoid sending large vectors forward
+        for _item in hits:
+            for _k in list(_item.keys()):
+                if _k.endswith("_embedding"):
+                    del _item[_k]
+        is_sale = _get_customer_is_sale(customer_id, thread_id)
+        formatted_hits = _format_results_for_agent(hits, is_sale)
+
+        if llm:
+            return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
+        return formatted_hits
+    except Exception as e:
+        print(f"[HYBRID_PRODUCTS] Lỗi hybrid search: {e}")
+        return []
+
+
+async def hybrid_search_services(
+    es_client: AsyncElasticsearch,
+    customer_id: str,
+    thread_id: str,
+    query: str,
+    offset: int = 0,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None,
+) -> List[str]:
+    """Hybrid search dành riêng cho dịch vụ sửa chữa dùng BM25 + vector trong Elasticsearch.
+
+    - Vector: trường ``ten_dich_vu_embedding`` được tạo từ ``ten_dich_vu``.
+    - Lexical: match trên ``ten_dich_vu`` và filter ``customer_id`` / khoảng giá.
+    - Fallback về ``search_services`` nếu không tạo được embedding.
+    """
+    if not es_client:
+        return ["Không thể kết nối đến Elasticsearch."]
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+
+    query_vector: List[float] = []
+    try:
+        query_vector = await _embed_name_with_google(query)
+    except Exception as e:
+        print(f"[HYBRID_SERVICES] Lỗi tạo embedding cho query '{query}': {e}")
+        query_vector = []
+
+    if not query_vector:
+        try:
+            results = await search_services(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ten_dich_vu=query,
+                ten_san_pham=None,
+                loai_dich_vu=None,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=query if llm else None,
+                llm=llm,
+                chat_history=chat_history,
+            )
+        except Exception as e:
+            print(f"[HYBRID_SERVICES] Lỗi fallback search_services: {e}")
+            return []
+
+        if not isinstance(results, list):
+            return []
+        return [r.strip() for r in results if isinstance(r, str) and r.strip()]
+
+    price_range: Dict[str, float] = {}
+    if min_gia is not None:
+        price_range["gte"] = min_gia
+    if max_gia is not None:
+        price_range["lte"] = max_gia
+
+    bool_query: Dict[str, Any] = {
+        "filter": [
+            {"term": {"customer_id": sanitized_customer_id}},
+        ],
+        "should": [
+            {"match": {"ten_dich_vu": query}},
+            {"match_phrase": {"ten_dich_vu": {"query": query, "boost": 2.0}}},
+        ],
+        "minimum_should_match": 1,
+    }
+    if price_range:
+        bool_query["filter"].append({"range": {"gia": price_range}})
+
+    try:
+        response = await es_client.search(
+            index=SERVICES_INDEX,
+            knn={
+                "field": "ten_dich_vu_embedding",
+                "query_vector": query_vector,
+                "k": 20,
+                "num_candidates": 50,
+            },
+            query={"bool": bool_query},
+            routing=sanitized_customer_id,
+            size=20,
+        )
+
+        hits = [hit["_source"] for hit in response["hits"]["hits"]]
+        # Strip embedding fields to avoid sending large vectors forward
+        for _item in hits:
+            for _k in list(_item.keys()):
+                if _k.endswith("_embedding"):
+                    del _item[_k]
+        is_sale = _get_customer_is_sale(customer_id, thread_id)
+        formatted_hits = _format_results_for_agent(hits, is_sale)
+        if llm:
+            return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
+        return formatted_hits
+    except Exception as e:
+        print(f"[HYBRID_SERVICES] Lỗi hybrid search: {e}")
+        return []
+
+
+async def hybrid_search_accessories(
+    es_client: AsyncElasticsearch,
+    customer_id: str,
+    thread_id: str,
+    query: str,
+    offset: int = 0,
+    cum_dac_trung: Optional[str] = None,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None,
+) -> List[str]:
+    """Hybrid search dành riêng cho phụ kiện dùng BM25 + vector trong Elasticsearch.
+
+    - Vector: trường ``accessory_name_embedding`` được tạo từ ``accessory_name``.
+    - Lexical: match trên ``accessory_name`` (và ưu tiên cụm đặc trưng nếu có) + filter ``customer_id`` / khoảng giá.
+    - Fallback về ``search_accessories`` nếu không tạo được embedding.
+    """
+    if not es_client:
+        return ["Không thể kết nối đến Elasticsearch."]
+
+    sanitized_customer_id = sanitize_for_es(customer_id)
+
+    query_vector: List[float] = []
+    try:
+        query_vector = await _embed_name_with_google(query)
+    except Exception as e:
+        print(f"[HYBRID_ACCESSORIES] Lỗi tạo embedding cho query '{query}': {e}")
+        query_vector = []
+
+    if not query_vector:
+        try:
+            results = await search_accessories(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ten_phu_kien=query,
+                thuong_hieu=None,
+                phan_loai_phu_kien=None,
+                thuoc_tinh_phu_kien=None,
+                cum_dac_trung=cum_dac_trung,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=query if llm else None,
+                llm=llm,
+                chat_history=chat_history,
+            )
+        except Exception as e:
+            print(f"[HYBRID_ACCESSORIES] Lỗi fallback search_accessories: {e}")
+            return []
+
+        if not isinstance(results, list):
+            return []
+        return [r.strip() for r in results if isinstance(r, str) and r.strip()]
+
+    price_range: Dict[str, float] = {}
+    if min_gia is not None:
+        price_range["gte"] = min_gia
+    if max_gia is not None:
+        price_range["lte"] = max_gia
+
+    # Lexical query: match accessory_name + filter customer_id / khoảng giá
+    bool_query: Dict[str, Any] = {
+        "filter": [
+            {"term": {"customer_id": sanitized_customer_id}},
+        ],
+        "should": [
+            {"match": {"accessory_name": query}},
+            {"match_phrase": {"accessory_name": {"query": query, "boost": 2.0}}},
+        ],
+        "minimum_should_match": 1,
+    }
+    if price_range:
+        bool_query["filter"].append({"range": {"lifecare_price": price_range}})
+
+    # Vector: dùng đúng field accessory_name_embedding trong ES
+    knn_body: Dict[str, Any] = {
+        "field": "accessory_name_embedding",
+        "query_vector": query_vector,
+        "k": 100,
+        "num_candidates": 200,
+    }
+
+    try:
+        # Log ES query nhưng bỏ query_vector để tránh log quá dài
+        knn_log = dict(knn_body)
+        if "query_vector" in knn_log:
+            knn_log["query_vector"] = f"<vector_len={len(knn_body['query_vector'])}>"
+        print(
+            "[HYBRID_ACCESSORIES] ES query:",
+            json.dumps(
+                {
+                    "knn": knn_log,
+                    "query": {"bool": bool_query},
+                    "routing": sanitized_customer_id,
+                    "size": 100,
+                },
+                ensure_ascii=False,
+            ),
+        )
+
+        response = await es_client.search(
+            index=ACCESSORIES_INDEX,
+            knn=knn_body,
+            query={"bool": bool_query},
+            routing=sanitized_customer_id,
+            size=100,
+        )
+
+        hits = [hit["_source"] for hit in response["hits"]["hits"]]
+        # Strip embedding fields để không gửi vector to cho LLM
+        for _item in hits:
+            for _k in list(_item.keys()):
+                if _k.endswith("_embedding"):
+                    del _item[_k]
+
+        raw_num_hits = len(hits)
+        print(f"[HYBRID_ACCESSORIES] Found {raw_num_hits} hits for customer '{customer_id}'.")
+        try:
+            accessory_names = [str(_item.get("accessory_name", "")) for _item in hits]
+            print(
+                "[HYBRID_ACCESSORIES] Accessory names:",
+                json.dumps(accessory_names, ensure_ascii=False),
+            )
+        except Exception:
+            pass
+
+        # Chuẩn bị văn bản cho Jina rerank (chủ yếu dùng accessory_name + category + trademark + properties)
+        docs_for_rerank: List[str] = []
+        for item in hits:
+            parts: List[str] = []
+            name = item.get("accessory_name")
+            if name:
+                parts.append(str(name))
+            category = item.get("category")
+            if category:
+                parts.append(str(category))
+            trademark = item.get("trademark")
+            if trademark:
+                parts.append(str(trademark))
+            prop = item.get("properties")
+            if prop:
+                parts.append(str(prop))
+            docs_for_rerank.append(" | ".join(parts) if parts else "")
+
+        reranked_hits = hits
+        if docs_for_rerank:
+            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
+            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
+            if not reranked_hits:
+                reranked_hits = hits[:10]
+        else:
+            reranked_hits = hits[:10]
+
+        num_hits = len(reranked_hits)
+        print(f"[HYBRID_ACCESSORIES] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+        try:
+            reranked_names = [str(_item.get("accessory_name", "")) for _item in reranked_hits]
+            print(
+                "[HYBRID_ACCESSORIES] Reranked accessory names:",
+                json.dumps(reranked_names, ensure_ascii=False),
+            )
+        except Exception:
+            pass
+
+        is_sale = _get_customer_is_sale(customer_id, thread_id)
+        # Chỉ hiển thị specifications nếu có <= 5 kết quả sau rerank
+        top_hits = reranked_hits[:5]
+        rest_hits = reranked_hits[5:]
+        formatted_hits: List[str] = []
+        if top_hits:
+            formatted_hits.extend(_format_results_for_agent(top_hits, is_sale, True))
+        if rest_hits:
+            formatted_hits.extend(_format_results_for_agent(rest_hits, is_sale, False))
+
+        if llm:
+            return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
+        return formatted_hits
+    except Exception as e:
+        print(f"[HYBRID_ACCESSORIES] Lỗi hybrid search: {e}")
+        return []
+
+async def hybrid_search(
+    es_client: AsyncElasticsearch,
+    customer_id: str,
+    thread_id: str,
+    query: str,
+    offset: int = 0,
+    include_products: bool = True,
+    include_services: bool = True,
+    include_accessories: bool = True,
+    min_gia: Optional[float] = None,
+    max_gia: Optional[float] = None,
+    llm: Optional[Any] = None,
+    chat_history: Optional[List[str]] = None
+) -> List[str]:
+    """Tìm kiếm hybrid trên nhiều loại dữ liệu (sản phẩm, dịch vụ, phụ kiện) trong Elasticsearch.
+
+    Hàm này sẽ:
+    - Gọi lại các hàm search_products / search_services / search_accessories hiện có để lấy kết quả dạng text đã format sẵn cho agent.
+    - Gom tất cả kết quả lại thành một danh sách chung.
+    - Nếu truyền vào LLM, dùng filter_results_with_ai để lọc/xếp hạng lại dựa trên câu hỏi gốc và lịch sử chat.
+    """
+    if not es_client:
+        return ["Không thể kết nối đến Elasticsearch."]
+
+    all_results: List[str] = []
+
+    if include_products:
+        try:
+            product_results = await search_products(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                model=None,
+                mau_sac=None,
+                dung_luong=None,
+                tinh_trang_may=None,
+                loai_thiet_bi=None,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=None,
+                llm=None,
+                chat_history=None,
+            )
+            if isinstance(product_results, list):
+                for r in product_results:
+                    if isinstance(r, str) and r.strip():
+                        all_results.append(f"[SẢN PHẨM]\n{r}")
+        except Exception as e:
+            print(f"Lỗi khi hybrid search sản phẩm: {e}")
+
+    if include_services:
+        try:
+            service_results = await search_services(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ten_dich_vu=None,
+                ten_san_pham=None,
+                loai_dich_vu=None,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=None,
+                llm=None,
+                chat_history=None,
+            )
+            if isinstance(service_results, list):
+                for r in service_results:
+                    if isinstance(r, str) and r.strip():
+                        all_results.append(f"[DỊCH VỤ]\n{r}")
+        except Exception as e:
+            print(f"Lỗi khi hybrid search dịch vụ: {e}")
+
+    if include_accessories:
+        try:
+            accessory_results = await search_accessories(
+                es_client=es_client,
+                customer_id=customer_id,
+                thread_id=thread_id,
+                ten_phu_kien=None,
+                thuong_hieu=None,
+                phan_loai_phu_kien=None,
+                thuoc_tinh_phu_kien=None,
+                cum_dac_trung=None,
+                min_gia=min_gia,
+                max_gia=max_gia,
+                offset=offset,
+                original_query=None,
+                llm=None,
+                chat_history=None,
+            )
+            if isinstance(accessory_results, list):
+                for r in accessory_results:
+                    if isinstance(r, str) and r.strip():
+                        all_results.append(f"[PHỤ KIỆN]\n{r}")
+        except Exception as e:
+            print(f"Lỗi khi hybrid search phụ kiện: {e}")
+
+    if not all_results:
+        return []
+
+    if llm:
+        return await filter_results_with_ai(query, all_results, llm, chat_history)
+
+    return all_results
 
 if __name__ == '__main__':
     import asyncio

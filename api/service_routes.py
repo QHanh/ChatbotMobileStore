@@ -3,14 +3,16 @@ from typing import List
 from dependencies import get_es_client
 from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
-    process_and_index_data, 
+    process_and_index_data,
     SERVICES_INDEX,
     index_single_document,
     delete_single_document,
     bulk_index_documents,
     process_and_upsert_file_data,
+    process_and_upsert_file_data_with_embedding,
     delete_documents_by_customer,
-    bulk_delete_documents
+    bulk_delete_documents,
+    upsert_document_with_name_embedding,
 )
 from service.models.schemas import ServiceRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
@@ -77,7 +79,46 @@ async def upload_service_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/insert-service-row/{customer_id}")
+
+@router.post("/upload-service-embed/{customer_id}")
+async def upload_service_data_with_embed(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ (kèm embed tên)."),
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Upload dữ liệu dịch vụ (kèm embedding cho `ten_dich_vu`) dưới dạng upsert.
+
+    - KHÔNG xóa dữ liệu cũ của customer trong index.
+    - Chỉ embed trường `ten_dich_vu`, các cột còn lại là metadata.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+
+    try:
+        content = await file.read()
+        # KHÔNG xóa dữ liệu cũ; dùng upsert + embedding thông minh
+        success, failed_items = await process_and_upsert_file_data_with_embedding(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=SERVICES_INDEX,
+            file_content=content,
+            columns_config=SERVICE_COLUMNS_CONFIG,
+            embed_name_field="ten_dich_vu",
+            name_field="ten_dich_vu",
+        )
+
+        return {
+            "message": f"Dữ liệu dịch vụ (kèm embedding) cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "index_name": SERVICES_INDEX,
+            "successfully_indexed": success,
+            "failed_items": failed_items,
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
+
+@router.post("/insert-service-embed-row/{customer_id}")
 async def add_service(
     customer_id: str,
     service_data: ServiceRow,
@@ -97,6 +138,38 @@ async def add_service(
 
         response = await index_single_document(es_client, SERVICES_INDEX, sanitized_customer_id, doc_id, service_dict)
         return {"message": "Dịch vụ đã được thêm/cập nhật thành công.", "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/insert-service-embed-row/{customer_id}")
+async def add_service_with_embed(
+    customer_id: str,
+    service_data: ServiceRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Thêm mới hoặc ghi đè một dịch vụ, kèm embedding cho `ten_dich_vu`."""
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        service_dict = service_data.model_dump()
+        doc_id = service_dict.get("ma_dich_vu")
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'ma_dich_vu' trong dữ liệu đầu vào.")
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=SERVICES_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=str(doc_id),
+            doc_body=service_dict,
+            name_field="ten_dich_vu",
+        )
+        return {
+            "message": "Dịch vụ (kèm embedding) đã được thêm/cập nhật thành công.",
+            "result": response.body,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -139,6 +212,49 @@ async def update_service(
             message = "Dịch vụ đã được tạo mới thành công."
         elif result_status == 'updated':
             message = "Dịch vụ đã được cập nhật thành công."
+        else:
+            message = "Thao tác hoàn tất."
+
+        return {"message": message, "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/service-embed/{customer_id}/{service_id}")
+async def update_service_with_embed(
+    customer_id: str,
+    service_id: str,
+    service_data: ServiceRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        service_dict = service_data.model_dump()
+
+        body_service_id = service_dict.get("ma_dich_vu")
+        if body_service_id and body_service_id != service_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mã dịch vụ trong URL ({service_id}) và trong body ({body_service_id}) không khớp.",
+            )
+
+        service_dict["ma_dich_vu"] = service_id
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=SERVICES_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=service_id,
+            doc_body=service_dict,
+            name_field="ten_dich_vu",
+        )
+
+        result_status = response.body.get("result")
+        if result_status == "created":
+            message = "Dịch vụ (kèm embedding) đã được tạo mới thành công."
+        elif result_status == "updated":
+            message = "Dịch vụ (kèm embedding) đã được cập nhật thành công."
         else:
             message = "Thao tác hoàn tất."
 
@@ -190,6 +306,45 @@ async def add_services_bulk(
             "message": "Thao tác hàng loạt hoàn tất.",
             "successfully_indexed": success,
             "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/services-embed/bulk/{customer_id}")
+async def add_services_bulk_with_embed(
+    customer_id: str,
+    services: List[ServiceRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        success_ids = []
+        failed_items = []
+        for s in services:
+            service_dict = s.model_dump()
+            doc_id = service_dict.get("ma_dich_vu")
+            if not doc_id:
+                failed_items.append({"id": None, "error": "Thiếu 'ma_dich_vu'."})
+                continue
+            try:
+                await upsert_document_with_name_embedding(
+                    es_client=es_client,
+                    index_name=SERVICES_INDEX,
+                    customer_id=sanitized_customer_id,
+                    doc_id=str(doc_id),
+                    doc_body=service_dict,
+                    name_field="ten_dich_vu",
+                )
+                success_ids.append(str(doc_id))
+            except Exception as item_e:
+                failed_items.append({"id": str(doc_id), "error": str(item_e)})
+
+        return {
+            "message": "Thao tác hàng loạt (kèm embedding) hoàn tất.",
+            "success_ids": success_ids,
+            "failed_items": failed_items,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

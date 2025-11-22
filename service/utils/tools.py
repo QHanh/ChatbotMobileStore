@@ -6,7 +6,14 @@ from typing import List, Optional, Dict, Any
 from functools import partial
 from langchain_core.tools import StructuredTool
 from pydantic import BaseModel, Field
-from service.retrieve.search_service import search_products, search_accessories, search_services
+from service.retrieve.search_service import (
+    search_products,
+    search_accessories,
+    search_services,
+    hybrid_search_products,
+    hybrid_search_services,
+    hybrid_search_accessories,
+)
 from database.database import get_db
 from sqlalchemy.orm import Session
 from datetime import datetime
@@ -346,22 +353,21 @@ async def search_products_logic(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các sản phẩm điện thoại có trong kho hàng của cửa hàng.
     Cung cấp các tiêu chí cụ thể như model, màu sắc, dung lượng, tình trạng máy (trầy xước, xước nhẹ), loại thiết bị (Cũ, Mới), hoặc khoảng giá để lọc kết quả.
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm cho khách hàng: {customer_id} ---")
-    results = await search_products(
+    print(f"--- Agent đã gọi công cụ tìm kiếm sản phẩm (HYBRID) cho khách hàng: {customer_id} ---")
+
+    # Ưu tiên dùng original_query (câu hỏi gốc), fallback sang model nếu có
+    query_text = original_query or model or ""
+
+    results = await hybrid_search_products(
         es_client=es_client,
         customer_id=customer_id,
-        thread_id=thread_id,
-        model=model,
-        mau_sac=mau_sac,
-        dung_luong=dung_luong,
-        tinh_trang_may=tinh_trang_may,
-        loai_thiet_bi=loai_thiet_bi,
+        thread_id=thread_id or "",
+        query=query_text,
+        offset=offset or 0,
         min_gia=min_gia,
         max_gia=max_gia,
-        offset=offset,
-        original_query=original_query,
         llm=llm,
-        chat_history=chat_history
+        chat_history=chat_history,
     )
     return results
 
@@ -383,21 +389,20 @@ async def search_services_logic(
     Sử dụng công cụ này để tìm kiếm và tra cứu thông tin các dịch vụ sửa chữa điện thoại có trong dữ liệu của cửa hàng.
     Cung cấp các tiêu chí cụ thể như tên dịch vụ, tên sản phẩm điện thoại được sửa chữa (cần thiết), hãng sản phẩm ví dụ iPhone, màu sắc sản phẩm ví dụ đỏ, hãng dịch vụ ví dụ Pin Lithium để lọc kết quả.
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ cho khách hàng: {customer_id} ---")
+    print(f"--- Agent đã gọi công cụ tìm kiếm dịch vụ (HYBRID) cho khách hàng: {customer_id} ---")
 
-    results = await search_services(
+    query_text = original_query or ten_dich_vu or ""
+
+    results = await hybrid_search_services(
         es_client=es_client,
         customer_id=customer_id,
-        thread_id=thread_id,
-        ten_dich_vu=ten_dich_vu,
-        ten_san_pham=ten_san_pham,
-        loai_dich_vu=loai_dich_vu,
+        thread_id=thread_id or "",
+        query=query_text,
+        offset=offset or 0,
         min_gia=min_gia,
         max_gia=max_gia,
-        offset=offset,
-        original_query=original_query,
         llm=llm,
-        chat_history=chat_history
+        chat_history=chat_history,
     )
     return results
 
@@ -436,22 +441,22 @@ async def search_accessories_logic(
       -> ten_phu_kien = "Mũi hàn WYLIE C210 Black King Kong"
       -> cum_dac_trung = "WYLIE C210"
     """
-    print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện cho khách hàng: {customer_id} ---")
-    results = await search_accessories(
+    print(f"--- Agent đã gọi công cụ tìm kiếm phụ kiện (HYBRID) cho khách hàng: {customer_id} ---")
+
+    # ten_phu_kien thường là cụm tên + brand; nếu thiếu thì dùng original_query
+    query_text = ten_phu_kien or original_query or ""
+
+    results = await hybrid_search_accessories(
         es_client=es_client,
         customer_id=customer_id,
-        thread_id=thread_id,
-        ten_phu_kien=ten_phu_kien,
-        thuong_hieu=thuong_hieu,
-        phan_loai_phu_kien=phan_loai_phu_kien,
-        thuoc_tinh_phu_kien=thuoc_tinh_phu_kien,
+        thread_id=thread_id or "",
+        query=query_text,
+        offset=offset or 0,
         cum_dac_trung=cum_dac_trung,
         min_gia=min_gia,
         max_gia=max_gia,
-        offset=offset,
-        original_query=original_query,
         llm=llm,
-        chat_history=chat_history
+        chat_history=chat_history,
     )
     return results
 

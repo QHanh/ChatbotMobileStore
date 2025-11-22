@@ -11,7 +11,7 @@ from config.settings import ELASTIC_HOST
 from mcp.server.fastmcp import FastMCP
 
 # Import shared logic
-from service.retrieve.search_service import search_products
+from service.retrieve.search_service import hybrid_search_products
 from chat_mcp.core.constants import TOOL_PRODUCTS_SEARCH
 
 
@@ -54,20 +54,15 @@ async def products_search(
 
     es = await _get_es_client()
     try:
-        # Gọi trực tiếp service logic đã có
-        results = await search_products(
+        # Gọi hybrid search cho sản phẩm (ES + optional AI filter)
+        results = await hybrid_search_products(
             es_client=es,
             customer_id=customer_id,
             thread_id=thread_id,
-            model=None,
-            mau_sac=None,
-            dung_luong=None,
-            tinh_trang_may=None,
-            loai_thiet_bi=None,
+            query=query,
+            offset=offset,
             min_gia=None,
             max_gia=None,
-            offset=offset,
-            original_query=query,
             llm=None,
             chat_history=None,
         )

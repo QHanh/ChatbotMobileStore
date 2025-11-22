@@ -3,14 +3,16 @@ from typing import List
 from dependencies import get_es_client
 from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
-    process_and_index_data, 
+    process_and_index_data,
     PRODUCTS_INDEX,
     index_single_document,
     delete_single_document,
     bulk_index_documents,
     process_and_upsert_file_data,
+    process_and_upsert_file_data_with_embedding,
     delete_documents_by_customer,
-    bulk_delete_documents
+    bulk_delete_documents,
+    upsert_document_with_name_embedding,
 )
 from service.models.schemas import ProductRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
@@ -82,7 +84,46 @@ async def upload_product_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
-@router.post("/insert-product-row/{customer_id}")
+
+@router.post("/upload-product-embed/{customer_id}")
+async def upload_product_data_with_embed(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm (kèm embed tên)."),
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Upload dữ liệu sản phẩm (kèm embedding cho `model`) dưới dạng upsert.
+
+    - KHÔNG xóa dữ liệu cũ của customer trong index.
+    - Chỉ embed trường `model`, các cột còn lại là metadata.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+
+    try:
+        content = await file.read()
+        # KHÔNG xóa dữ liệu cũ; dùng upsert + embedding thông minh
+        success, failed_items = await process_and_upsert_file_data_with_embedding(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=PRODUCTS_INDEX,
+            file_content=content,
+            columns_config=PRODUCT_COLUMNS_CONFIG,
+            embed_name_field="model",
+            name_field="model",
+        )
+
+        return {
+            "message": f"Dữ liệu sản phẩm (kèm embedding) cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "index_name": PRODUCTS_INDEX,
+            "successfully_indexed": success,
+            "failed_items": failed_items,
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
+
+@router.post("/insert-accessory-embed-row/{customer_id}")
 async def add_product(
     customer_id: str,
     product_data: ProductRow,
@@ -102,6 +143,42 @@ async def add_product(
         
         response = await index_single_document(es_client, PRODUCTS_INDEX, sanitized_customer_id, doc_id, product_dict)
         return {"message": "Sản phẩm đã được thêm/cập nhật thành công.", "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/insert-product-embed-row/{customer_id}")
+async def add_product_with_embed(
+    customer_id: str,
+    product_data: ProductRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Thêm mới hoặc ghi đè một sản phẩm, kèm embedding cho trường `model`.
+
+    - Chỉ embed tên thiết bị (`model`).
+    - Các field còn lại là metadata.
+    """
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        product_dict = product_data.model_dump()
+        doc_id = product_dict.get("ma_san_pham")
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'ma_san_pham' trong dữ liệu đầu vào.")
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=PRODUCTS_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=str(doc_id),
+            doc_body=product_dict,
+            name_field="model",
+        )
+        return {
+            "message": "Sản phẩm (kèm embedding) đã được thêm/cập nhật thành công.",
+            "result": response.body,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -144,6 +221,49 @@ async def update_product(
             message = "Sản phẩm đã được tạo mới thành công."
         elif result_status == 'updated':
             message = "Sản phẩm đã được cập nhật thành công."
+        else:
+            message = "Thao tác hoàn tất."
+
+        return {"message": message, "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/product-embed/{customer_id}/{product_id}")
+async def update_product_with_embed(
+    customer_id: str,
+    product_id: str,
+    product_data: ProductRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        product_dict = product_data.model_dump()
+
+        body_product_id = product_dict.get("ma_san_pham")
+        if body_product_id and body_product_id != product_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mã sản phẩm trong URL ({product_id}) và trong body ({body_product_id}) không khớp.",
+            )
+
+        product_dict["ma_san_pham"] = product_id
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=PRODUCTS_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=product_id,
+            doc_body=product_dict,
+            name_field="model",
+        )
+
+        result_status = response.body.get("result")
+        if result_status == "created":
+            message = "Sản phẩm (kèm embedding) đã được tạo mới thành công."
+        elif result_status == "updated":
+            message = "Sản phẩm (kèm embedding) đã được cập nhật thành công."
         else:
             message = "Thao tác hoàn tất."
 
@@ -195,6 +315,45 @@ async def add_products_bulk(
             "message": "Thao tác hàng loạt hoàn tất.",
             "successfully_indexed": success,
             "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/products-embed/bulk/{customer_id}")
+async def add_products_bulk_with_embed(
+    customer_id: str,
+    products: List[ProductRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        success_ids = []
+        failed_items = []
+        for p in products:
+            product_dict = p.model_dump()
+            doc_id = product_dict.get("ma_san_pham")
+            if not doc_id:
+                failed_items.append({"id": None, "error": "Thiếu 'ma_san_pham'."})
+                continue
+            try:
+                await upsert_document_with_name_embedding(
+                    es_client=es_client,
+                    index_name=PRODUCTS_INDEX,
+                    customer_id=sanitized_customer_id,
+                    doc_id=str(doc_id),
+                    doc_body=product_dict,
+                    name_field="model",
+                )
+                success_ids.append(str(doc_id))
+            except Exception as item_e:
+                failed_items.append({"id": str(doc_id), "error": str(item_e)})
+
+        return {
+            "message": "Thao tác hàng loạt (kèm embedding) hoàn tất.",
+            "success_ids": success_ids,
+            "failed_items": failed_items,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

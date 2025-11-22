@@ -18,6 +18,7 @@ from langchain_core.output_parsers import StrOutputParser
 from google import genai
 from google.genai import types
 from mcp.server.fastmcp import FastMCP
+from service.retrieve.search_service import hybrid_search_services
 
 
 mcp = FastMCP(name="services-mcp")
@@ -401,17 +402,15 @@ async def services_search(
 
     es = await _get_es_client()
     try:
-        results = await search_services(
+        # Dùng hybrid_search_services từ service.retrieve.search_service
+        results = await hybrid_search_services(
             es_client=es,
             customer_id=customer_id,
             thread_id=thread_id,
-            ten_dich_vu=query,
-            ten_san_pham=None,
-            loai_dich_vu=None,
+            query=query,
+            offset=offset,
             min_gia=None,
             max_gia=None,
-            offset=offset,
-            original_query=query,
             llm=None,
             chat_history=None,
         )

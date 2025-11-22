@@ -3,14 +3,16 @@ from typing import List
 from dependencies import get_es_client
 from elasticsearch import AsyncElasticsearch
 from service.data.data_loader_elastic_search import (
-    process_and_index_data, 
+    process_and_index_data,
     ACCESSORIES_INDEX,
     index_single_document,
     delete_single_document,
     bulk_index_documents,
     process_and_upsert_file_data,
+    process_and_upsert_file_data_with_embedding,
     delete_documents_by_customer,
-    bulk_delete_documents
+    bulk_delete_documents,
+    upsert_document_with_name_embedding,
 )
 from service.models.schemas import AccessoryRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
@@ -81,6 +83,41 @@ async def upload_accessory_data(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
+
+@router.post("/upload-accessory-embed/{customer_id}")
+async def upload_accessory_data_with_embed(
+    customer_id: str = Path(..., description="Mã khách hàng."),
+    file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện (kèm embed tên)."),
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Upload toàn bộ dữ liệu phụ kiện và tạo vector embedding cho `accessory_name`."""
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+
+    try:
+        content = await file.read()
+        # KHÔNG xóa dữ liệu cũ; dùng upsert + embedding thông minh
+        success, failed_items = await process_and_upsert_file_data_with_embedding(
+            es_client=es_client,
+            customer_id=customer_id,
+            index_name=ACCESSORIES_INDEX,
+            file_content=content,
+            columns_config=ACCESSORY_COLUMNS_CONFIG,
+            embed_name_field="accessory_name",
+            name_field="accessory_name",
+        )
+
+        return {
+            "message": f"Dữ liệu phụ kiện (kèm embedding) cho khách hàng '{customer_id}' đã được nạp thêm/cập nhật.",
+            "index_name": ACCESSORIES_INDEX,
+            "successfully_indexed": success,
+            "failed_items": failed_items,
+        }
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
+
 @router.post("/insert-accessory-row/{customer_id}")
 async def add_accessory(
     customer_id: str,
@@ -101,6 +138,38 @@ async def add_accessory(
 
         response = await index_single_document(es_client, ACCESSORIES_INDEX, sanitized_customer_id, doc_id, accessory_dict)
         return {"message": "Phụ kiện đã được thêm/cập nhật thành công.", "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/insert-accessory-embed-row/{customer_id}")
+async def add_accessory_with_embed(
+    customer_id: str,
+    accessory_data: AccessoryRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    """Thêm mới hoặc ghi đè một phụ kiện, kèm embedding cho `accessory_name`."""
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        accessory_dict = accessory_data.model_dump()
+        doc_id = accessory_dict.get("accessory_code")
+        if not doc_id:
+            raise HTTPException(status_code=400, detail="Thiếu 'accessory_code' trong dữ liệu đầu vào.")
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=ACCESSORIES_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=str(doc_id),
+            doc_body=accessory_dict,
+            name_field="accessory_name",
+        )
+        return {
+            "message": "Phụ kiện (kèm embedding) đã được thêm/cập nhật thành công.",
+            "result": response.body,
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -143,6 +212,49 @@ async def update_accessory(
             message = "Phụ kiện đã được tạo mới thành công."
         elif result_status == 'updated':
             message = "Phụ kiện đã được cập nhật thành công."
+        else:
+            message = "Thao tác hoàn tất."
+
+        return {"message": message, "result": response.body}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/accessory-embed/{customer_id}/{accessory_id}")
+async def update_accessory_with_embed(
+    customer_id: str,
+    accessory_id: str,
+    accessory_data: AccessoryRow,
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        accessory_dict = accessory_data.model_dump()
+
+        body_accessory_id = accessory_dict.get("accessory_code")
+        if body_accessory_id and body_accessory_id != accessory_id:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Mã phụ kiện trong URL ({accessory_id}) và trong body ({body_accessory_id}) không khớp.",
+            )
+
+        accessory_dict["accessory_code"] = accessory_id
+
+        response = await upsert_document_with_name_embedding(
+            es_client=es_client,
+            index_name=ACCESSORIES_INDEX,
+            customer_id=sanitized_customer_id,
+            doc_id=accessory_id,
+            doc_body=accessory_dict,
+            name_field="accessory_name",
+        )
+
+        result_status = response.body.get("result")
+        if result_status == "created":
+            message = "Phụ kiện (kèm embedding) đã được tạo mới thành công."
+        elif result_status == "updated":
+            message = "Phụ kiện (kèm embedding) đã được cập nhật thành công."
         else:
             message = "Thao tác hoàn tất."
 
@@ -194,6 +306,45 @@ async def add_accessories_bulk(
             "message": "Thao tác hàng loạt hoàn tất.",
             "successfully_indexed": success,
             "failed_items": failed
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/accessories-embed/bulk/{customer_id}")
+async def add_accessories_bulk_with_embed(
+    customer_id: str,
+    accessories: List[AccessoryRow],
+    es_client: AsyncElasticsearch = Depends(get_es_client),
+):
+    if not es_client:
+        raise HTTPException(status_code=503, detail="Không thể kết nối đến Elasticsearch.")
+    try:
+        sanitized_customer_id = sanitize_for_es(customer_id)
+        success_ids = []
+        failed_items = []
+        for a in accessories:
+            accessory_dict = a.model_dump()
+            doc_id = accessory_dict.get("accessory_code")
+            if not doc_id:
+                failed_items.append({"id": None, "error": "Thiếu 'accessory_code'."})
+                continue
+            try:
+                await upsert_document_with_name_embedding(
+                    es_client=es_client,
+                    index_name=ACCESSORIES_INDEX,
+                    customer_id=sanitized_customer_id,
+                    doc_id=str(doc_id),
+                    doc_body=accessory_dict,
+                    name_field="accessory_name",
+                )
+                success_ids.append(str(doc_id))
+            except Exception as item_e:
+                failed_items.append({"id": str(doc_id), "error": str(item_e)})
+
+        return {
+            "message": "Thao tác hàng loạt (kèm embedding) hoàn tất.",
+            "success_ids": success_ids,
+            "failed_items": failed_items,
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

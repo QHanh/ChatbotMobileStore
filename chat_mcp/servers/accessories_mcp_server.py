@@ -13,7 +13,7 @@ from database.database import CustomerIsSale, SessionLocal
 from service.prompts.prompt_service import load_instructions
 from service.data.data_loader_elastic_search import ACCESSORIES_INDEX
 from service.utils.helpers import sanitize_for_es
-from service.retrieve.search_service import search_accessories as core_search_accessories
+from service.retrieve.search_service import hybrid_search_accessories as core_hybrid_search_accessories
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from google import genai
@@ -477,19 +477,16 @@ async def accessories_search(
 
     es = await _get_es_client()
     try:
-        results = await core_search_accessories(
+        # Gọi hybrid_search_accessories từ service.retrieve.search_service
+        results = await core_hybrid_search_accessories(
             es_client=es,
             customer_id=customer_id,
             thread_id=thread_id,
-            ten_phu_kien=query,
-            thuong_hieu=None,
-            phan_loai_phu_kien=None,
-            thuoc_tinh_phu_kien=None,
+            query=query,
+            offset=offset,
             cum_dac_trung=cum_dac_trung,
             min_gia=None,
             max_gia=None,
-            offset=offset,
-            original_query=query,
             llm=None,
             chat_history=None,
         )

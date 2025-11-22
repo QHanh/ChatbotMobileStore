@@ -8,6 +8,6 @@ __pycache__/
 .vscode/
 venv/
 config/credentials.json
-data/
+# data/
 .venv
 alembic/versions
