@@ -174,6 +174,16 @@ def create_agent_executor(
                                     elif isinstance(c, str):
                                         # Chuỗi nhưng rỗng / toàn khoảng trắng
                                         print(f"[AGENT DEBUG] Attempt {attempt}: AIMessage string content is empty/whitespace, skipping")
+                                        # Log thêm metadata khi AIMessage rỗng để tìm nguyên nhân gốc
+                                        meta = getattr(m, "response_metadata", None)
+                                        add_kwargs = getattr(m, "additional_kwargs", None)
+                                        try:
+                                            print(
+                                                f"[AGENT DEBUG] Attempt {attempt}: AIMessage EMPTY meta={meta}, "
+                                                f"additional_kwargs={add_kwargs}"
+                                            )
+                                        except Exception:
+                                            pass
                                     # content dạng list (structured content), gom các phần text lại
                                     if isinstance(c, list):
                                         parts = []
