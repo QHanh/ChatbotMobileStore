@@ -1,6 +1,6 @@
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langgraph.prebuilt import create_react_agent
+from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
@@ -68,7 +68,8 @@ def create_agent_executor(
         MessagesPlaceholder(variable_name="agent_scratchpad", optional=True),
     ])
 
-    agent = create_react_agent(llm, customer_tools)
+    # Dùng create_agent tương tự các MCP agent, để LLM tự quyết định gọi tool dựa trên messages
+    agent = create_agent(llm, customer_tools)
 
     class _AgentWrapper:
         def __init__(self, agent, tools, system_prompt: str):
