@@ -2,6 +2,7 @@ import pandas as pd
 from elasticsearch import Elasticsearch, AsyncElasticsearch, NotFoundError
 from elasticsearch.helpers import async_bulk
 import numpy as np
+import asyncio
 import warnings
 import io
 import os
@@ -18,6 +19,7 @@ PRODUCTS_INDEX = "products"
 SERVICES_INDEX = "services"
 ACCESSORIES_INDEX = "accessories"
 FAQ_INDEX = "faqs"
+MAX_CONCURRENT_UPSERTS = 5
 
 def get_shared_index_mapping(data_type: str):
     """
@@ -283,7 +285,6 @@ async def index_single_document(es_client: Elasticsearch, index_name: str, custo
     except Exception as e:
         raise IOError(f"Lỗi khi nạp bản ghi đơn: {e}")
 
-
 async def upsert_document_with_name_embedding(
     es_client: Elasticsearch,
     index_name: str,
@@ -542,26 +543,38 @@ async def process_and_upsert_file_data_with_embedding(
     sanitized_customer_id = sanitize_for_es(customer_id)
     success = 0
     failed_items: list[dict[str, Any]] = []
+    semaphore = asyncio.Semaphore(MAX_CONCURRENT_UPSERTS)
+    tasks = []
+
+    async def _worker(doc, doc_id):
+        async with semaphore:
+            try:
+                await upsert_document_with_name_embedding(
+                    es_client=es_client,
+                    index_name=index_name,
+                    customer_id=sanitized_customer_id,
+                    doc_id=str(doc_id),
+                    doc_body=doc,
+                    name_field=name_field,
+                )
+                return True, None
+            except Exception as item_e:
+                return False, {"id": str(doc_id), "error": str(item_e)}
 
     for doc in documents:
         doc_id = doc.get(renamed_id_field)
         if not doc_id:
             failed_items.append({"id": None, "error": f"Thiếu '{renamed_id_field}'."})
             continue
+        tasks.append(_worker(doc, str(doc_id)))
 
-        try:
-            # upsert_document_with_name_embedding sẽ tự xử lý re-embed khi tên đổi
-            await upsert_document_with_name_embedding(
-                es_client=es_client,
-                index_name=index_name,
-                customer_id=sanitized_customer_id,
-                doc_id=str(doc_id),
-                doc_body=doc,
-                name_field=name_field,
-            )
-            success += 1
-        except Exception as item_e:
-            failed_items.append({"id": str(doc_id), "error": str(item_e)})
+    if tasks:
+        results = await asyncio.gather(*tasks, return_exceptions=False)
+        for ok, error in results:
+            if ok:
+                success += 1
+            elif error:
+                failed_items.append(error)
 
     return success, failed_items
 

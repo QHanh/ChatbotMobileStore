@@ -91,12 +91,16 @@ def create_agent_executor(
             )
 
         async def ainvoke(self, data: dict):
-            max_attempts = 5
-            output_text = ""
-            last_internal_error_text = ""
+            # Hàm bất đồng bộ gọi agent để sinh câu trả lời cho người dùng.
+            # Có cơ chế retry nhiều lần và lọc bỏ các message lỗi nội bộ / tool call.
+            max_attempts = 5  # Số lần thử gọi agent tối đa
+            output_text = ""  # Câu trả lời cuối cùng sẽ trả về client
+            last_internal_error_text = ""  # Lưu text lỗi nội bộ gần nhất (nếu có)
 
+            # Chuẩn bị danh sách messages gửi vào agent
             messages = []
             if self.system_prompt:
+                # Thêm system prompt cố định cho agent (persona / hướng dẫn tổng quát)
                 messages.append(SystemMessage(content=self.system_prompt))
             faq_context = data.get("faq_context") or []
             chat_history = data.get("chat_history") or []
@@ -105,29 +109,60 @@ def create_agent_executor(
             if chat_history:
                 messages.extend(chat_history)
             input_text = data.get("input", "")
+            # Ghi lại số lượng message ban đầu, để biết phần nào là message mới do agent sinh ra
             base_len = len(messages)
             if input_text:
                 messages.append(HumanMessage(content=input_text))
 
+            # Log thông tin đầu vào cho lần gọi agent này
+            try:
+                print(
+                    "[AGENT DEBUG] ainvoke input="
+                    f"{input_text!r}, faq_context_len={len(faq_context)}, "
+                    f"chat_history_len={len(chat_history)}, total_messages={len(messages)}"
+                )
+            except Exception:
+                # Nếu log bị lỗi thì bỏ qua, không làm hỏng flow chính
+                pass
+
+            # msgs sẽ lưu toàn bộ messages trả về từ agent trong lần gọi gần nhất
             msgs = []
             for attempt in range(1, max_attempts + 1):
+                # Thử gọi agent tối đa max_attempts lần, nếu chưa lấy được output hợp lệ thì retry
                 try:
+                    print(f"[AGENT DEBUG] Attempt {attempt}/{max_attempts} - calling underlying agent")
                     state = await self._agent.ainvoke({"messages": messages})
-                    msgs = state.get("messages", [])
+                    print(f"[AGENT DEBUG] Attempt {attempt}: state type = {type(state).__name__}")
+                    if isinstance(state, dict):
+                        msgs = state.get("messages", [])
+                    else:
+                        msgs = []
+                    print(f"[AGENT DEBUG] Attempt {attempt}: total messages from agent = {len(msgs)}")
                     if msgs:
+                        # Chỉ lấy các message mới sinh ra sau phần context ban đầu
                         new_msgs = msgs[base_len:]
-                        for m in reversed(new_msgs):
+                        print(f"[AGENT DEBUG] Attempt {attempt}: new_messages_after_base_len = {len(new_msgs)} (base_len={base_len})")
+                        # Duyệt ngược từ message mới nhất về cũ để ưu tiên output cuối cùng
+                        for idx, m in enumerate(reversed(new_msgs)):
                             try:
+                                print(f"[AGENT DEBUG] Attempt {attempt}: inspecting msg idx={idx}, type={type(m).__name__}")
                                 if isinstance(m, AIMessage):
                                     c = getattr(m, "content", None)
                                     has_tool_calls = bool(getattr(m, "tool_calls", None))
+                                    print(
+                                        f"[AGENT DEBUG] Attempt {attempt}: AIMessage content_type={type(c).__name__}, "
+                                        f"has_tool_calls={has_tool_calls}"
+                                    )
+                                    # content dạng chuỗi đơn giản
                                     if isinstance(c, str) and c.strip():
                                         text_val = c.strip()
                                         if self._is_internal_error_text(text_val):
                                             last_internal_error_text = text_val
                                         else:
                                             output_text = text_val
+                                            print(f"[AGENT DEBUG] Attempt {attempt}: using string content as output")
                                             break
+                                    # content dạng list (structured content), gom các phần text lại
                                     if isinstance(c, list):
                                         parts = []
                                         for part in c:
@@ -138,26 +173,34 @@ def create_agent_executor(
                                         if parts:
                                             joined = "\n".join(parts).strip()
                                             if joined:
+                                                # Kiểm tra xem nội dung có phải là lỗi nội bộ không
                                                 if self._is_internal_error_text(joined):
                                                     last_internal_error_text = joined
                                                 else:
+                                                    # Nội dung không phải lỗi nội bộ, lấy làm output cuối
                                                     output_text = joined
+                                                    print(f"[AGENT DEBUG] Attempt {attempt}: using list content as output")
                                                     break
+                                    # Nếu message này chỉ chứa tool_calls thì bỏ qua, không lấy làm output cuối
                                     if has_tool_calls:
+                                        print(f"[AGENT DEBUG] Attempt {attempt}: AIMessage has only tool_calls, skipping as final output")
                                         continue
                                 if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
                                     c = getattr(m, "content", None)
                                     if isinstance(c, str) and c.strip():
                                         text_val = c.strip()
+                                        print(f"[AGENT DEBUG] Attempt {attempt}: ToolMessage content preview = {text_val[:200]!r}")
                                         if self._is_internal_error_text(text_val):
                                             last_internal_error_text = text_val
                                         else:
                                             output_text = text_val
                                             break
                             except Exception:
+                                # Nếu parse 1 message bị lỗi thì bỏ qua message đó, tránh làm hỏng cả vòng lặp
                                 continue
 
                     if output_text:
+                        print(f"[AGENT DEBUG] Attempt {attempt}: output_text acquired, stop retry loop")
                         break
 
                     print(f"[AGENT WARN] Empty output on attempt {attempt}/{max_attempts}. Retrying...")
