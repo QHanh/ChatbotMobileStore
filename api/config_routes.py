@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from service.models.schemas import PersonaConfig, PromptConfig, ServiceFeatureConfig, AccessoryFeatureConfig, ProductFeatureConfig
 from database.database import get_db, Customer
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -18,6 +19,12 @@ def get_or_create_customer(db: Session, customer_id: str) -> Customer:
     return customer
 
 @router.put("/config/persona/{customer_id}")
+@with_log_context(
+    event_action="config.persona.update",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def set_persona_config(
     customer_id: str,
     config: PersonaConfig,
@@ -33,6 +40,12 @@ async def set_persona_config(
     return {"message": f"Vai trò và tên cho chatbot AI của khách hàng '{customer_id}' đã được cập nhật."}
 
 @router.get("/config/persona/{customer_id}")
+@with_log_context(
+    event_action="config.persona.get",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def get_persona_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy cấu hình vai trò và tên của chatbot AI cho một khách hàng.
@@ -41,6 +54,12 @@ async def get_persona_config(customer_id: str, db: Session = Depends(get_db)):
     return {"ai_name": customer.ai_name, "ai_role": customer.ai_role}
 
 @router.delete("/config/persona/{customer_id}")
+@with_log_context(
+    event_action="config.persona.delete",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def delete_persona_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Xóa cấu hình vai trò và tên của chatbot AI, quay về mặc định.
@@ -54,6 +73,12 @@ async def delete_persona_config(customer_id: str, db: Session = Depends(get_db))
     raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng.")
 
 @router.put("/config/prompt/{customer_id}")
+@with_log_context(
+    event_action="config.prompt.update",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def set_prompt_config(
     customer_id: str,
     config: PromptConfig,
@@ -68,6 +93,12 @@ async def set_prompt_config(
     return {"message": f"System prompt tùy chỉnh cho khách hàng '{customer_id}' đã được cập nhật."}
 
 @router.get("/config/prompt/{customer_id}")
+@with_log_context(
+    event_action="config.prompt.get",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def get_prompt_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy system prompt tùy chỉnh của một khách hàng.
@@ -76,6 +107,12 @@ async def get_prompt_config(customer_id: str, db: Session = Depends(get_db)):
     return {"custom_prompt": customer.custom_prompt or ""}
 
 @router.delete("/config/prompt/{customer_id}")
+@with_log_context(
+    event_action="config.prompt.delete",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def delete_prompt_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Xóa system prompt tùy chỉnh của một khách hàng.
@@ -88,6 +125,12 @@ async def delete_prompt_config(customer_id: str, db: Session = Depends(get_db)):
     raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng.")
 
 @router.put("/config/service-feature/{customer_id}")
+@with_log_context(
+    event_action="config.service_feature.update",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def set_service_feature_config(
     customer_id: str,
     config: ServiceFeatureConfig,
@@ -103,6 +146,12 @@ async def set_service_feature_config(
     return {"message": f"Chức năng tư vấn dịch vụ cho khách hàng '{customer_id}' đã được {status}."}
 
 @router.get("/config/service-feature/{customer_id}")
+@with_log_context(
+    event_action="config.service_feature.get",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def get_service_feature_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy trạng thái bật/tắt chức năng tư vấn dịch vụ của một khách hàng.
@@ -111,6 +160,12 @@ async def get_service_feature_config(customer_id: str, db: Session = Depends(get
     return {"enabled": customer.service_feature_enabled}
 
 @router.put("/config/accessory-feature/{customer_id}")
+@with_log_context(
+    event_action="config.accessory_feature.update",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def set_accessory_feature_config(
     customer_id: str,
     config: AccessoryFeatureConfig,
@@ -126,6 +181,12 @@ async def set_accessory_feature_config(
     return {"message": f"Chức năng tư vấn phụ kiện cho khách hàng '{customer_id}' đã được {status}."}
 
 @router.get("/config/accessory-feature/{customer_id}")
+@with_log_context(
+    event_action="config.accessory_feature.get",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def get_accessory_feature_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy trạng thái bật/tắt chức năng tư vấn phụ kiện của một khách hàng.
@@ -134,6 +195,12 @@ async def get_accessory_feature_config(customer_id: str, db: Session = Depends(g
     return {"enabled": customer.accessory_feature_enabled}
 
 @router.put("/config/product-feature/{customer_id}")
+@with_log_context(
+    event_action="config.product_feature.update",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def set_product_feature_config(
     customer_id: str,
     config: ProductFeatureConfig,
@@ -149,6 +216,12 @@ async def set_product_feature_config(
     return {"message": f"Chức năng tư vấn sản phẩm cho khách hàng '{customer_id}' đã được {status}."}
 
 @router.get("/config/product-feature/{customer_id}")
+@with_log_context(
+    event_action="config.product_feature.get",
+    event_category="config",
+    source_layer="controller",
+    source_controller="config_routes",
+)
 async def get_product_feature_config(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy trạng thái bật/tắt chức năng tư vấn sản phẩm của một khách hàng.

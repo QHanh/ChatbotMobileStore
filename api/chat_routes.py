@@ -10,6 +10,8 @@ from typing import List
 from langchain.chat_models import init_chat_model
 from langchain_core.messages import HumanMessage
 from service.prompts.prompt_service import compose_system_prompt, load_instructions
+from app_logging.decorators import with_log_context
+from datetime import datetime, timezone
 
 router = APIRouter()
 
@@ -119,6 +121,12 @@ async def _identify_product_from_image(llm_provider: str, api_key: str, db: Sess
         raise ValueError(f"Không thể nhận diện sản phẩm từ ảnh: {str(e)}")
 
 @router.post("/chat/{threadId}")
+@with_log_context(
+    event_action="chatbot.chat",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
 async def chat(
     request: ChatbotRequest,
     threadId: str = Path(..., description="Mã phiên chat với người dùng."),
@@ -128,17 +136,28 @@ async def chat(
     """
     Endpoint chính để tương tác với chatbot.
     """
+    start_time = datetime.now(timezone.utc)
+
     # Check customer-level bot status first
     customer_status = db.query(ChatCustomer).filter(
         ChatCustomer.customer_id == request.customer_id
     ).first()
-    
+
     if customer_status and customer_status.status == "stopped":
-        raise HTTPException(
-            status_code=403, 
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        exc = HTTPException(
+            status_code=403,
             detail="Bot đã bị dừng cho customer_id này."
         )
-    
+        exc.log_context = {
+            "chat.customer_id": request.customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": request.access,
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.customer_stopped",
+        }
+        raise exc
+
     # Check thread-level bot status
     thread_status = db.query(ChatThread).filter(
         ChatThread.customer_id == request.customer_id,
@@ -146,21 +165,62 @@ async def chat(
     ).first()
 
     if thread_status and thread_status.status == "stopped":
-        raise HTTPException(
-            status_code=403, 
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        exc = HTTPException(
+            status_code=403,
             detail="Bot đã bị dừng cho threadId của customer_id này."
         )
+        exc.log_context = {
+            "chat.customer_id": request.customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": request.access,
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.thread_stopped",
+        }
+        raise exc
 
     if not threadId:
-        raise HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        exc = HTTPException(status_code=400, detail="Mã phiên chat là bắt buộc.")
+        exc.log_context = {
+            "chat.customer_id": request.customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": request.access,
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.validation.thread_id_missing",
+        }
+        raise exc
 
     customer_id = request.customer_id
     if not customer_id:
-        raise HTTPException(status_code=400, detail="Mã khách hàng là bắt buộc.")
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        exc = HTTPException(status_code=400, detail="Mã khách hàng là bắt buộc.")
+        exc.log_context = {
+            "chat.customer_id": customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": request.access,
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.validation.customer_id_missing",
+        }
+        raise exc
 
     access = request.access
     if access == 0:
-        raise HTTPException(status_code=403, detail="Bạn không có quyền sử dụng tính năng này.")
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        exc = HTTPException(status_code=403, detail="Bạn không có quyền sử dụng tính năng này.")
+        exc.log_context = {
+            "chat.customer_id": customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": access,
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.access_denied",
+        }
+        raise exc
+
+    user_input = None
+    llm_provider = None
+    image_urls = []
+    image_base64 = None
 
     try:
         user_input = request.query
@@ -237,14 +297,51 @@ async def chat(
         return {"response": response['output']}
 
     except ValueError as ve:
-        raise HTTPException(status_code=400, detail=str(ve))
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
+        http_exc = HTTPException(status_code=400, detail=str(ve))
+        http_exc.log_context = {
+            "chat.customer_id": customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": access,
+            "chat.llm_provider": llm_provider,
+            "chat.has_image": bool(image_urls or image_base64),
+            "chat.has_history": bool(request.history),
+            "chat.user_input_length": len(user_input or ""),
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.value_error",
+        }
+        raise http_exc
     except Exception as e:
+        duration_ms = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
         print(f"An unexpected error occurred: {e}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail="Đã có lỗi không mong muốn xảy ra từ server.")
+        http_exc = HTTPException(
+            status_code=500,
+            detail="Đã có lỗi không mong muốn xảy ra từ server.",
+        )
+        http_exc.log_context = {
+            "chat.customer_id": customer_id,
+            "chat.thread_id": threadId,
+            "chat.access": access,
+            "chat.llm_provider": llm_provider,
+            "chat.has_image": bool(image_urls or image_base64),
+            "chat.has_history": bool(request.history),
+            "chat.user_input_length": len(user_input or ""),
+            "chat.duration_ms": duration_ms,
+            "error.stage": "chat.unexpected",
+            "error.original_type": e.__class__.__name__,
+            "error.original_message": str(e)[:500],
+        }
+        raise http_exc from e
 
 @router.get("/chat/system-prompt/{threadId}")
+@with_log_context(
+    event_action="chatbot.system_prompt.get",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
 async def get_system_prompt(
     threadId: str = Path(..., description="Mã phiên chat với người dùng."),
     customer_id: str = None,
@@ -277,6 +374,12 @@ async def get_system_prompt(
     return {"system_prompt": system_prompt}
 
 @router.get("/chat-history/{customer_id}/{thread_id}", response_model=List[ChatHistoryResponse])
+@with_log_context(
+    event_action="chatbot.chat_history.get",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
 async def get_chat_history(
     customer_id: str = Path(..., description="Mã khách hàng."),
     thread_id: str = Path(..., description="Mã phiên chat."),
@@ -296,6 +399,12 @@ async def get_chat_history(
     return history
 
 @router.post("/chat-history-clear/{customer_id}")
+@with_log_context(
+    event_action="chatbot.chat_history.clear",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
 async def clear_history(
     customer_id: str = Path(..., description="Mã khách hàng để xóa lịch sử chat."),
     db: Session = Depends(get_db)

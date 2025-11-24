@@ -10,6 +10,7 @@ from dependencies import get_db
 from database.database import IngestedMessage
 from service.models.schemas import IngestBatch
 from service.training.agl_training import start_training_for_customer
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -21,6 +22,12 @@ def _require_api_key(x_api_key: Optional[str]):
 
 
 @router.post("/training/ingest-chat-batch")
+@with_log_context(
+    event_action="training.ingest_batch",
+    event_category="training",
+    source_layer="controller",
+    source_controller="training_routes",
+)
 def ingest_chat_batch(
     payload: IngestBatch,
     db: Session = Depends(get_db),
@@ -71,6 +78,12 @@ def ingest_chat_batch(
 
 
 @router.post("/training/start")
+@with_log_context(
+    event_action="training.start",
+    event_category="training",
+    source_layer="controller",
+    source_controller="training_routes",
+)
 def trigger_training(
     customer_id: str,
     background_tasks: BackgroundTasks,

@@ -15,6 +15,7 @@ from service.graphrag.graphrag_service import (
     configure_cache_short_base,
 )
 from database.database import SessionLocal
+from app_logging.decorators import with_log_context
 
 
 router = APIRouter()
@@ -84,6 +85,12 @@ def _background_reindex(
 
 
 @router.post("/graphrag/reindex/{customer_id}")
+@with_log_context(
+    event_action="document.graphrag.reindex",
+    event_category="document",
+    source_layer="controller",
+    source_controller="graphrag_routes",
+)
 async def reindex(customer_id: str, data: GraphRAGIndexRequest, background: BackgroundTasks):
     try:
         root: Path = workspace_path_for_customer(customer_id)

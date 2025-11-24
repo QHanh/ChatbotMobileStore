@@ -4,10 +4,17 @@ import os
 import shutil
 from database.database import get_db, ChatbotSettings as ChatbotSettingsModel
 from service.models import schemas
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
 @router.post("/settings/", response_model=schemas.ChatbotSettings)
+@with_log_context(
+    event_action="chatbot_js.settings.create",
+    event_category="chatbot_js",
+    source_layer="controller",
+    source_controller="setting_routes",
+)
 def create_settings(settings: schemas.ChatbotSettingsCreate, db: Session = Depends(get_db)):
     db_settings = db.query(ChatbotSettingsModel).filter(ChatbotSettingsModel.customer_id == settings.customer_id).first()
     if db_settings:
@@ -19,6 +26,12 @@ def create_settings(settings: schemas.ChatbotSettingsCreate, db: Session = Depen
     return db_settings
 
 @router.get("/settings/{customer_id}", response_model=schemas.ChatbotSettings)
+@with_log_context(
+    event_action="chatbot_js.settings.get",
+    event_category="chatbot_js",
+    source_layer="controller",
+    source_controller="setting_routes",
+)
 def get_settings(customer_id: str, db: Session = Depends(get_db)):
     db_settings = db.query(ChatbotSettingsModel).filter(ChatbotSettingsModel.customer_id == customer_id).first()
     if db_settings is None:
@@ -33,6 +46,12 @@ def get_settings(customer_id: str, db: Session = Depends(get_db)):
     return db_settings
 
 @router.put("/settings/{customer_id}", response_model=schemas.ChatbotSettings)
+@with_log_context(
+    event_action="chatbot_js.settings.update",
+    event_category="chatbot_js",
+    source_layer="controller",
+    source_controller="setting_routes",
+)
 def update_settings(customer_id: str, settings: schemas.ChatbotSettingsUpdate, db: Session = Depends(get_db)):
     db_settings = db.query(ChatbotSettingsModel).filter(ChatbotSettingsModel.customer_id == customer_id).first()
     if db_settings is None:
@@ -52,6 +71,12 @@ def update_settings(customer_id: str, settings: schemas.ChatbotSettingsUpdate, d
     return db_settings
 
 @router.post("/settings/{customer_id}/upload-icon", response_model=schemas.ChatbotSettings)
+@with_log_context(
+    event_action="chatbot_js.settings.upload_icon",
+    event_category="chatbot_js",
+    source_layer="controller",
+    source_controller="setting_routes",
+)
 async def upload_chatbot_icon(customer_id: str, request: Request, file: UploadFile = File(...), db: Session = Depends(get_db)):
     # Ensure the images directory exists
     upload_dir = os.path.join("JS_Chatbot", "images")

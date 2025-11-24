@@ -3,10 +3,17 @@ from sqlalchemy.orm import Session
 from database.database import get_db, SystemInstruction
 from service.models.schemas import InstructionsUpdate, Instruction
 from typing import List
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
 @router.get("/instructions", response_model=List[Instruction])
+@with_log_context(
+    event_action="instruction.list",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def get_instructions(db: Session = Depends(get_db)):
     """
     Lấy tất cả các instruction chung của hệ thống từ database.
@@ -15,6 +22,12 @@ def get_instructions(db: Session = Depends(get_db)):
     return instructions
 
 @router.put("/instructions", response_model=List[Instruction])
+@with_log_context(
+    event_action="instruction.bulk_upsert",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def update_instructions(
     update_data: InstructionsUpdate,
     db: Session = Depends(get_db)
@@ -40,6 +53,12 @@ def update_instructions(
     return updated_instructions
 
 @router.get("/instructions/{key}", response_model=Instruction)
+@with_log_context(
+    event_action="instruction.get",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def get_instruction_by_key(key: str, db: Session = Depends(get_db)):
     instruction = db.query(SystemInstruction).filter(SystemInstruction.key == key).first()
     if not instruction:
@@ -47,6 +66,12 @@ def get_instruction_by_key(key: str, db: Session = Depends(get_db)):
     return instruction
 
 @router.post("/instructions", response_model=Instruction)
+@with_log_context(
+    event_action="instruction.create",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def create_instruction(item: Instruction, db: Session = Depends(get_db)):
     existing = db.query(SystemInstruction).filter(SystemInstruction.key == item.key).first()
     if existing:
@@ -58,6 +83,12 @@ def create_instruction(item: Instruction, db: Session = Depends(get_db)):
     return instruction
 
 @router.put("/instructions/{key}", response_model=Instruction)
+@with_log_context(
+    event_action="instruction.upsert",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def upsert_instruction(key: str, item: Instruction, db: Session = Depends(get_db)):
     instruction = db.query(SystemInstruction).filter(SystemInstruction.key == key).first()
     if instruction:
@@ -70,6 +101,12 @@ def upsert_instruction(key: str, item: Instruction, db: Session = Depends(get_db
     return instruction
 
 @router.delete("/instructions/{key}")
+@with_log_context(
+    event_action="instruction.delete",
+    event_category="instruction",
+    source_layer="controller",
+    source_controller="instruction_routes",
+)
 def delete_instruction(key: str, db: Session = Depends(get_db)):
     instruction = db.query(SystemInstruction).filter(SystemInstruction.key == key).first()
     if not instruction:

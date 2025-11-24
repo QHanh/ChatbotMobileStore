@@ -25,6 +25,7 @@ from chat_mcp.services import MCPClientManager
 from chat_mcp.agents.orchestrator import prewarm_tenant_graph
 from database.database import init_db, SessionLocal, MCPAgentBinding
 import dependencies
+from app_logging.error_handler import ErrorHandlerMiddleware
 import os
 os.environ["LANGCHAIN_DEBUG"] = "true"
 import tracemalloc
@@ -87,6 +88,8 @@ app = FastAPI(**APP_CONFIG, lifespan=lifespan)
 app.mount("/images", StaticFiles(directory="JS_Chatbot/images"), name="images")
 
 app.add_middleware(CORSMiddleware, **CORS_CONFIG)
+
+app.add_middleware(ErrorHandlerMiddleware)
 
 app.include_router(product_routes.router, tags=["Products"])
 app.include_router(service_routes.router, tags=["Services"])

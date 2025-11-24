@@ -16,6 +16,7 @@ from service.data.data_loader_elastic_search import (
 )
 from service.models.schemas import ProductRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -49,6 +50,12 @@ PRODUCT_COLUMNS_CONFIG = {
 }
 
 @router.post("/upload-product/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.upload_full",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def upload_product_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm."),
@@ -86,6 +93,12 @@ async def upload_product_data(
 
 
 @router.post("/upload-product-embed/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.upload_embed",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def upload_product_data_with_embed(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm (kèm embed tên)."),
@@ -124,6 +137,12 @@ async def upload_product_data_with_embed(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.post("/insert-accessory-embed-row/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.row.upsert",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def add_product(
     customer_id: str,
     product_data: ProductRow,
@@ -148,6 +167,12 @@ async def add_product(
 
 
 @router.post("/insert-product-embed-row/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.row.upsert_embed",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def add_product_with_embed(
     customer_id: str,
     product_data: ProductRow,
@@ -183,6 +208,12 @@ async def add_product_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/product/{customer_id}/{product_id}")
+@with_log_context(
+    event_action="product_catalog.update",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def update_product(
     customer_id: str,
     product_id: str,
@@ -229,6 +260,12 @@ async def update_product(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/product-embed/{customer_id}/{product_id}")
+@with_log_context(
+    event_action="product_catalog.update_embed",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def update_product_with_embed(
     customer_id: str,
     product_id: str,
@@ -272,6 +309,12 @@ async def update_product_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/product/{customer_id}/{product_id}")
+@with_log_context(
+    event_action="product_catalog.delete",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def delete_product(
     customer_id: str,
     product_id: str,
@@ -290,6 +333,12 @@ async def delete_product(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/products/bulk/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.bulk_upsert",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def add_products_bulk(
     customer_id: str,
     products: List[ProductRow],
@@ -320,6 +369,12 @@ async def add_products_bulk(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/products-embed/bulk/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.bulk_upsert_embed",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def add_products_bulk_with_embed(
     customer_id: str,
     products: List[ProductRow],
@@ -359,6 +414,12 @@ async def add_products_bulk_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/insert-product/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.import",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def append_product_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu sản phẩm để nạp thêm."),
@@ -393,6 +454,12 @@ async def append_product_data_from_file(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.delete("/products/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.delete_all",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def delete_all_products_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng để xóa tất cả sản phẩm."),
     es_client: AsyncElasticsearch = Depends(get_es_client)
@@ -415,6 +482,12 @@ async def delete_all_products_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa sản phẩm: {e}")
 
 @router.delete("/products/bulk/{customer_id}")
+@with_log_context(
+    event_action="product_catalog.bulk_delete",
+    event_category="product_catalog",
+    source_layer="controller",
+    source_controller="product_routes",
+)
 async def delete_products_bulk(
     customer_id: str,
     delete_input: BulkDeleteInput,

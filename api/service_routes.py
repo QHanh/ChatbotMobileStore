@@ -16,6 +16,7 @@ from service.data.data_loader_elastic_search import (
 )
 from service.models.schemas import ServiceRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
+from app_logging.decorators import with_log_context
 router = APIRouter()
 
 SERVICE_COLUMNS_CONFIG = {
@@ -44,6 +45,12 @@ SERVICE_COLUMNS_CONFIG = {
 }
 
 @router.post("/upload-service/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.upload_full",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def upload_service_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ."),
@@ -81,6 +88,12 @@ async def upload_service_data(
 
 
 @router.post("/upload-service-embed/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.upload_embed",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def upload_service_data_with_embed(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ (kèm embed tên)."),
@@ -119,6 +132,12 @@ async def upload_service_data_with_embed(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.post("/insert-service-embed-row/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.row.upsert",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def add_service(
     customer_id: str,
     service_data: ServiceRow,
@@ -143,6 +162,12 @@ async def add_service(
 
 
 @router.post("/insert-service-embed-row/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.row.upsert_embed",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def add_service_with_embed(
     customer_id: str,
     service_data: ServiceRow,
@@ -174,6 +199,12 @@ async def add_service_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/service/{customer_id}/{service_id}")
+@with_log_context(
+    event_action="service_catalog.update",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def update_service(
     customer_id: str,
     service_id: str,
@@ -220,6 +251,12 @@ async def update_service(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/service-embed/{customer_id}/{service_id}")
+@with_log_context(
+    event_action="service_catalog.update_embed",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def update_service_with_embed(
     customer_id: str,
     service_id: str,
@@ -263,6 +300,12 @@ async def update_service_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/service/{customer_id}/{service_id}")
+@with_log_context(
+    event_action="service_catalog.delete",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def delete_service(
     customer_id: str,
     service_id: str,
@@ -281,6 +324,12 @@ async def delete_service(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/services/bulk/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.bulk_upsert",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def add_services_bulk(
     customer_id: str,
     services: List[ServiceRow],
@@ -311,6 +360,12 @@ async def add_services_bulk(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/services-embed/bulk/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.bulk_upsert_embed",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def add_services_bulk_with_embed(
     customer_id: str,
     services: List[ServiceRow],
@@ -350,6 +405,12 @@ async def add_services_bulk_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/insert-service/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.import",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def append_service_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu dịch vụ để nạp thêm."),
@@ -384,6 +445,12 @@ async def append_service_data_from_file(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.delete("/services/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.delete_all",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def delete_all_services_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng để xóa tất cả dịch vụ."),
     es_client: AsyncElasticsearch = Depends(get_es_client)
@@ -406,6 +473,12 @@ async def delete_all_services_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa dịch vụ: {e}")
 
 @router.delete("/services/bulk/{customer_id}")
+@with_log_context(
+    event_action="service_catalog.bulk_delete",
+    event_category="service_catalog",
+    source_layer="controller",
+    source_controller="service_routes",
+)
 async def delete_services_bulk(
     customer_id: str,
     delete_input: BulkDeleteInput,

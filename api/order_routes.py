@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from database.database import get_db, ProductOrder, ServiceOrder, AccessoryOrder
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -46,6 +47,12 @@ class AllOrdersResponse(BaseModel):
     accessory_orders: List[AccessoryOrderResponse]
 
 @router.get("/orders/{customer_id}", response_model=AllOrdersResponse)
+@with_log_context(
+    event_action="order.all.list",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def get_all_orders_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: Optional[str] = Query(None, description="Lọc theo thread_id (tùy chọn)"),
@@ -105,6 +112,12 @@ async def get_all_orders_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng: {str(e)}")
 
 @router.get("/orders/{customer_id}/products", response_model=List[ProductOrderResponse])
+@with_log_context(
+    event_action="order.product.list",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def get_product_orders_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: Optional[str] = Query(None, description="Lọc theo thread_id (tùy chọn)"),
@@ -137,6 +150,12 @@ async def get_product_orders_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng sản phẩm: {str(e)}")
 
 @router.get("/orders/{customer_id}/services", response_model=List[ServiceOrderResponse])
+@with_log_context(
+    event_action="order.service.list",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def get_service_orders_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: Optional[str] = Query(None, description="Lọc theo thread_id (tùy chọn)"),
@@ -169,6 +188,12 @@ async def get_service_orders_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng dịch vụ: {str(e)}")
 
 @router.get("/orders/{customer_id}/accessories", response_model=List[AccessoryOrderResponse])
+@with_log_context(
+    event_action="order.accessory.list",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def get_accessory_orders_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: Optional[str] = Query(None, description="Lọc theo thread_id (tùy chọn)"),
@@ -201,6 +226,12 @@ async def get_accessory_orders_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy đơn hàng phụ kiện: {str(e)}")
 
 @router.get("/orders/{customer_id}/summary")
+@with_log_context(
+    event_action="order.summary",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def get_orders_summary_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: Optional[str] = Query(None, description="Lọc theo thread_id (tùy chọn)"),
@@ -244,6 +275,12 @@ class UpdateStatusRequest(BaseModel):
     status: str = Field(description="Trạng thái mới của đơn hàng")
 
 @router.put("/orders/{customer_id}/{thread_id}/{order_id}")
+@with_log_context(
+    event_action="order.status.update",
+    event_category="order",
+    source_layer="controller",
+    source_controller="order_routes",
+)
 async def update_order_status(
     customer_id: str = Path(..., description="Mã khách hàng"),
     thread_id: str = Path(..., description="ID luồng chat"),

@@ -16,6 +16,7 @@ import hashlib
 import pandas as pd
 import io
 from datetime import datetime, timezone
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 FAQ_COLUMNS_CONFIG = {
@@ -56,6 +57,12 @@ async def get_all_faqs_by_customer(es_client: AsyncElasticsearch, index_name: st
         return []
 
 @router.get("/faqs/{customer_id}", response_model=List[FaqRow])
+@with_log_context(
+    event_action="faq_mobile.list",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def get_all_faqs(
     customer_id: str = Path(..., description="Mã khách hàng."),
     es_client: AsyncElasticsearch = Depends(get_es_client)
@@ -68,6 +75,12 @@ async def get_all_faqs(
     return faqs
 
 @router.post("/faq/{customer_id}")
+@with_log_context(
+    event_action="faq_mobile.create",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def add_faq(
     customer_id: str,
     faq_data: FaqCreate,
@@ -105,6 +118,12 @@ async def add_faq(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/faq/{customer_id}/{faq_id}")
+@with_log_context(
+    event_action="faq_mobile.update",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def update_faq(
     customer_id: str,
     faq_id: str,
@@ -157,6 +176,12 @@ async def update_faq(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/faq/{customer_id}/{faq_id}")
+@with_log_context(
+    event_action="faq_mobile.delete",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def delete_faq(
     customer_id: str,
     faq_id: str,
@@ -173,6 +198,12 @@ async def delete_faq(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/faqs/{customer_id}")
+@with_log_context(
+    event_action="faq_mobile.delete_all",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def delete_all_faqs(
     customer_id: str = Path(..., description="Mã khách hàng để xóa tất cả FAQs."),
     es_client: AsyncElasticsearch = Depends(get_es_client)
@@ -189,6 +220,12 @@ async def delete_all_faqs(
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa FAQs: {e}")
 
 @router.post("/insert-faq/{customer_id}")
+@with_log_context(
+    event_action="faq_mobile.import",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def append_faq_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu FAQ để nạp thêm."),
@@ -223,6 +260,12 @@ async def append_faq_data_from_file(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.get("/faq-export/{customer_id}")
+@with_log_context(
+    event_action="faq_mobile.export",
+    event_category="faq_mobile",
+    source_layer="controller",
+    source_controller="faq_routes",
+)
 async def export_faqs_to_excel(
     customer_id: str = Path(..., description="Mã khách hàng."),
     es_client: AsyncElasticsearch = Depends(get_es_client)

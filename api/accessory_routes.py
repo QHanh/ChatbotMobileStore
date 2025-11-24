@@ -16,6 +16,7 @@ from service.data.data_loader_elastic_search import (
 )
 from service.models.schemas import AccessoryRow, BulkDeleteInput
 from service.utils.helpers import sanitize_for_es
+from app_logging.decorators import with_log_context
 router = APIRouter()
 
 ACCESSORY_COLUMNS_CONFIG = {
@@ -48,6 +49,12 @@ ACCESSORY_COLUMNS_CONFIG = {
 }
 
 @router.post("/upload-accessory/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.upload_full",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def upload_accessory_data(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện."),
@@ -85,6 +92,12 @@ async def upload_accessory_data(
 
 
 @router.post("/upload-accessory-embed/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.upload_embed",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def upload_accessory_data_with_embed(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện (kèm embed tên)."),
@@ -119,6 +132,12 @@ async def upload_accessory_data_with_embed(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.post("/insert-accessory-row/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.row.upsert",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def add_accessory(
     customer_id: str,
     accessory_data: AccessoryRow,
@@ -143,6 +162,12 @@ async def add_accessory(
 
 
 @router.post("/insert-accessory-embed-row/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.row.upsert_embed",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def add_accessory_with_embed(
     customer_id: str,
     accessory_data: AccessoryRow,
@@ -174,6 +199,12 @@ async def add_accessory_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/accessory/{customer_id}/{accessory_id}")
+@with_log_context(
+    event_action="accessory_catalog.update",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def update_accessory(
     customer_id: str,
     accessory_id: str,
@@ -220,6 +251,12 @@ async def update_accessory(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.put("/accessory-embed/{customer_id}/{accessory_id}")
+@with_log_context(
+    event_action="accessory_catalog.update_embed",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def update_accessory_with_embed(
     customer_id: str,
     accessory_id: str,
@@ -263,6 +300,12 @@ async def update_accessory_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/accessory/{customer_id}/{accessory_id}")
+@with_log_context(
+    event_action="accessory_catalog.delete",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def delete_accessory(
     customer_id: str,
     accessory_id: str,
@@ -281,6 +324,12 @@ async def delete_accessory(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/accessories/bulk/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.bulk_upsert",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def add_accessories_bulk(
     customer_id: str,
     accessories: List[AccessoryRow],
@@ -311,6 +360,12 @@ async def add_accessories_bulk(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/accessories-embed/bulk/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.bulk_upsert_embed",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def add_accessories_bulk_with_embed(
     customer_id: str,
     accessories: List[AccessoryRow],
@@ -350,6 +405,12 @@ async def add_accessories_bulk_with_embed(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/insert-accessory/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.import",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def append_accessory_data_from_file(
     customer_id: str = Path(..., description="Mã khách hàng."),
     file: UploadFile = File(..., description="File Excel chứa dữ liệu phụ kiện để nạp thêm."),
@@ -384,6 +445,12 @@ async def append_accessory_data_from_file(
         raise HTTPException(status_code=500, detail=f"Lỗi hệ thống: {e}")
 
 @router.delete("/accessories/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.delete_all",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def delete_all_accessories_by_customer(
     customer_id: str = Path(..., description="Mã khách hàng để xóa tất cả phụ kiện."),
     es_client: AsyncElasticsearch = Depends(get_es_client)
@@ -406,6 +473,12 @@ async def delete_all_accessories_by_customer(
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa phụ kiện: {e}")
 
 @router.delete("/accessories/bulk/{customer_id}")
+@with_log_context(
+    event_action="accessory_catalog.bulk_delete",
+    event_category="accessory_catalog",
+    source_layer="controller",
+    source_controller="accessory_routes",
+)
 async def delete_accessories_bulk(
     customer_id: str,
     delete_input: BulkDeleteInput,

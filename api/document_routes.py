@@ -25,6 +25,7 @@ from service.graphrag.graphrag_service import (
     configure_input_for_json,
     configure_cache_short_base,
 )
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -51,6 +52,12 @@ def _reindex_graphrag_for_customer(customer_id: str):
             db2.close()
 
 @router.post("/upload-text/{customer_id}")
+@with_log_context(
+    event_action="document.upload_text",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def upload_text(customer_id: str, doc_input: DocumentInput, db: Session = Depends(get_db), background: BackgroundTasks = None):
     try:
         source_name = doc_input.source if doc_input.source else doc_input.text[:20]
@@ -69,6 +76,12 @@ async def upload_text(customer_id: str, doc_input: DocumentInput, db: Session = 
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload-file/{customer_id}")
+@with_log_context(
+    event_action="document.upload_file",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def upload_file(customer_id: str, file: UploadFile = File(...), source: Optional[str] = Form(None), db: Session = Depends(get_db), background: BackgroundTasks = None):
     try:
         file_content = await file.read()
@@ -90,6 +103,12 @@ async def upload_file(customer_id: str, file: UploadFile = File(...), source: Op
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/upload-url/{customer_id}")
+@with_log_context(
+    event_action="document.upload_url",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def upload_url(customer_id: str, doc_input: DocumentUrlInput, db: Session = Depends(get_db), background: BackgroundTasks = None):
     try:
         try:
@@ -230,6 +249,12 @@ async def crawl_url_content(url: str) -> tuple[str, str]:
         return url, ""
 
 @router.post("/start-sitemap-crawl/{customer_id}")
+@with_log_context(
+    event_action="document.sitemap.crawl",
+    event_category="document_sitemap",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def start_sitemap_crawl(customer_id: str, website_url: str = Form(...), source: Optional[str] = Form(None)):
     """
     Start a sitemap crawl task and return task_id immediately.
@@ -260,6 +285,12 @@ async def start_sitemap_crawl(customer_id: str, website_url: str = Form(...), so
     }
 
 @router.get("/sitemap-progress/{task_id}")
+@with_log_context(
+    event_action="document.sitemap.progress",
+    event_category="document_sitemap",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
     """
     Stream progress for a specific crawl task.
@@ -446,6 +477,12 @@ async def get_sitemap_progress(task_id: str, db: Session = Depends(get_db)):
     )
 
 @router.post("/cancel-crawl/{task_id}")
+@with_log_context(
+    event_action="document.sitemap.cancel",
+    event_category="document_sitemap",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def cancel_crawl(task_id: str):
     """
     Cancel an active crawl task.
@@ -468,6 +505,12 @@ async def cancel_crawl(task_id: str):
     return {"message": f"Task {task_id} has been cancelled", "task_id": task_id}
 
 @router.get("/crawl-status/{task_id}")
+@with_log_context(
+    event_action="document.sitemap.status",
+    event_category="document_sitemap",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def get_crawl_status(task_id: str):
     """
     Get the status of a crawl task.
@@ -478,6 +521,12 @@ async def get_crawl_status(task_id: str):
     return crawl_task_status[task_id]
 
 @router.get("/active-crawls")
+@with_log_context(
+    event_action="document.sitemap.active",
+    event_category="document_sitemap",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def get_active_crawls():
     """
     Get all active crawl tasks.
@@ -489,6 +538,12 @@ async def get_active_crawls():
     return {"active_tasks": active_tasks, "count": len(active_tasks)}
 
 @router.get("/document-original/{customer_id}")
+@with_log_context(
+    event_action="document.original.get",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def get_original_document(
     customer_id: str, 
     source: str = Query(..., description="Tên 'source' của tài liệu cần lấy."),
@@ -529,6 +584,12 @@ async def get_original_document(
         raise HTTPException(status_code=404, detail="Tài liệu không có nội dung.")
 
 @router.get("/documents/{customer_id}")
+@with_log_context(
+    event_action="document.list",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def list_documents(customer_id: str, limit: int = 100, offset: int = 0, db: Session = Depends(get_db)):
     try:
         docs = (
@@ -548,6 +609,12 @@ async def list_documents(customer_id: str, limit: int = 100, offset: int = 0, db
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/sources/{customer_id}")
+@with_log_context(
+    event_action="document.sources.list",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def list_document_sources(customer_id: str, db: Session = Depends(get_db)):
     try:
         rows = (
@@ -562,6 +629,12 @@ async def list_document_sources(customer_id: str, db: Session = Depends(get_db))
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/sources/{customer_id}")
+@with_log_context(
+    event_action="document.sources.delete",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def delete_document_by_source(customer_id: str, source: str = Query(..., description="Tên 'source' của tài liệu cần xóa."), db: Session = Depends(get_db)):
     try:
         deleted = (
@@ -575,6 +648,12 @@ async def delete_document_by_source(customer_id: str, source: str = Query(..., d
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.delete("/documents/{customer_id}")
+@with_log_context(
+    event_action="document.delete_all",
+    event_category="document",
+    source_layer="controller",
+    source_controller="document_routes",
+)
 async def delete_all_documents(customer_id: str, db: Session = Depends(get_db)):
     try:
         db.query(Document).filter(Document.customer_id == customer_id).delete(synchronize_session=False)

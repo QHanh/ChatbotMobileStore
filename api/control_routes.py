@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database.database import get_db, ChatThread, CustomerIsSale, ChatCustomer
 from pydantic import BaseModel
 from typing import Optional
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -13,6 +14,12 @@ class ThreadUpdate(BaseModel):
     thread_name: Optional[str] = None
 
 @router.get("/is_sale/{customer_id}/{thread_id}")
+@with_log_context(
+    event_action="chatbot.customer.is_sale.get",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def get_is_sale_customer_status(customer_id: str, thread_id: str, db: Session = Depends(get_db)):
     """
     Lấy trạng thái khách hàng buôn của một khách hàng cho một luồng chat cụ thể.
@@ -26,6 +33,12 @@ async def get_is_sale_customer_status(customer_id: str, thread_id: str, db: Sess
     return {"customer_id": customer_id, "thread_id": thread_id, "is_sale_customer": is_sale}
 
 @router.post("/is_sale/{customer_id}/{thread_id}")
+@with_log_context(
+    event_action="chatbot.customer.is_sale.update",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def update_is_sale_customer_status(customer_id: str, thread_id: str, update_data: IsSaleCustomerUpdate, db: Session = Depends(get_db)):
     """
     Cập nhật trạng thái khách hàng buôn cho một khách hàng trong một luồng chat cụ thể.
@@ -53,6 +66,12 @@ async def update_is_sale_customer_status(customer_id: str, thread_id: str, updat
     }
 
 @router.post("/stop/{customer_id}/{thread_id}")
+@with_log_context(
+    event_action="chatbot.thread.stop",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def stop_bot(
     customer_id: str,
     thread_id: str,
@@ -84,6 +103,12 @@ async def stop_bot(
     return {"message": f"Bot has been stopped for thread {thread_id}."}
 
 @router.post("/start/{customer_id}/{thread_id}")
+@with_log_context(
+    event_action="chatbot.thread.start",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def start_bot(
     customer_id: str,
     thread_id: str,
@@ -104,6 +129,12 @@ async def start_bot(
     return {"message": f"Bot has been started for thread {thread_id}."}
 
 @router.get("/status/{customer_id}/{thread_id}")
+@with_log_context(
+    event_action="chatbot.thread.status",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def get_bot_status(
     customer_id: str,
     thread_id: str,
@@ -122,6 +153,12 @@ async def get_bot_status(
 
 # Customer-level bot control endpoints
 @router.post("/customer/stop/{customer_id}")
+@with_log_context(
+    event_action="chatbot.customer.stop",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def stop_customer_bot(
     customer_id: str,
     db: Session = Depends(get_db)
@@ -146,6 +183,12 @@ async def stop_customer_bot(
     return {"message": f"Bot đã được dừng cho customer_id {customer_id}."}
 
 @router.post("/customer/start/{customer_id}")
+@with_log_context(
+    event_action="chatbot.customer.start",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def start_customer_bot(
     customer_id: str,
     db: Session = Depends(get_db)
@@ -164,6 +207,12 @@ async def start_customer_bot(
     return {"message": f"Bot đã được khởi động cho customer_id {customer_id}."}
 
 @router.get("/customer/status/{customer_id}")
+@with_log_context(
+    event_action="chatbot.customer.status",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def get_customer_bot_status(
     customer_id: str,
     db: Session = Depends(get_db)
@@ -179,6 +228,12 @@ async def get_customer_bot_status(
     return {"customer_id": customer_id, "status": status}
 
 @router.delete("/customer/{customer_id}")
+@with_log_context(
+    event_action="chatbot.customer.data.delete",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def delete_customer_data(
     customer_id: str,
     db: Session = Depends(get_db)
@@ -214,6 +269,12 @@ async def delete_customer_data(
         )
 
 @router.delete("/customer/threads/{customer_id}")
+@with_log_context(
+    event_action="chatbot.customer.threads.delete",
+    event_category="chatbot_control",
+    source_layer="controller",
+    source_controller="control_routes",
+)
 async def delete_all_customer_threads(
     customer_id: str,
     db: Session = Depends(get_db)

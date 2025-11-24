@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from service.models.schemas import StoreInfo, StoreInfoUpdate
 from database.database import get_db, StoreInfo as StoreInfoModel
+from app_logging.decorators import with_log_context
 
 router = APIRouter()
 
@@ -18,6 +19,12 @@ def get_or_create_store_info(db: Session, customer_id: str) -> StoreInfoModel:
     return store_info
 
 @router.get("/store-info/{customer_id}", response_model=StoreInfo)
+@with_log_context(
+    event_action="store_info.get",
+    event_category="store_info",
+    source_layer="controller",
+    source_controller="info_store_routes",
+)
 async def get_store_info(customer_id: str, db: Session = Depends(get_db)):
     """
     Lấy thông tin cửa hàng của một khách hàng.
@@ -29,6 +36,12 @@ async def get_store_info(customer_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=f"Lỗi khi lấy thông tin cửa hàng: {str(e)}")
 
 @router.put("/store-info/{customer_id}")
+@with_log_context(
+    event_action="store_info.update",
+    event_category="store_info",
+    source_layer="controller",
+    source_controller="info_store_routes",
+)
 async def update_store_info(
     customer_id: str,
     store_info_update: StoreInfoUpdate,
@@ -57,6 +70,12 @@ async def update_store_info(
         raise HTTPException(status_code=500, detail=f"Lỗi khi cập nhật thông tin cửa hàng: {str(e)}")
 
 @router.delete("/store-info/{customer_id}")
+@with_log_context(
+    event_action="store_info.delete",
+    event_category="store_info",
+    source_layer="controller",
+    source_controller="info_store_routes",
+)
 async def delete_store_info(customer_id: str, db: Session = Depends(get_db)):
     """
     Xóa thông tin cửa hàng của một khách hàng (reset về mặc định).
