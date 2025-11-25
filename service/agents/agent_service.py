@@ -5,9 +5,41 @@ from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, System
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
 from elasticsearch import AsyncElasticsearch
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from dataclasses import dataclass
+import threading
+import time
 
 load_dotenv()
+
+# ==================== AGENT EXECUTOR CACHE ====================
+# Cache lưu trữ agent executor cho từng customer để tái sử dụng
+# Key: customer_id, Value: CachedAgentExecutor
+
+@dataclass
+class CachedAgentExecutor:
+    """Wrapper class để lưu trữ agent executor cùng metadata."""
+    executor: Any
+    customer_id: str
+    llm_provider: str
+    api_key_hash: str  # Hash của API key để so sánh
+    created_at: float
+    config_hash: str  # Hash của customer config để phát hiện thay đổi
+
+# Thread-safe cache dictionary
+_agent_cache: Dict[str, CachedAgentExecutor] = {}
+_cache_lock = threading.Lock()
+
+def _hash_api_key(api_key: str) -> str:
+    """Tạo hash đơn giản cho API key để so sánh."""
+    import hashlib
+    return hashlib.sha256((api_key or "").encode()).hexdigest()[:16]
+
+def _hash_customer_config(customer_config) -> str:
+    """Tạo hash từ customer config để phát hiện thay đổi."""
+    import hashlib
+    config_str = f"{customer_config.ai_name}|{customer_config.ai_role}|{customer_config.custom_prompt}|{customer_config.product_feature_enabled}|{customer_config.service_feature_enabled}|{customer_config.accessory_feature_enabled}"
+    return hashlib.sha256(config_str.encode()).hexdigest()[:16]
 
 from service.utils.tools import create_customer_tools
 from database.database import Customer, ChatHistory, ChatThread
@@ -253,6 +285,145 @@ def create_agent_executor(
     agent_executor = _AgentWrapper(agent, customer_tools, final_system_prompt)
     
     return agent_executor
+
+
+def get_or_create_agent_executor(
+    es_client: AsyncElasticsearch,
+    db: Session,
+    customer_id: str,
+    customer_config,
+    thread_id: str = None,
+    llm_provider: str = "google_genai",
+    api_key: str = None,
+    force_recreate: bool = False
+):
+    """
+    Lấy agent executor từ cache hoặc tạo mới nếu chưa có.
+    
+    Agent sẽ được tạo lại nếu:
+    - force_recreate=True
+    - Chưa có trong cache
+    - LLM provider thay đổi
+    - API key thay đổi
+    - Customer config thay đổi
+    
+    Returns:
+        Agent executor đã được cache hoặc mới tạo
+    """
+    api_key_hash = _hash_api_key(api_key)
+    config_hash = _hash_customer_config(customer_config)
+    
+    with _cache_lock:
+        cached = _agent_cache.get(customer_id)
+        
+        # Kiểm tra xem có cần tạo lại agent không
+        need_recreate = (
+            force_recreate
+            or cached is None
+            or cached.llm_provider != llm_provider
+            or cached.api_key_hash != api_key_hash
+            or cached.config_hash != config_hash
+        )
+        
+        if not need_recreate:
+            print(f"[AGENT CACHE] Reusing cached agent for customer {customer_id}")
+            return cached.executor
+        
+        # Tạo agent mới
+        print(f"[AGENT CACHE] Creating new agent for customer {customer_id} (force={force_recreate})")
+        executor = create_agent_executor(
+            es_client=es_client,
+            db=db,
+            customer_id=customer_id,
+            customer_config=customer_config,
+            thread_id=thread_id,
+            llm_provider=llm_provider,
+            api_key=api_key
+        )
+        
+        # Lưu vào cache
+        _agent_cache[customer_id] = CachedAgentExecutor(
+            executor=executor,
+            customer_id=customer_id,
+            llm_provider=llm_provider,
+            api_key_hash=api_key_hash,
+            created_at=time.time(),
+            config_hash=config_hash
+        )
+        
+        return executor
+
+
+def reset_agent_executor(customer_id: str) -> dict:
+    """
+    Reset/xóa agent executor khỏi cache cho một customer cụ thể.
+    Lần gọi chat tiếp theo sẽ tạo agent mới.
+    
+    Args:
+        customer_id: ID của customer cần reset agent
+        
+    Returns:
+        Dict với status và thông tin
+    """
+    with _cache_lock:
+        if customer_id in _agent_cache:
+            cached = _agent_cache.pop(customer_id)
+            age_seconds = time.time() - cached.created_at
+            print(f"[AGENT CACHE] Reset agent for customer {customer_id} (was cached for {age_seconds:.1f}s)")
+            return {
+                "status": "success",
+                "message": f"Đã reset agent cho customer {customer_id}",
+                "was_cached": True,
+                "cache_age_seconds": round(age_seconds, 1)
+            }
+        else:
+            print(f"[AGENT CACHE] No cached agent found for customer {customer_id}")
+            return {
+                "status": "success",
+                "message": f"Không tìm thấy agent trong cache cho customer {customer_id}",
+                "was_cached": False
+            }
+
+
+def reset_all_agent_executors() -> dict:
+    """
+    Reset tất cả agent executor trong cache.
+    
+    Returns:
+        Dict với status và số lượng agent đã xóa
+    """
+    with _cache_lock:
+        count = len(_agent_cache)
+        _agent_cache.clear()
+        print(f"[AGENT CACHE] Reset all agents, cleared {count} cached agent(s)")
+        return {
+            "status": "success",
+            "message": f"Đã reset {count} agent(s) trong cache",
+            "cleared_count": count
+        }
+
+
+def get_agent_cache_info() -> dict:
+    """
+    Lấy thông tin về trạng thái cache hiện tại.
+    
+    Returns:
+        Dict với thông tin cache
+    """
+    with _cache_lock:
+        cache_info = []
+        current_time = time.time()
+        for customer_id, cached in _agent_cache.items():
+            cache_info.append({
+                "customer_id": customer_id,
+                "llm_provider": cached.llm_provider,
+                "cache_age_seconds": round(current_time - cached.created_at, 1),
+                "created_at": cached.created_at
+            })
+        return {
+            "total_cached": len(_agent_cache),
+            "agents": cache_info
+        }
 
 def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 8) -> List[BaseMessage]:
     """Lấy các tin nhắn gần nhất trong lịch sử chat từ database."""

@@ -1,7 +1,14 @@
 from fastapi import APIRouter, Path, HTTPException, Depends
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from service.agents.agent_service import create_agent_executor, invoke_agent_with_memory, clear_chat_history_for_customer
+from service.agents.agent_service import (
+    get_or_create_agent_executor,
+    invoke_agent_with_memory,
+    clear_chat_history_for_customer,
+    reset_agent_executor,
+    reset_all_agent_executors,
+    get_agent_cache_info
+)
 from service.models.schemas import ChatbotRequest, ChatHistoryResponse
 from database.database import get_db, Customer, ChatThread, ChatHistory, ChatCustomer
 from elasticsearch import AsyncElasticsearch
@@ -274,7 +281,7 @@ async def chat(
             customer_config.service_feature_enabled = '2' in access_str
             customer_config.accessory_feature_enabled = '3' in access_str
             
-        agent_executor = create_agent_executor(
+        agent_executor = get_or_create_agent_executor(
             es_client=es_client,
             db=db,
             customer_id=customer_id,
@@ -417,3 +424,77 @@ async def clear_history(
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Lỗi khi xóa lịch sử chat: {str(e)}")
+
+
+# ==================== AGENT CACHE MANAGEMENT ENDPOINTS ====================
+
+@router.post("/agent/reset/{customer_id}")
+@with_log_context(
+    event_action="chatbot.agent.reset",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
+async def reset_customer_agent(
+    customer_id: str = Path(..., description="Mã khách hàng cần reset agent.")
+):
+    """
+    Reset agent executor cho một customer cụ thể.
+    Agent sẽ được tạo lại từ đầu ở lần chat tiếp theo.
+    
+    Sử dụng khi:
+    - Muốn làm mới trạng thái agent
+    - Sau khi thay đổi cấu hình customer
+    - Khi agent gặp lỗi cần khởi động lại
+    """
+    try:
+        result = reset_agent_executor(customer_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi reset agent: {str(e)}")
+
+
+@router.post("/agent/reset-all")
+@with_log_context(
+    event_action="chatbot.agent.reset_all",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
+async def reset_all_agents():
+    """
+    Reset tất cả agent executor trong cache.
+    Tất cả agent sẽ được tạo lại từ đầu ở lần chat tiếp theo.
+    
+    Sử dụng khi:
+    - Cần làm mới toàn bộ hệ thống
+    - Sau khi cập nhật system prompt chung
+    - Khi cần giải phóng bộ nhớ
+    """
+    try:
+        result = reset_all_agent_executors()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi reset tất cả agents: {str(e)}")
+
+
+@router.get("/agent/cache-info")
+@with_log_context(
+    event_action="chatbot.agent.cache_info",
+    event_category="chatbot",
+    source_layer="controller",
+    source_controller="chat_routes",
+)
+async def get_cache_info():
+    """
+    Lấy thông tin về trạng thái cache agent hiện tại.
+    
+    Trả về:
+    - Số lượng agent đang được cache
+    - Thông tin chi tiết từng agent (customer_id, provider, thời gian cache)
+    """
+    try:
+        result = get_agent_cache_info()
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Lỗi khi lấy thông tin cache: {str(e)}")

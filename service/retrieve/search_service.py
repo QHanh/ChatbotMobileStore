@@ -769,8 +769,45 @@ async def hybrid_search_products(
             for _k in list(_item.keys()):
                 if _k.endswith("_embedding"):
                     del _item[_k]
+
+        raw_num_hits = len(hits)
+        print(f"[HYBRID_PRODUCTS] Found {raw_num_hits} hits for customer '{customer_id}'.")
+
+        # Chuẩn bị văn bản cho Jina rerank (dùng model + loại thiết bị + tình trạng)
+        docs_for_rerank: List[str] = []
+        for item in hits:
+            parts: List[str] = []
+            model_name = item.get("model")
+            if model_name:
+                parts.append(str(model_name))
+            dung_luong = item.get("dung_luong")
+            if dung_luong:
+                parts.append(str(dung_luong))
+            mau_sac = item.get("mau_sac")
+            if mau_sac:
+                parts.append(str(mau_sac))
+            loai_thiet_bi = item.get("loai_thiet_bi")
+            if loai_thiet_bi:
+                parts.append(str(loai_thiet_bi))
+            tinh_trang_may = item.get("tinh_trang_may")
+            if tinh_trang_may:
+                parts.append(str(tinh_trang_may))
+            docs_for_rerank.append(" | ".join(parts) if parts else "")
+
+        reranked_hits = hits
+        if docs_for_rerank:
+            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
+            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
+            if not reranked_hits:
+                reranked_hits = hits[:10]
+        else:
+            reranked_hits = hits[:10]
+
+        num_hits = len(reranked_hits)
+        print(f"[HYBRID_PRODUCTS] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        formatted_hits = _format_results_for_agent(hits, is_sale)
+        formatted_hits = _format_results_for_agent(reranked_hits, is_sale)
 
         if llm:
             return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
@@ -872,8 +909,43 @@ async def hybrid_search_services(
             for _k in list(_item.keys()):
                 if _k.endswith("_embedding"):
                     del _item[_k]
+
+        raw_num_hits = len(hits)
+        print(f"[HYBRID_SERVICES] Found {raw_num_hits} hits for customer '{customer_id}'.")
+
+        # Chuẩn bị văn bản cho Jina rerank (dùng tên dịch vụ + loại dịch vụ + sản phẩm áp dụng)
+        docs_for_rerank: List[str] = []
+        for item in hits:
+            parts: List[str] = []
+            ten_dv = item.get("ten_dich_vu")
+            if ten_dv:
+                parts.append(str(ten_dv))
+            loai_dv = item.get("loai_dich_vu")
+            if loai_dv:
+                parts.append(str(loai_dv))
+            ten_sp = item.get("ten_san_pham")
+            if ten_sp:
+                parts.append(str(ten_sp))
+            ghi_chu = item.get("ghi_chu")
+            if ghi_chu:
+                parts.append(str(ghi_chu))
+            docs_for_rerank.append(" | ".join(parts) if parts else "")
+
+        reranked_hits = hits
+        if docs_for_rerank:
+            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
+            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
+            if not reranked_hits:
+                reranked_hits = hits[:10]
+        else:
+            reranked_hits = hits[:10]
+
+        num_hits = len(reranked_hits)
+        print(f"[HYBRID_SERVICES] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        formatted_hits = _format_results_for_agent(hits, is_sale)
+        formatted_hits = _format_results_for_agent(reranked_hits, is_sale)
+
         if llm:
             return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
         return formatted_hits

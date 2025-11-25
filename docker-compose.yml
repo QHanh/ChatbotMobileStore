@@ -14,6 +14,11 @@ services:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - datanet
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\"\\|\"status\":\"yellow\"'"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   kibana:
     image: docker.elastic.co/kibana/kibana:9.0.3
@@ -24,7 +29,8 @@ services:
       - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
       - xpack.security.enabled=false
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
     networks:
       - datanet
 
@@ -38,9 +44,111 @@ services:
     networks:
       - datanet
 
+  # ============= LOGGING STACK =============
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.17.0
+    container_name: filebeat
+    user: root
+    volumes:
+      - ./logging-stack/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ./logs:/var/log/chatbotmobilestore:ro
+      # Mount dangbaitudong logs from host path (adjust if needed)
+      - /home/doiquanai/Desktop/dangbaitudong/dangbaitudong/logs:/var/log/dangbaitudong:ro
+      - filebeat_data:/usr/share/filebeat/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    networks:
+      - datanet
+    command: filebeat -e --strict.perms=false
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./logging-stack/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+      prometheus:
+        condition: service_started
+    networks:
+      - datanet
+    restart: unless-stopped
+
+  # ============= MONITORING STACK =============
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./logging-stack/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - datanet
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.6.1
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - datanet
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.47.2
+    container_name: cadvisor
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    privileged: true
+    devices:
+      - /dev/kmsg
+    networks:
+      - datanet
+    restart: unless-stopped
+
 volumes:
   esdata:
   weavdata:
+  filebeat_data:
+  grafana_data:
+  prometheus_data:
+  dangbaitudong_logs:
+    external: true
+    name: dangbaitudong_logs
 
 networks:
   datanet:
+    name: shared_datanet
+    driver: bridge

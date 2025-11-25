@@ -1,0 +1,305 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 80 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "id": 1,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["count"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "alias": "",
+          "bucketAggs": [],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [{ "id": "1", "type": "count" }],
+          "query": "log.level:ERROR",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Total Errors",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["count"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "bucketAggs": [],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [{ "id": "1", "type": "count" }],
+          "query": "service.name:chatbotmobilestore-api",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "ChatbotMobileStore Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "id": 3,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": ["count"],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "auto"
+      },
+      "pluginVersion": "10.0.0",
+      "targets": [
+        {
+          "bucketAggs": [],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [{ "id": "1", "type": "count" }],
+          "query": "service.name:dangbaitudong-api",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "dangbaitudong Logs",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 5 },
+      "id": 4,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": true,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "targets": [
+        {
+          "bucketAggs": [],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [
+            {
+              "id": "1",
+              "settings": { "limit": "500" },
+              "type": "logs"
+            }
+          ],
+          "query": "log.level:ERROR",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Error Logs",
+      "type": "logs"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [{ "color": "green", "value": null }]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 13 },
+      "id": 5,
+      "options": {
+        "legend": { "calcs": [], "displayMode": "list", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "field": "@timestamp",
+              "id": "2",
+              "settings": { "interval": "auto" },
+              "type": "date_histogram"
+            }
+          ],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [{ "id": "1", "type": "count" }],
+          "query": "log.level:ERROR",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Errors Over Time",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "elasticsearch",
+        "uid": "P4E55FF30829D8CB1"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 13 },
+      "id": 6,
+      "options": {
+        "legend": { "displayMode": "list", "placement": "right", "showLegend": true },
+        "pieType": "pie",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "bucketAggs": [
+            {
+              "field": "event.category",
+              "id": "2",
+              "settings": { "min_doc_count": "1", "order": "desc", "orderBy": "_count", "size": "10" },
+              "type": "terms"
+            }
+          ],
+          "datasource": { "type": "elasticsearch", "uid": "P4E55FF30829D8CB1" },
+          "metrics": [{ "id": "1", "type": "count" }],
+          "query": "log.level:ERROR",
+          "refId": "A",
+          "timeField": "@timestamp"
+        }
+      ],
+      "title": "Errors by Category",
+      "type": "piechart"
+    }
+  ],
+  "refresh": "10s",
+  "schemaVersion": 38,
+  "style": "dark",
+  "tags": ["logs", "application"],
+  "templating": {
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "DS_ELASTICSEARCH-LOGS",
+        "options": [],
+        "query": "elasticsearch",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
+  },
+  "time": { "from": "now-1h", "to": "now" },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Application Logs Dashboard",
+  "uid": "app-logs-main",
+  "version": 1,
+  "weekStart": ""
+}
