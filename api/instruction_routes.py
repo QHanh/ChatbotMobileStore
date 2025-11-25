@@ -4,6 +4,7 @@ from database.database import get_db, SystemInstruction
 from service.models.schemas import InstructionsUpdate, Instruction
 from typing import List
 from app_logging.decorators import with_log_context
+from service.agents.agent_service import reset_all_agent_executors
 
 router = APIRouter()
 
@@ -49,6 +50,9 @@ def update_instructions(
     
     for instruction in updated_instructions:
         db.refresh(instruction)
+    
+    # Reset tất cả agents vì instructions là global
+    reset_all_agent_executors()
         
     return updated_instructions
 
@@ -80,6 +84,10 @@ def create_instruction(item: Instruction, db: Session = Depends(get_db)):
     db.add(instruction)
     db.commit()
     db.refresh(instruction)
+    
+    # Reset tất cả agents vì instructions là global
+    reset_all_agent_executors()
+    
     return instruction
 
 @router.put("/instructions/{key}", response_model=Instruction)
@@ -98,6 +106,10 @@ def upsert_instruction(key: str, item: Instruction, db: Session = Depends(get_db
         db.add(instruction)
     db.commit()
     db.refresh(instruction)
+    
+    # Reset tất cả agents vì instructions là global
+    reset_all_agent_executors()
+    
     return instruction
 
 @router.delete("/instructions/{key}")
@@ -113,4 +125,8 @@ def delete_instruction(key: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Instruction not found")
     db.delete(instruction)
     db.commit()
+    
+    # Reset tất cả agents vì instructions là global
+    reset_all_agent_executors()
+    
     return {"status": "deleted", "key": key}

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from service.models.schemas import StoreInfo, StoreInfoUpdate
 from database.database import get_db, StoreInfo as StoreInfoModel
 from app_logging.decorators import with_log_context
+from service.agents.agent_service import reset_agent_executor
 
 router = APIRouter()
 
@@ -61,6 +62,9 @@ async def update_store_info(
         db.commit()
         db.refresh(store_info)
         
+        # Reset agent để áp dụng thông tin cửa hàng mới
+        reset_agent_executor(customer_id)
+        
         return {
             "message": f"Thông tin cửa hàng của khách hàng '{customer_id}' đã được cập nhật.",
             "store_info": store_info
@@ -95,6 +99,10 @@ async def delete_store_info(customer_id: str, db: Session = Depends(get_db)):
             store_info.info_more = None
             
             db.commit()
+            
+            # Reset agent để áp dụng thay đổi
+            reset_agent_executor(customer_id)
+            
             return {"message": f"Thông tin cửa hàng của khách hàng '{customer_id}' đã được reset về mặc định."}
         else:
             return {"message": f"Không tìm thấy thông tin cửa hàng cho khách hàng '{customer_id}'."}

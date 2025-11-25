@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from service.models.schemas import PersonaConfig, PromptConfig, ServiceFeatureConfig, AccessoryFeatureConfig, ProductFeatureConfig
 from database.database import get_db, Customer
 from app_logging.decorators import with_log_context
+from service.agents.agent_service import reset_agent_executor
 
 router = APIRouter()
 
@@ -37,6 +38,10 @@ async def set_persona_config(
     customer.ai_name = config.ai_name
     customer.ai_role = config.ai_role
     db.commit()
+    
+    # Reset agent để áp dụng config mới
+    reset_agent_executor(customer_id)
+    
     return {"message": f"Vai trò và tên cho chatbot AI của khách hàng '{customer_id}' đã được cập nhật."}
 
 @router.get("/config/persona/{customer_id}")
@@ -69,6 +74,10 @@ async def delete_persona_config(customer_id: str, db: Session = Depends(get_db))
         customer.ai_name = None
         customer.ai_role = None
         db.commit()
+        
+        # Reset agent để áp dụng config mới
+        reset_agent_executor(customer_id)
+        
         return {"message": f"Cấu hình vai trò của khách hàng '{customer_id}' đã được xóa về mặc định."}
     raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng.")
 
@@ -90,6 +99,10 @@ async def set_prompt_config(
     customer = get_or_create_customer(db, customer_id)
     customer.custom_prompt = config.custom_prompt
     db.commit()
+    
+    # Reset agent để áp dụng prompt mới
+    reset_agent_executor(customer_id)
+    
     return {"message": f"System prompt tùy chỉnh cho khách hàng '{customer_id}' đã được cập nhật."}
 
 @router.get("/config/prompt/{customer_id}")
@@ -121,6 +134,10 @@ async def delete_prompt_config(customer_id: str, db: Session = Depends(get_db)):
     if customer:
         customer.custom_prompt = None
         db.commit()
+        
+        # Reset agent để áp dụng thay đổi
+        reset_agent_executor(customer_id)
+        
         return {"message": f"System prompt tùy chỉnh của khách hàng '{customer_id}' đã được xóa."}
     raise HTTPException(status_code=404, detail="Không tìm thấy khách hàng.")
 
@@ -142,6 +159,10 @@ async def set_service_feature_config(
     customer = get_or_create_customer(db, customer_id)
     customer.service_feature_enabled = config.enabled
     db.commit()
+    
+    # Reset agent để áp dụng config mới
+    reset_agent_executor(customer_id)
+    
     status = "bật" if config.enabled else "tắt"
     return {"message": f"Chức năng tư vấn dịch vụ cho khách hàng '{customer_id}' đã được {status}."}
 
@@ -177,6 +198,10 @@ async def set_accessory_feature_config(
     customer = get_or_create_customer(db, customer_id)
     customer.accessory_feature_enabled = config.enabled
     db.commit()
+    
+    # Reset agent để áp dụng config mới
+    reset_agent_executor(customer_id)
+    
     status = "bật" if config.enabled else "tắt"
     return {"message": f"Chức năng tư vấn phụ kiện cho khách hàng '{customer_id}' đã được {status}."}
 
@@ -212,6 +237,10 @@ async def set_product_feature_config(
     customer = get_or_create_customer(db, customer_id)
     customer.product_feature_enabled = config.enabled
     db.commit()
+    
+    # Reset agent để áp dụng config mới
+    reset_agent_executor(customer_id)
+    
     status = "bật" if config.enabled else "tắt"
     return {"message": f"Chức năng tư vấn sản phẩm cho khách hàng '{customer_id}' đã được {status}."}
 
