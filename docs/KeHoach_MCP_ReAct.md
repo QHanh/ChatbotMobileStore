@@ -40,7 +40,7 @@ Tài liệu này mô tả kế hoạch đơn giản, dễ hiểu để:
 ### 3.1) Agent hiện tại trong codebase: wiring và workflow
  - Tạo agent
    - File: `service/agents/agent_service.py`, hàm `create_agent_executor`.
-   - LLM: `google_genai` → `gemini-2.5-flash`; `openai` → `gpt-4o-mini`.
+   - LLM: `google_genai` → `gemini-2.5-flash-lite`; `openai` → `gpt-4o-mini`.
    - Prompt hệ thống: `compose_system_prompt(...)` dựa trên `customer_config` và các feature flags.
    - Tool: lấy từ `create_customer_tools(...)` trong `service/utils/tools.py`.
    - Agent: `create_react_agent(llm, customer_tools)` và được bọc bởi `_AgentWrapper.ainvoke(...)` để trích xuất `output` an toàn từ state.
@@ -77,7 +77,7 @@ Tài liệu này mô tả kế hoạch đơn giản, dễ hiểu để:
  - B0. Kiểm tra trạng thái bot theo customer/thread, validate `threadId`, `customer_id`, và `access`.
  - B1. Xử lý đầu vào ảnh:
    - Nếu có `image_urls` hoặc `image_base64` → gọi `_identify_product_from_image(llm_provider, api_key, db, ...)`.
-   - LLM cho vision: `google_genai → gemini-2.5-flash`, `openai → gpt-4o-mini` (qua `init_chat_model`).
+   - LLM cho vision: `google_genai → gemini-2.5-flash-lite`, `openai → gpt-4o-mini` (qua `init_chat_model`).
    - Lấy `product_prefix_label` từ DB instructions, ghép kết quả nhận diện vào `user_input` nếu có (ưu tiên text+ảnh; nếu không có text thì dùng kết quả ảnh).
  - B2. Tạo `customer_config` và gán feature flags theo `access` (1: sản phẩm, 2: dịch vụ, 3: phụ kiện) nếu `access != 100`.
  - B3. Tạo agent executor:

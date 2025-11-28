@@ -176,7 +176,7 @@ def _build_llm_for_customer(customer: Customer, api_key: str):
     """Khởi tạo LLM cho tenant dựa trên cấu hình trong bảng customers.
 
     - Nếu customer.llm_provider/llm_model không có, fallback về logic cũ:
-      google_genai → gemini-2.5-flash, openai → gpt-4o-mini.
+      google_genai → gemini-2.5-flash-lite, openai → gpt-4o-mini.
     """
     if not api_key:
         raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
@@ -186,7 +186,7 @@ def _build_llm_for_customer(customer: Customer, api_key: str):
 
     if not model:
         if provider == "google_genai":
-            model = "gemini-2.5-flash"
+            model = "gemini-2.5-flash-lite"
         elif provider == "openai":
             model = "gpt-4o-mini"
         else:

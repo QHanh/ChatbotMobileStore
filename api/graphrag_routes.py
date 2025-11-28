@@ -27,7 +27,7 @@ class GraphRAGIndexRequest(BaseModel):
     persist_to_db: Optional[bool] = True
     overwrite: Optional[bool] = True
     provider: Optional[str] = "gemini"  # "openai" | "gemini"
-    chat_model: Optional[str] = None     # e.g., "gemini-2.5-flash"
+    chat_model: Optional[str] = None     # e.g., "gemini-2.5-flash-lite"
     embedding_model: Optional[str] = None  # e.g., "gemini-embedding-001"
 
 
@@ -47,7 +47,7 @@ def _background_reindex(
         # Configure Gemini via LiteLLM in settings.yaml and set GEMINI_API_KEY
         configure_models_gemini(
             root,
-            chat_model=chat_model or "gemini-2.5-flash",
+            chat_model=chat_model or "gemini-2.5-flash-lite",
             embedding_model=embedding_model or "gemini-embedding-001",
         )
         if api_key:

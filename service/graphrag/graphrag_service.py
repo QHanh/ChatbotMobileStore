@@ -60,7 +60,7 @@ def upsert_env_api_key(root: Path, api_key: str, env_key: str = "GRAPHRAG_API_KE
         f.write("\n".join(lines))
 
 
-def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash", embedding_model: str = "gemini-embedding-001"):
+def configure_models_gemini(root: Path, chat_model: str = "gemini-2.5-flash-lite", embedding_model: str = "gemini-embedding-001"):
     """Modify settings.yaml to use LiteLLM with Gemini for chat and embeddings."""
     settings_path = root / "settings.yaml"
     if not settings_path.exists():

@@ -34,7 +34,7 @@ async def _ocr_image_to_text(llm_provider: str, api_key: str, db: Session, image
 
     try:
         if llm_provider == "google_genai":
-            llm = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
+            llm = init_chat_model(model="gemini-2.5-flash-lite", model_provider="google_genai", api_key=api_key)
         elif llm_provider == "openai":
             llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
         else:
@@ -87,7 +87,7 @@ async def _identify_product_from_image(llm_provider: str, api_key: str, db: Sess
 
     try:
         if llm_provider == "google_genai":
-            llm = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
+            llm = init_chat_model(model="gemini-2.5-flash-lite", model_provider="google_genai", api_key=api_key)
         elif llm_provider == "openai":
             llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
         else:
