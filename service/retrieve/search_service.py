@@ -1034,7 +1034,7 @@ async def hybrid_search_accessories(
     knn_body: Dict[str, Any] = {
         "field": "accessory_name_embedding",
         "query_vector": query_vector,
-        "k": 100,
+        "k": 50,
         "num_candidates": 200,
     }
 
@@ -1050,7 +1050,7 @@ async def hybrid_search_accessories(
                     "knn": knn_log,
                     "query": {"bool": bool_query},
                     "routing": sanitized_customer_id,
-                    "size": 100,
+                    "size": 50,
                 },
                 ensure_ascii=False,
             ),
@@ -1061,7 +1061,7 @@ async def hybrid_search_accessories(
             knn=knn_body,
             query={"bool": bool_query},
             routing=sanitized_customer_id,
-            size=100,
+            size=50,
         )
 
         hits = [hit["_source"] for hit in response["hits"]["hits"]]
