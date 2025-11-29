@@ -286,9 +286,14 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
             prop = item.get('properties')
             if prop and str(prop).strip() and str(prop).strip() != '0':
                 context.append(f"  Thuộc tính: {prop}")
-            price = item.get('lifecare_price', 0)
+            # Giá phụ kiện: ưu tiên trường gia_ban / gia_si, fallback về lifecare_price / sale_price nếu còn dữ liệu cũ
+            price = item.get('gia_ban')
+            if price is None:
+                price = item.get('lifecare_price', 0)
             if is_sale_customer:
-                price_sale = item.get('sale_price')
+                price_sale = item.get('gia_si')
+                if price_sale is None:
+                    price_sale = item.get('sale_price')
                 price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
                 context.append(f"  Giá bán buôn: {price_sale_str}")
             inventory = item.get('inventory')
@@ -539,7 +544,8 @@ async def search_accessories(
     if max_gia is not None:
         price_range["lte"] = max_gia
     if price_range:
-        base_bool["bool"]["filter"].append({"range": {"lifecare_price": price_range}})
+        # Lọc theo giá bán đúng trường gia_ban
+        base_bool["bool"]["filter"].append({"range": {"gia_ban": price_range}})
 
     search_terms: List[str] = []
     if ten_phu_kien:
@@ -1028,7 +1034,8 @@ async def hybrid_search_accessories(
         "minimum_should_match": 1,
     }
     if price_range:
-        bool_query["filter"].append({"range": {"lifecare_price": price_range}})
+        # Lọc theo giá bán đúng trường gia_ban
+        bool_query["filter"].append({"range": {"gia_ban": price_range}})
 
     # Vector: dùng đúng field accessory_name_embedding trong ES
     knn_body: Dict[str, Any] = {
@@ -1079,10 +1086,15 @@ async def hybrid_search_accessories(
                 "[HYBRID_ACCESSORIES] Accessory names:",
                 json.dumps(accessory_names, ensure_ascii=False),
             )
-            # Log chi tiết tất cả các trường sau khi tìm từ ES (loại bỏ embedding)
+            # Log chi tiết tất cả các trường sau khi tìm từ ES (loại bỏ embedding và các trường giá cũ)
             print("[HYBRID_ACCESSORIES] === RAW ES HITS (ALL FIELDS) ===")
             for idx, _item in enumerate(hits):
-                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k not in ("specifications", "description")}
+                _item_log = {
+                    k: v
+                    for k, v in _item.items()
+                    if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
+                }
+            
                 print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
         except Exception as log_err:
@@ -1125,10 +1137,14 @@ async def hybrid_search_accessories(
                 "[HYBRID_ACCESSORIES] Reranked accessory names:",
                 json.dumps(reranked_names, ensure_ascii=False),
             )
-            # Log chi tiết tất cả các trường sau khi rerank (loại bỏ embedding)
+            # Log chi tiết tất cả các trường sau khi rerank (loại bỏ embedding và các trường giá cũ)
             print("[HYBRID_ACCESSORIES] === RERANKED HITS (ALL FIELDS) ===")
             for idx, _item in enumerate(reranked_hits):
-                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k not in ("specifications", "description")}
+                _item_log = {
+                    k: v
+                    for k, v in _item.items()
+                    if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
+                }
                 print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RERANKED HITS ===")
         except Exception as log_err:
