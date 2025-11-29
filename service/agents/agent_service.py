@@ -62,9 +62,13 @@ def create_agent_executor(
         raise ValueError("Bạn chưa thêm API key bên trang cấu hình.")
 
     if llm_provider == "google_genai":
-        llm = init_chat_model(model="gemini-2.5-flash-lite", model_provider="google_genai", api_key=api_key)
+        # Dùng model lớn để agent quyết định gọi tool nào
+        llm_decision = init_chat_model(model="gemini-2.5-flash", model_provider="google_genai", api_key=api_key)
+        # Dùng model nhẹ hơn cho các tool (search, RAG, ...)
+        llm_tools = init_chat_model(model="gemini-2.5-flash-lite", model_provider="google_genai", api_key=api_key)
     elif llm_provider == "openai":
-        llm = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
+        llm_decision = init_chat_model(model="gpt-4o-mini", model_provider="openai", api_key=api_key)
+        llm_tools = llm_decision
     else:
         raise ValueError(f"Không tìm thấy LLM provider: {llm_provider}")
 
@@ -81,7 +85,7 @@ def create_agent_executor(
         product_feature_enabled,
         service_feature_enabled, 
         accessory_feature_enabled,
-        llm=llm
+        llm=llm_tools
     )
 
     final_system_prompt = compose_system_prompt(
@@ -101,7 +105,7 @@ def create_agent_executor(
     ])
 
     # Dùng create_agent tương tự các MCP agent, để LLM tự quyết định gọi tool dựa trên messages
-    agent = create_agent(llm, customer_tools)
+    agent = create_agent(llm_decision, customer_tools)
 
     class _AgentWrapper:
         def __init__(self, agent, tools, system_prompt: str):
