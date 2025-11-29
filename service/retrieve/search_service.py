@@ -1079,8 +1079,14 @@ async def hybrid_search_accessories(
                 "[HYBRID_ACCESSORIES] Accessory names:",
                 json.dumps(accessory_names, ensure_ascii=False),
             )
-        except Exception:
-            pass
+            # Log chi tiết tất cả các trường sau khi tìm từ ES (loại bỏ embedding)
+            print("[HYBRID_ACCESSORIES] === RAW ES HITS (ALL FIELDS) ===")
+            for idx, _item in enumerate(hits):
+                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding")}
+                print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
+            print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
+        except Exception as log_err:
+            print(f"[HYBRID_ACCESSORIES] Lỗi log raw hits: {log_err}")
 
         # Chuẩn bị văn bản cho Jina rerank (chủ yếu dùng accessory_name + category + trademark + properties)
         docs_for_rerank: List[str] = []
@@ -1103,7 +1109,9 @@ async def hybrid_search_accessories(
         reranked_hits = hits
         if docs_for_rerank:
             indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
+            print(f"[HYBRID_ACCESSORIES] Jina rerank indices: {indices}")
             reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
+            print(f"[HYBRID_ACCESSORIES] Valid reranked_hits count: {len(reranked_hits)} (from {len(indices)} indices)")
             if not reranked_hits:
                 reranked_hits = hits[:10]
         else:
@@ -1117,8 +1125,14 @@ async def hybrid_search_accessories(
                 "[HYBRID_ACCESSORIES] Reranked accessory names:",
                 json.dumps(reranked_names, ensure_ascii=False),
             )
-        except Exception:
-            pass
+            # Log chi tiết tất cả các trường sau khi rerank (loại bỏ embedding)
+            print("[HYBRID_ACCESSORIES] === RERANKED HITS (ALL FIELDS) ===")
+            for idx, _item in enumerate(reranked_hits):
+                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding")}
+                print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
+            print("[HYBRID_ACCESSORIES] === END RERANKED HITS ===")
+        except Exception as log_err:
+            print(f"[HYBRID_ACCESSORIES] Lỗi log reranked hits: {log_err}")
 
         is_sale = _get_customer_is_sale(customer_id, thread_id)
         # Chỉ hiển thị specifications nếu có <= 5 kết quả sau rerank
