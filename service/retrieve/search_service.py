@@ -1082,7 +1082,7 @@ async def hybrid_search_accessories(
             # Log chi tiết tất cả các trường sau khi tìm từ ES (loại bỏ embedding)
             print("[HYBRID_ACCESSORIES] === RAW ES HITS (ALL FIELDS) ===")
             for idx, _item in enumerate(hits):
-                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k != "specifications"}
+                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k != "specifications" and k !="description"}
                 print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
         except Exception as log_err:
