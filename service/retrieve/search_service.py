@@ -221,7 +221,7 @@ async def rerank_with_jina(query: str, docs: List[str], top_n: int = 10) -> List
         return list(range(min(top_n, len(docs))))
 
 
-def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False, show_specifications: bool = True) -> List[str]:
+def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool = False, show_description: bool = True) -> List[str]:
     """Định dạng danh sách kết quả tìm kiếm thành chuỗi văn bản dễ đọc cho agent."""
     formatted_results = []
     for item in hits:
@@ -294,8 +294,8 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
             inventory = item.get('inventory')
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
-            if show_specifications and item.get('specifications'):
-                context.append(f"  Mô tả: {item.get('specifications')}")
+            if show_description and item.get('description'):
+                context.append(f"  Mô tả: {item.get('description')}")
             if item.get('guarantee'):
                 context.append(f"  Bảo hành: {item.get('guarantee')}")
             if item.get('link_product'):
@@ -1082,7 +1082,7 @@ async def hybrid_search_accessories(
             # Log chi tiết tất cả các trường sau khi tìm từ ES (loại bỏ embedding)
             print("[HYBRID_ACCESSORIES] === RAW ES HITS (ALL FIELDS) ===")
             for idx, _item in enumerate(hits):
-                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k != "specifications" and k !="description"}
+                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k not in ("specifications", "description")}
                 print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
         except Exception as log_err:
@@ -1128,14 +1128,14 @@ async def hybrid_search_accessories(
             # Log chi tiết tất cả các trường sau khi rerank (loại bỏ embedding)
             print("[HYBRID_ACCESSORIES] === RERANKED HITS (ALL FIELDS) ===")
             for idx, _item in enumerate(reranked_hits):
-                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k != "specifications"}
+                _item_log = {k: v for k, v in _item.items() if not k.endswith("_embedding") and k not in ("specifications", "description")}
                 print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RERANKED HITS ===")
         except Exception as log_err:
             print(f"[HYBRID_ACCESSORIES] Lỗi log reranked hits: {log_err}")
 
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        # Chỉ hiển thị specifications nếu có <= 5 kết quả sau rerank
+        # Chỉ hiển thị description nếu có <= 5 kết quả sau rerank
         top_hits = reranked_hits[:5]
         rest_hits = reranked_hits[5:]
         formatted_hits: List[str] = []
