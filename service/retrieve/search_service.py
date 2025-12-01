@@ -1050,18 +1050,18 @@ async def hybrid_search_accessories(
         knn_log = dict(knn_body)
         if "query_vector" in knn_log:
             knn_log["query_vector"] = f"<vector_len={len(knn_body['query_vector'])}>"
-        print(
-            "[HYBRID_ACCESSORIES] ES query:",
-            json.dumps(
-                {
-                    "knn": knn_log,
-                    "query": {"bool": bool_query},
-                    "routing": sanitized_customer_id,
-                    "size": 50,
-                },
-                ensure_ascii=False,
-            ),
-        )
+        # print(
+        #     "[HYBRID_ACCESSORIES] ES query:",
+        #     json.dumps(
+        #         {
+        #             "knn": knn_log,
+        #             "query": {"bool": bool_query},
+        #             "routing": sanitized_customer_id,
+        #             "size": 50,
+        #         },
+        #         ensure_ascii=False,
+        #     ),
+        # )
 
         response = await es_client.search(
             index=ACCESSORIES_INDEX,
@@ -1095,7 +1095,7 @@ async def hybrid_search_accessories(
                     if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
                 }
             
-                print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
+                # print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
         except Exception as log_err:
             print(f"[HYBRID_ACCESSORIES] Lỗi log raw hits: {log_err}")
@@ -1145,7 +1145,7 @@ async def hybrid_search_accessories(
                     for k, v in _item.items()
                     if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
                 }
-                print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
+                # print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RERANKED HITS ===")
         except Exception as log_err:
             print(f"[HYBRID_ACCESSORIES] Lỗi log reranked hits: {log_err}")
