@@ -153,4 +153,14 @@ def compose_system_prompt(
         )
     )
 
+    try:
+        customer_id = getattr(customer_config, "customer_id", None)
+        preview = final_system_prompt[:200].replace("\n", "\\n")
+        print(
+            f"[SYSTEM PROMPT BUILD] customer_id={customer_id}, "
+            f"len={len(final_system_prompt)}, preview={preview!r}"
+        )
+    except Exception:
+        pass
+
     return final_system_prompt

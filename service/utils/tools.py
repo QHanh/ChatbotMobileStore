@@ -57,7 +57,7 @@ def call_zalo_api(customer_id: str, thread_id: str, customer_name: str, phone: s
     Call Zalo API to create group with order information
     """
     try:
-        url = "https://zaloapi.doiquanai.vn/api/groups/managers"
+        url = "http://localhost:3001/api/groups/managers"
         
         # Create name with customer info and product
         group_name = f"{customer_name} {phone} {address} {product_name}"
@@ -99,7 +99,7 @@ def send_order_notification(customer_id: str, thread_id: str, message: str) -> d
     Send order notification to group using the send-message API
     """
     try:
-        url = "https://zaloapi.doiquanai.vn/api/groups/send-message"
+        url = "http://localhost:3001/api/groups/send-message"
         
         payload = {
             "session_key": customer_id,

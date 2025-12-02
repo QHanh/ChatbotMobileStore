@@ -95,6 +95,15 @@ def create_agent_executor(
         service_feature_enabled=service_feature_enabled,
         accessory_feature_enabled=accessory_feature_enabled,
     )
+    try:
+        customer_id_log = getattr(customer_config, "customer_id", customer_id)
+        sp_preview = str(final_system_prompt)[:200].replace("\n", "\\n")
+        print(
+            f"[SYSTEM PROMPT AGENT INIT] customer_id={customer_id_log}, "
+            f"len={len(final_system_prompt)}, preview={sp_preview!r}"
+        )
+    except Exception:
+        pass
 
     prompt = ChatPromptTemplate.from_messages([
         ("system", final_system_prompt),
@@ -137,6 +146,15 @@ def create_agent_executor(
             # Chuẩn bị danh sách messages gửi vào agent
             messages = []
             if self.system_prompt:
+                try:
+                    thread_id = data.get("thread_id") if isinstance(data, dict) else None
+                    sp_preview = str(self.system_prompt)[:200].replace("\n", "\\n")
+                    print(
+                        f"[SYSTEM PROMPT USE] thread_id={thread_id}, "
+                        f"len={len(self.system_prompt)}, preview={sp_preview!r}"
+                    )
+                except Exception:
+                    pass
                 # Thêm system prompt cố định cho agent (persona / hướng dẫn tổng quát)
                 messages.append(SystemMessage(content=self.system_prompt))
             faq_context = data.get("faq_context") or []

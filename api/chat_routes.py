@@ -378,6 +378,15 @@ async def get_system_prompt(
         accessory_feature_enabled=customer_config.accessory_feature_enabled,
     )
 
+    try:
+        preview = system_prompt[:200].replace("\n", "\\n") if system_prompt else ""
+        print(
+            f"[SYSTEM PROMPT API] customer_id={customer_id}, thread_id={threadId}, "
+            f"len={len(system_prompt) if system_prompt else 0}, preview={preview!r}"
+        )
+    except Exception:
+        pass
+
     return {"system_prompt": system_prompt}
 
 @router.get("/chat-history/{customer_id}/{thread_id}", response_model=List[ChatHistoryResponse])
