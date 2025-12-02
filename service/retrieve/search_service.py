@@ -761,12 +761,12 @@ async def hybrid_search_products(
             knn={
                 "field": "model_embedding",
                 "query_vector": query_vector,
-                "k": 20,
+                "k": 10,
                 "num_candidates": 50,
             },
             query={"bool": bool_query},
             routing=sanitized_customer_id,
-            size=20,
+            size=10,
         )
 
         hits = [hit["_source"] for hit in response["hits"]["hits"]]
@@ -778,42 +778,16 @@ async def hybrid_search_products(
 
         raw_num_hits = len(hits)
         print(f"[HYBRID_PRODUCTS] Found {raw_num_hits} hits for customer '{customer_id}'.")
+        # Lấy trực tiếp top 10 kết quả từ Elasticsearch (không dùng Jina rerank)
+        selected_hits = hits[:10]
 
-        # Chuẩn bị văn bản cho Jina rerank (dùng model + loại thiết bị + tình trạng)
-        docs_for_rerank: List[str] = []
-        for item in hits:
-            parts: List[str] = []
-            model_name = item.get("model")
-            if model_name:
-                parts.append(str(model_name))
-            dung_luong = item.get("dung_luong")
-            if dung_luong:
-                parts.append(str(dung_luong))
-            mau_sac = item.get("mau_sac")
-            if mau_sac:
-                parts.append(str(mau_sac))
-            loai_thiet_bi = item.get("loai_thiet_bi")
-            if loai_thiet_bi:
-                parts.append(str(loai_thiet_bi))
-            tinh_trang_may = item.get("tinh_trang_may")
-            if tinh_trang_may:
-                parts.append(str(tinh_trang_may))
-            docs_for_rerank.append(" | ".join(parts) if parts else "")
-
-        reranked_hits = hits
-        if docs_for_rerank:
-            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
-            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
-            if not reranked_hits:
-                reranked_hits = hits[:10]
-        else:
-            reranked_hits = hits[:10]
-
-        num_hits = len(reranked_hits)
-        print(f"[HYBRID_PRODUCTS] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+        num_hits = len(selected_hits)
+        print(
+            f"[HYBRID_PRODUCTS] Returning top {num_hits} hits from Elasticsearch for customer '{customer_id}'."
+        )
 
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        formatted_hits = _format_results_for_agent(reranked_hits, is_sale)
+        formatted_hits = _format_results_for_agent(selected_hits, is_sale)
 
         if llm:
             return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
@@ -901,12 +875,12 @@ async def hybrid_search_services(
             knn={
                 "field": "ten_dich_vu_embedding",
                 "query_vector": query_vector,
-                "k": 20,
+                "k": 10,
                 "num_candidates": 50,
             },
             query={"bool": bool_query},
             routing=sanitized_customer_id,
-            size=20,
+            size=10,
         )
 
         hits = [hit["_source"] for hit in response["hits"]["hits"]]
@@ -918,39 +892,16 @@ async def hybrid_search_services(
 
         raw_num_hits = len(hits)
         print(f"[HYBRID_SERVICES] Found {raw_num_hits} hits for customer '{customer_id}'.")
+        # Lấy trực tiếp top 10 kết quả từ Elasticsearch (không dùng Jina rerank)
+        selected_hits = hits[:10]
 
-        # Chuẩn bị văn bản cho Jina rerank (dùng tên dịch vụ + loại dịch vụ + sản phẩm áp dụng)
-        docs_for_rerank: List[str] = []
-        for item in hits:
-            parts: List[str] = []
-            ten_dv = item.get("ten_dich_vu")
-            if ten_dv:
-                parts.append(str(ten_dv))
-            loai_dv = item.get("loai_dich_vu")
-            if loai_dv:
-                parts.append(str(loai_dv))
-            ten_sp = item.get("ten_san_pham")
-            if ten_sp:
-                parts.append(str(ten_sp))
-            ghi_chu = item.get("ghi_chu")
-            if ghi_chu:
-                parts.append(str(ghi_chu))
-            docs_for_rerank.append(" | ".join(parts) if parts else "")
-
-        reranked_hits = hits
-        if docs_for_rerank:
-            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
-            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
-            if not reranked_hits:
-                reranked_hits = hits[:10]
-        else:
-            reranked_hits = hits[:10]
-
-        num_hits = len(reranked_hits)
-        print(f"[HYBRID_SERVICES] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+        num_hits = len(selected_hits)
+        print(
+            f"[HYBRID_SERVICES] Returning top {num_hits} hits from Elasticsearch for customer '{customer_id}'."
+        )
 
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        formatted_hits = _format_results_for_agent(reranked_hits, is_sale)
+        formatted_hits = _format_results_for_agent(selected_hits, is_sale)
 
         if llm:
             return await filter_results_with_ai(query, formatted_hits, llm, chat_history)
@@ -1041,8 +992,8 @@ async def hybrid_search_accessories(
     knn_body: Dict[str, Any] = {
         "field": "accessory_name_embedding",
         "query_vector": query_vector,
-        "k": 50,
-        "num_candidates": 200,
+        "k": 10,
+        "num_candidates": 50,
     }
 
     try:
@@ -1068,7 +1019,7 @@ async def hybrid_search_accessories(
             knn=knn_body,
             query={"bool": bool_query},
             routing=sanitized_customer_id,
-            size=50,
+            size=10,
         )
 
         hits = [hit["_source"] for hit in response["hits"]["hits"]]
@@ -1100,60 +1051,26 @@ async def hybrid_search_accessories(
         except Exception as log_err:
             print(f"[HYBRID_ACCESSORIES] Lỗi log raw hits: {log_err}")
 
-        # Chuẩn bị văn bản cho Jina rerank (chủ yếu dùng accessory_name + category + trademark + properties)
-        docs_for_rerank: List[str] = []
-        for item in hits:
-            parts: List[str] = []
-            name = item.get("accessory_name")
-            if name:
-                parts.append(str(name))
-            category = item.get("category")
-            if category:
-                parts.append(str(category))
-            trademark = item.get("trademark")
-            if trademark:
-                parts.append(str(trademark))
-            prop = item.get("properties")
-            if prop:
-                parts.append(str(prop))
-            docs_for_rerank.append(" | ".join(parts) if parts else "")
+        # Lấy trực tiếp top 10 kết quả từ Elasticsearch (không dùng Jina rerank)
+        selected_hits = hits[:10]
 
-        reranked_hits = hits
-        if docs_for_rerank:
-            indices = await rerank_with_jina(query, docs_for_rerank, top_n=10)
-            print(f"[HYBRID_ACCESSORIES] Jina rerank indices: {indices}")
-            reranked_hits = [hits[i] for i in indices if isinstance(i, int) and 0 <= i < len(hits)]
-            print(f"[HYBRID_ACCESSORIES] Valid reranked_hits count: {len(reranked_hits)} (from {len(indices)} indices)")
-            if not reranked_hits:
-                reranked_hits = hits[:10]
-        else:
-            reranked_hits = hits[:10]
-
-        num_hits = len(reranked_hits)
-        print(f"[HYBRID_ACCESSORIES] After Jina rerank: {num_hits} hits for customer '{customer_id}'.")
+        num_hits = len(selected_hits)
+        print(
+            f"[HYBRID_ACCESSORIES] Returning top {num_hits} hits from Elasticsearch for customer '{customer_id}'."
+        )
         try:
-            reranked_names = [str(_item.get("accessory_name", "")) for _item in reranked_hits]
+            selected_names = [str(_item.get("accessory_name", "")) for _item in selected_hits]
             print(
-                "[HYBRID_ACCESSORIES] Reranked accessory names:",
-                json.dumps(reranked_names, ensure_ascii=False),
+                "[HYBRID_ACCESSORIES] Selected accessory names:",
+                json.dumps(selected_names, ensure_ascii=False),
             )
-            # Log chi tiết tất cả các trường sau khi rerank (loại bỏ embedding và các trường giá cũ)
-            print("[HYBRID_ACCESSORIES] === RERANKED HITS (ALL FIELDS) ===")
-            for idx, _item in enumerate(reranked_hits):
-                _item_log = {
-                    k: v
-                    for k, v in _item.items()
-                    if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
-                }
-                # print(f"[HYBRID_ACCESSORIES] Reranked #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
-            print("[HYBRID_ACCESSORIES] === END RERANKED HITS ===")
         except Exception as log_err:
-            print(f"[HYBRID_ACCESSORIES] Lỗi log reranked hits: {log_err}")
+            print(f"[HYBRID_ACCESSORIES] Lỗi log selected hits: {log_err}")
 
         is_sale = _get_customer_is_sale(customer_id, thread_id)
-        # Chỉ hiển thị description nếu có <= 5 kết quả sau rerank
-        top_hits = reranked_hits[:5]
-        rest_hits = reranked_hits[5:]
+        # Chỉ hiển thị description nếu có <= 5 kết quả sau khi chọn top 10
+        top_hits = selected_hits[:5]
+        rest_hits = selected_hits[5:]
         formatted_hits: List[str] = []
         if top_hits:
             formatted_hits.extend(_format_results_for_agent(top_hits, is_sale, True))
