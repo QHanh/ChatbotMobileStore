@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import threading
 import time
 import re
+import requests
 
 load_dotenv()
 
@@ -183,6 +184,27 @@ def create_agent_executor(
                 # Nếu log bị lỗi thì bỏ qua, không làm hỏng flow chính
                 pass
 
+            # Helper: strip all image_url parts from messages
+            def _strip_image_urls(msgs: List[BaseMessage]) -> List[BaseMessage]:
+                stripped: List[BaseMessage] = []
+                for m in msgs:
+                    content = getattr(m, "content", None)
+                    if isinstance(content, list):
+                        filtered_parts = []
+                        for part in content:
+                            if isinstance(part, dict) and part.get("type") == "image_url":
+                                continue
+                            filtered_parts.append(part)
+                        new_content: Any
+                        if filtered_parts:
+                            new_content = filtered_parts
+                        else:
+                            new_content = ""
+                        stripped.append(type(m)(content=new_content))
+                    else:
+                        stripped.append(m)
+                return stripped
+
             # Vòng lặp LLM + tool_calls
             for step in range(1, max_tool_steps + 1):
                 try:
@@ -190,7 +212,27 @@ def create_agent_executor(
                     ai_msg = await self._agent.ainvoke(messages)
                 except Exception as e:
                     print(f"[AGENT ERROR] Model call failed at tool step {step}: {e}")
-                    break
+
+                    # Nếu lỗi đến từ việc tải ảnh (HTTPError) thì bỏ qua ảnh và thử lại một lần không có image_url
+                    is_http_error = False
+                    try:
+                        if isinstance(e, requests.exceptions.HTTPError):
+                            is_http_error = True
+                    except Exception:
+                        pass
+                    if (not is_http_error) and ("HTTPError" in type(e).__name__ or "404 Client Error" in str(e)):
+                        is_http_error = True
+
+                    if is_http_error:
+                        print("[AGENT WARN] Detected HTTP error while loading image. Retrying once without image_url parts.")
+                        try:
+                            messages = _strip_image_urls(messages)
+                            ai_msg = await self._agent.ainvoke(messages)
+                        except Exception as e2:
+                            print(f"[AGENT ERROR] Retry without images failed at tool step {step}: {e2}")
+                            break
+                    else:
+                        break
 
                 if ai_msg is None:
                     print(f"[AGENT WARN] Model returned None at step {step}")
@@ -527,8 +569,16 @@ def _build_multimodal_content(
     urls: List[str] = []
     if extra_image_urls:
         for u in extra_image_urls:
-            if u:
-                urls.append(u)
+            if not u:
+                continue
+            # Mỗi phần tử extra_image_urls đôi khi là một chuỗi JSON dài từ Zalo,
+            # nên cần bóc tách đúng các URL ảnh bên trong thay vì dùng nguyên chuỗi.
+            u_str = str(u)
+            extracted = _extract_image_urls_from_text(u_str)
+            if extracted:
+                urls.extend(extracted)
+            else:
+                urls.append(u_str)
     urls_from_text = _extract_image_urls_from_text(content_text)
     if urls_from_text:
         urls.extend(urls_from_text)
