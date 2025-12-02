@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain.agents import create_agent
 from langchain_core.messages import AIMessage, HumanMessage, BaseMessage, SystemMessage, ToolMessage
 from langchain.chat_models import init_chat_model
 from sqlalchemy.orm import Session
@@ -115,7 +114,8 @@ def create_agent_executor(
     ])
 
     # Dùng create_agent tương tự các MCP agent, để LLM tự quyết định gọi tool dựa trên messages
-    agent = create_agent(llm_decision, customer_tools)
+    # (hiện tại sử dụng ChatModel đã bind tools thay cho create_agent cũ)
+    agent = llm_decision.bind_tools(customer_tools)
 
     class _AgentWrapper:
         def __init__(self, agent, tools, system_prompt: str):
@@ -138,9 +138,9 @@ def create_agent_executor(
             )
 
         async def ainvoke(self, data: dict):
-            # Hàm bất đồng bộ gọi agent để sinh câu trả lời cho người dùng.
-            # Có cơ chế retry nhiều lần và lọc bỏ các message lỗi nội bộ / tool call.
-            max_attempts = 5  # Số lần thử gọi agent tối đa
+            # Hàm bất đồng bộ gọi agent (ChatModel đã bind tools) để sinh câu trả lời cho người dùng.
+            # Tự loop LLM + tool_calls một số bước cho tới khi có câu trả lời cuối cùng.
+            max_tool_steps = 8
             output_text = ""  # Câu trả lời cuối cùng sẽ trả về client
             last_internal_error_text = ""  # Lưu text lỗi nội bộ gần nhất (nếu có)
 
@@ -158,12 +158,14 @@ def create_agent_executor(
                     pass
                 # Thêm system prompt cố định cho agent (persona / hướng dẫn tổng quát)
                 messages.append(SystemMessage(content=self.system_prompt))
+
             faq_context = data.get("faq_context") or []
             chat_history = data.get("chat_history") or []
             if faq_context:
                 messages.extend(faq_context)
             if chat_history:
                 messages.extend(chat_history)
+
             input_text = data.get("input", "")
             # Ghi lại số lượng message ban đầu, để biết phần nào là message mới do agent sinh ra
             base_len = len(messages)
@@ -181,110 +183,166 @@ def create_agent_executor(
                 # Nếu log bị lỗi thì bỏ qua, không làm hỏng flow chính
                 pass
 
-            # msgs sẽ lưu toàn bộ messages trả về từ agent trong lần gọi gần nhất
-            msgs = []
-            for attempt in range(1, max_attempts + 1):
-                # Thử gọi agent tối đa max_attempts lần, nếu chưa lấy được output hợp lệ thì retry
+            # Vòng lặp LLM + tool_calls
+            for step in range(1, max_tool_steps + 1):
                 try:
-                    print(f"[AGENT DEBUG] Attempt {attempt}/{max_attempts} - calling underlying agent")
-                    state = await self._agent.ainvoke({"messages": messages})
-                    print(f"[AGENT DEBUG] Attempt {attempt}: state type = {type(state).__name__}")
-                    if isinstance(state, dict):
-                        msgs = state.get("messages", [])
-                    else:
-                        msgs = []
-                    print(f"[AGENT DEBUG] Attempt {attempt}: total messages from agent = {len(msgs)}")
-                    if msgs:
-                        # Chỉ lấy các message mới sinh ra sau phần context ban đầu
-                        new_msgs = msgs[base_len:]
-                        print(f"[AGENT DEBUG] Attempt {attempt}: new_messages_after_base_len = {len(new_msgs)} (base_len={base_len})")
-                        # Duyệt ngược từ message mới nhất về cũ để ưu tiên output cuối cùng
-                        for idx, m in enumerate(reversed(new_msgs)):
-                            try:
-                                print(f"[AGENT DEBUG] Attempt {attempt}: inspecting msg idx={idx}, type={type(m).__name__}")
-                                if isinstance(m, AIMessage):
-                                    c = getattr(m, "content", None)
-                                    has_tool_calls = bool(getattr(m, "tool_calls", None))
-                                    print(
-                                        f"[AGENT DEBUG] Attempt {attempt}: AIMessage content_type={type(c).__name__}, "
-                                        f"has_tool_calls={has_tool_calls}"
-                                    )
-                                    # In preview nội dung thô của AIMessage nếu là chuỗi
-                                    if isinstance(c, str):
-                                        try:
-                                            preview = c if len(c) <= 300 else c[:300] + "..."
-                                            print(
-                                                f"[AGENT DEBUG] Attempt {attempt}: AIMessage raw text preview = {preview!r}"
-                                            )
-                                        except Exception:
-                                            pass
-                                    # content dạng chuỗi đơn giản
-                                    if isinstance(c, str) and c.strip():
-                                        text_val = c.strip()
-                                        if self._is_internal_error_text(text_val):
-                                            last_internal_error_text = text_val
-                                        else:
-                                            output_text = text_val
-                                            print(f"[AGENT DEBUG] Attempt {attempt}: using string content as output")
-                                            break
-                                    elif isinstance(c, str):
-                                        # Chuỗi nhưng rỗng / toàn khoảng trắng
-                                        print(f"[AGENT DEBUG] Attempt {attempt}: AIMessage string content is empty/whitespace, skipping")
-                                        # Log thêm metadata khi AIMessage rỗng để tìm nguyên nhân gốc
-                                        meta = getattr(m, "response_metadata", None)
-                                        add_kwargs = getattr(m, "additional_kwargs", None)
-                                        try:
-                                            print(
-                                                f"[AGENT DEBUG] Attempt {attempt}: AIMessage EMPTY meta={meta}, "
-                                                f"additional_kwargs={add_kwargs}"
-                                            )
-                                        except Exception:
-                                            pass
-                                    # content dạng list (structured content), gom các phần text lại
-                                    if isinstance(c, list):
-                                        parts = []
-                                        for part in c:
-                                            if isinstance(part, dict):
-                                                t = part.get("text")
-                                                if t:
-                                                    parts.append(t)
-                                        if parts:
-                                            joined = "\n".join(parts).strip()
-                                            if joined:
-                                                # Kiểm tra xem nội dung có phải là lỗi nội bộ không
-                                                if self._is_internal_error_text(joined):
-                                                    last_internal_error_text = joined
-                                                else:
-                                                    # Nội dung không phải lỗi nội bộ, lấy làm output cuối
-                                                    output_text = joined
-                                                    print(f"[AGENT DEBUG] Attempt {attempt}: using list content as output")
-                                                    break
-                                    # Nếu message này chỉ chứa tool_calls thì bỏ qua, không lấy làm output cuối
-                                    if has_tool_calls:
-                                        print(f"[AGENT DEBUG] Attempt {attempt}: AIMessage has only tool_calls, skipping as final output")
-                                        continue
-                                if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
-                                    c = getattr(m, "content", None)
-                                    if isinstance(c, str) and c.strip():
-                                        text_val = c.strip()
-                                        print(f"[AGENT DEBUG] Attempt {attempt}: ToolMessage content preview = {text_val[:200]!r}")
-                                        if self._is_internal_error_text(text_val):
-                                            last_internal_error_text = text_val
-                                        else:
-                                            output_text = text_val
-                                            break
-                            except Exception:
-                                # Nếu parse 1 message bị lỗi thì bỏ qua message đó, tránh làm hỏng cả vòng lặp
+                    print(f"[AGENT DEBUG] Tool step {step}/{max_tool_steps} - calling model with tools")
+                    ai_msg = await self._agent.ainvoke(messages)
+                except Exception as e:
+                    print(f"[AGENT ERROR] Model call failed at tool step {step}: {e}")
+                    break
+
+                if ai_msg is None:
+                    print(f"[AGENT WARN] Model returned None at step {step}")
+                    break
+
+                messages.append(ai_msg)
+
+                tool_calls = getattr(ai_msg, "tool_calls", None) or []
+                if tool_calls:
+                    print(f"[AGENT DEBUG] Tool step {step}: model requested {len(tool_calls)} tool call(s)")
+                    for tc_idx, tc in enumerate(tool_calls):
+                        try:
+                            name = getattr(tc, "name", None)
+                            if not name and isinstance(tc, dict):
+                                name = tc.get("name")
+                            if not name:
+                                print(f"[AGENT WARN] Tool call #{tc_idx} missing name, skipping")
                                 continue
 
-                    if output_text:
-                        print(f"[AGENT DEBUG] Attempt {attempt}: output_text acquired, stop retry loop")
-                        break
+                            tool = None
+                            for t in self.tools:
+                                if getattr(t, "name", None) == name:
+                                    tool = t
+                                    break
+                            if tool is None:
+                                print(f"[AGENT WARN] No tool found with name {name}, skipping")
+                                continue
 
-                    print(f"[AGENT WARN] Empty output on attempt {attempt}/{max_attempts}. Retrying...")
-                except Exception as e:
-                    print(f"[AGENT ERROR] Failed to extract output from state (attempt {attempt}): {e}")
-                    output_text = ""
+                            args = getattr(tc, "args", None)
+                            if args is None and isinstance(tc, dict):
+                                args = tc.get("args", {})
+                            if args is None:
+                                args = {}
+
+                            print(f"[AGENT DEBUG] Executing tool '{name}' with args={args}")
+                            try:
+                                # StructuredTool hỗ trợ cả invoke/ainvoke; ưu tiên coroutine nếu có
+                                if getattr(tool, "coroutine", None) is not None:
+                                    tool_result = await tool.ainvoke(args)
+                                else:
+                                    tool_result = tool.invoke(args)
+                            except Exception as te:
+                                print(f"[AGENT ERROR] Error while running tool '{name}': {te}")
+                                tool_result = {"error": str(te)}
+
+                            tool_call_id = getattr(tc, "id", None)
+                            if tool_call_id is None and isinstance(tc, dict):
+                                tool_call_id = tc.get("id", name)
+
+                            tool_msg = ToolMessage(
+                                content=str(tool_result),
+                                name=name,
+                                tool_call_id=tool_call_id or name,
+                            )
+                            messages.append(tool_msg)
+                        except Exception as e:
+                            print(f"[AGENT ERROR] Failed to process tool call #{tc_idx}: {e}")
+                            continue
+
+                    # Sau khi chạy tools, quay lại LLM thêm 1 vòng
+                    continue
+
+                # Không còn tool_calls -> coi đây là câu trả lời cuối cùng
+                print(f"[AGENT DEBUG] Tool step {step}: no tool_calls, assuming final answer")
+                break
+
+            # Phân tích messages mới sinh ra sau phần context ban đầu để lấy output cuối cùng
+            msgs = messages
+            try:
+                print(f"[AGENT DEBUG] Total messages in pipeline = {len(msgs)} (base_len={base_len})")
+            except Exception:
+                pass
+
+            new_msgs = msgs[base_len:]
+            print(f"[AGENT DEBUG] New messages after base_len: {len(new_msgs)}")
+
+            for idx, m in enumerate(reversed(new_msgs)):
+                try:
+                    print(f"[AGENT DEBUG] Inspecting msg idx={idx}, type={type(m).__name__}")
+                    if isinstance(m, AIMessage):
+                        c = getattr(m, "content", None)
+                        has_tool_calls = bool(getattr(m, "tool_calls", None))
+                        print(
+                            f"[AGENT DEBUG] AIMessage content_type={type(c).__name__}, "
+                            f"has_tool_calls={has_tool_calls}"
+                        )
+                        # In preview nội dung thô của AIMessage nếu là chuỗi
+                        if isinstance(c, str):
+                            try:
+                                preview = c if len(c) <= 300 else c[:300] + "..."
+                                print(
+                                    f"[AGENT DEBUG] AIMessage raw text preview = {preview!r}"
+                                )
+                            except Exception:
+                                pass
+                        # content dạng chuỗi đơn giản
+                        if isinstance(c, str) and c.strip():
+                            text_val = c.strip()
+                            if self._is_internal_error_text(text_val):
+                                last_internal_error_text = text_val
+                            else:
+                                output_text = text_val
+                                print("[AGENT DEBUG] Using string content as output")
+                                break
+                        elif isinstance(c, str):
+                            # Chuỗi nhưng rỗng / toàn khoảng trắng
+                            print("[AGENT DEBUG] AIMessage string content is empty/whitespace, skipping")
+                            # Log thêm metadata khi AIMessage rỗng để tìm nguyên nhân gốc
+                            meta = getattr(m, "response_metadata", None)
+                            add_kwargs = getattr(m, "additional_kwargs", None)
+                            try:
+                                print(
+                                    f"[AGENT DEBUG] AIMessage EMPTY meta={meta}, "
+                                    f"additional_kwargs={add_kwargs}"
+                                )
+                            except Exception:
+                                pass
+                        # content dạng list (structured content), gom các phần text lại
+                        if isinstance(c, list):
+                            parts = []
+                            for part in c:
+                                if isinstance(part, dict):
+                                    t = part.get("text")
+                                    if t:
+                                        parts.append(t)
+                            if parts:
+                                joined = "\n".join(parts).strip()
+                                if joined:
+                                    # Kiểm tra xem nội dung có phải là lỗi nội bộ không
+                                    if self._is_internal_error_text(joined):
+                                        last_internal_error_text = joined
+                                    else:
+                                        # Nội dung không phải lỗi nội bộ, lấy làm output cuối
+                                        output_text = joined
+                                        print("[AGENT DEBUG] Using list content as output")
+                                        break
+                        # Nếu message này chỉ chứa tool_calls thì bỏ qua, không lấy làm output cuối
+                        if has_tool_calls:
+                            print("[AGENT DEBUG] AIMessage has only tool_calls, skipping as final output")
+                            continue
+                    if isinstance(m, ToolMessage) or 'ToolMessage' in type(m).__name__:
+                        c = getattr(m, "content", None)
+                        if isinstance(c, str) and c.strip():
+                            text_val = c.strip()
+                            print(f"[AGENT DEBUG] ToolMessage content preview = {text_val[:200]!r}")
+                            if self._is_internal_error_text(text_val):
+                                last_internal_error_text = text_val
+                            else:
+                                output_text = text_val
+                                break
+                except Exception:
+                    # Nếu parse 1 message bị lỗi thì bỏ qua message đó, tránh làm hỏng cả vòng lặp
                     continue
 
             try:
