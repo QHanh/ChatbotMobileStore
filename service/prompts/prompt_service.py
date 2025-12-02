@@ -133,7 +133,7 @@ def compose_system_prompt(
         else ""
     )
 
-    final_system_prompt = "\n".join(
+    raw_system_prompt = "\n".join(
         filter(
             None,
             [
@@ -152,6 +152,27 @@ def compose_system_prompt(
             ],
         )
     )
+
+    # Loại bỏ các dòng chứa tên tool cụ thể để tránh embed toàn bộ prompt của từng tool vào system prompt
+    tool_markers = [
+        "search_products_tool",
+        "search_services_tool",
+        "search_accessories_tool",
+        "create_order_product_tool",
+        "create_order_service_tool",
+        "create_order_accessory_tool",
+        "graphrag_search_tool",
+        "retrieve_document_tool",
+        "check_customer_info_tool",
+        "get_store_info_tool",
+    ]
+    filtered_lines: List[str] = []
+    for line in raw_system_prompt.split("\n"):
+        if any(marker in line for marker in tool_markers):
+            continue
+        filtered_lines.append(line)
+
+    final_system_prompt = "\n".join(filtered_lines)
 
     try:
         customer_id = getattr(customer_config, "customer_id", None)
