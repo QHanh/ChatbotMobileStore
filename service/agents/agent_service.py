@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from dataclasses import dataclass
 import threading
 import time
+import re
 
 load_dotenv()
 
@@ -447,6 +448,54 @@ def get_agent_cache_info() -> dict:
             "agents": cache_info
         }
 
+IMAGE_URL_PATTERN = re.compile(
+    r"https?://\S+\.(?:png|jpe?g|gif|bmp|webp|svg)",
+    re.IGNORECASE,
+)
+
+
+def _extract_image_urls_from_text(text: str) -> List[str]:
+    if not isinstance(text, str):
+        return []
+    return IMAGE_URL_PATTERN.findall(text)
+
+
+def _build_multimodal_content(
+    text: str,
+    extra_image_urls: Optional[List[str]] = None,
+    image_base64: Optional[str] = None,
+):
+    content_text = text or ""
+    urls: List[str] = []
+    if extra_image_urls:
+        for u in extra_image_urls:
+            if u:
+                urls.append(u)
+    urls_from_text = _extract_image_urls_from_text(content_text)
+    if urls_from_text:
+        urls.extend(urls_from_text)
+    unique_urls: List[str] = []
+    seen = set()
+    for u in urls:
+        if u not in seen:
+            seen.add(u)
+            unique_urls.append(u)
+    content_blocks = []
+    if content_text:
+        content_blocks.append({"type": "text", "text": content_text})
+    if image_base64:
+        data_url = image_base64.strip()
+        if not data_url.startswith("data:"):
+            data_url = f"data:image/png;base64,{data_url}"
+        if data_url not in unique_urls:
+            unique_urls.append(data_url)
+    for url in unique_urls:
+        content_blocks.append({"type": "image_url", "image_url": {"url": url}})
+    if content_blocks:
+        return content_blocks
+    return content_text
+
+
 def get_session_history(customer_id: str, session_id: str, db: Session, limit: int = 8) -> List[BaseMessage]:
     """Lấy các tin nhắn gần nhất trong lịch sử chat từ database."""
     history_records = db.query(ChatHistory).filter(
@@ -459,10 +508,11 @@ def get_session_history(customer_id: str, session_id: str, db: Session, limit: i
 
     messages: List[BaseMessage] = []
     for record in history_records:
+        content = _build_multimodal_content(record.message or "")
         if record.role == 'human':
-            messages.append(HumanMessage(content=record.message))
+            messages.append(HumanMessage(content=content))
         elif record.role == 'bot':
-            messages.append(AIMessage(content=record.message))
+            messages.append(AIMessage(content=content))
     return messages
 
 async def invoke_agent_with_memory(
@@ -474,13 +524,15 @@ async def invoke_agent_with_memory(
     es_client: AsyncElasticsearch,
     history_override: Optional[List] = None,
     persist: bool = True,
+    input_image_urls: Optional[List[str]] = None,
+    input_image_base64: Optional[str] = None,
 ):
     """
     Gọi agent với input của người dùng và quản lý lịch sử trò chuyện trong database.
     Luôn kiểm tra FAQ trước tiên.
     """
     faq_context = []
-    faq_results = await search_faqs(es_client=es_client, customer_id=customer_id, query=user_input)
+    faq_results = await search_faqs(es_client=es_client, customer_id=customer_id, query=user_input or "")
     instr = load_instructions(db)
     
     def _pick(key: str, default_value: str) -> str:
@@ -509,14 +561,16 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
             .replace("{answer}", str(found_faq.get('answer', "")))
             .replace("{image_text}", image_text)
         )
-        faq_context.append(HumanMessage(content=faq_prompt))
+        faq_content = _build_multimodal_content(faq_prompt)
+        faq_context.append(HumanMessage(content=faq_content))
     def _map_history_item_to_message(role: str, message: str) -> BaseMessage:
         role_norm = (role or "").lower()
+        content = _build_multimodal_content(message or "")
         if role_norm in ("human", "user"):
-            return HumanMessage(content=message or "")
+            return HumanMessage(content=content)
         if role_norm in ("ai", "assistant", "bot"):
-            return AIMessage(content=message or "")
-        return HumanMessage(content=message or "")
+            return AIMessage(content=content)
+        return HumanMessage(content=content)
 
     chat_history: List[BaseMessage] = []
     if history_override:
@@ -538,7 +592,20 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
         formatted = []
         for msg in history:
             role = user_label if isinstance(msg, HumanMessage) else ai_label
-            formatted.append(f"{role}: {msg.content}")
+            content = msg.content
+            if isinstance(content, list):
+                parts: List[str] = []
+                for part in content:
+                    if isinstance(part, dict):
+                        text_part = part.get("text")
+                        if text_part:
+                            parts.append(text_part)
+                content_text = "\n".join(parts) if parts else ""
+            elif isinstance(content, str):
+                content_text = content
+            else:
+                content_text = str(content)
+            formatted.append(f"{role}: {content_text}")
         return formatted
 
     formatted_history = format_history_for_llm(chat_history)
@@ -549,9 +616,11 @@ Câu trả lời có sẵn (chỉ trả lời theo câu này nếu bạn thấy 
             tool.coroutine.keywords['original_query'] = user_input
             tool.coroutine.keywords['chat_history'] = formatted_history
 
+    rich_input = _build_multimodal_content(user_input or "", extra_image_urls=input_image_urls, image_base64=input_image_base64)
+
     try:
         response = await agent_executor.ainvoke({
-            "input": user_input,
+            "input": rich_input,
             "chat_history": chat_history,
             "faq_context": faq_context,
             "thread_id": session_id,

@@ -252,24 +252,18 @@ async def chat(
         if not (user_input or image_urls or image_base64):
             raise HTTPException(status_code=400, detail="Bạn phải nhập câu hỏi hoặc gửi hình ảnh.")
 
-        if image_urls or image_base64:
-            print(f"[CHAT DEBUG] Calling Product Identification with provider: {llm_provider}")
-            product_info = await _identify_product_from_image(llm_provider, api_key, db, image_urls=image_urls, image_base64=image_base64)
-            print(f"[CHAT DEBUG] Product identify result length: {len(product_info)}")
-            print(f"[CHAT DEBUG] Product identify result: {product_info[:200] if product_info else 'EMPTY'}")
+        if (image_urls or image_base64) and not user_input:
             instr = load_instructions(db)
-            product_prefix_label = instr.get("product_prefix_label", "[Sản phẩm từ ảnh]:")
-            if user_input and product_info:
-                user_input = f"{user_input}\n\n{product_prefix_label}\n{product_info}"
-                print(f"[CHAT DEBUG] Combined input (text + product info)")
-            elif not user_input:
-                user_input = product_info or ""
-                print(f"[CHAT DEBUG] Using product-info-only input")
-            if not user_input:
-                raise HTTPException(status_code=400, detail="Không nhận diện được sản phẩm từ ảnh đã gửi.")
-        
-        print(f"[CHAT DEBUG] Final user_input length: {len(user_input)}")
-        print(f"[CHAT DEBUG] Final user_input first 300 chars: {user_input[:300]}...")
+            identify_instruction = instr.get(
+                "product_identify_instruction",
+                "Hãy quan sát ảnh và xác định đây là sản phẩm gì hoặc tài liệu gì. Trả lời ngắn gọn bằng tiếng Việt với: tên sản phẩm, nhãn hiệu, model/biến thể chính, màu sắc/dung lượng nếu thấy, và một câu mô tả ngắn. Nếu không chắc chắn, trả về 'Không xác định'."
+            )
+            user_input = identify_instruction
+            print("[CHAT DEBUG] Using fallback identify instruction for image-only input")
+
+        safe_user_input = user_input or ""
+        print(f"[CHAT DEBUG] Final user_input length: {len(safe_user_input)}")
+        print(f"[CHAT DEBUG] Final user_input first 300 chars: {safe_user_input[:300]}...")
 
         customer_config = db.query(Customer).filter(Customer.customer_id == customer_id).first()
         if not customer_config:
@@ -295,10 +289,12 @@ async def chat(
             agent_executor, 
             customer_id,
             threadId, 
-            user_input, 
+            safe_user_input, 
             db,
             es_client=es_client,
-            history_override=request.history
+            history_override=request.history,
+            input_image_urls=image_urls or None,
+            input_image_base64=image_base64
         )
 
         return {"response": response['output']}
