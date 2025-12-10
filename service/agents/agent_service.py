@@ -549,7 +549,7 @@ def get_agent_cache_info() -> dict:
         }
 
 IMAGE_URL_PATTERN = re.compile(
-    r"https?://\S+\.(?:png|jpe?g|gif|bmp|webp|svg)",
+    r"https?://[a-zA-Z0-9._/:-]+\.(?:png|jpe?g|gif|bmp|webp|svg)",
     re.IGNORECASE,
 )
 
@@ -557,7 +557,34 @@ IMAGE_URL_PATTERN = re.compile(
 def _extract_image_urls_from_text(text: str) -> List[str]:
     if not isinstance(text, str):
         return []
-    return IMAGE_URL_PATTERN.findall(text)
+    
+    urls = []
+    
+    # Try to parse as JSON first to extract clean URLs
+    try:
+        import json
+        parsed = json.loads(text)
+        if isinstance(parsed, dict):
+            # Look for common image URL fields in JSON
+            for field in ['url', 'original', 'thumb', 'hd', 'src', 'image_url']:
+                if field in parsed and isinstance(parsed[field], str):
+                    if IMAGE_URL_PATTERN.match(parsed[field]):
+                        urls.append(parsed[field])
+        elif isinstance(parsed, list):
+            # Handle arrays of URLs or objects
+            for item in parsed:
+                if isinstance(item, str) and IMAGE_URL_PATTERN.match(item):
+                    urls.append(item)
+                elif isinstance(item, dict):
+                    for field in ['url', 'original', 'thumb', 'hd', 'src', 'image_url']:
+                        if field in item and isinstance(item[field], str):
+                            if IMAGE_URL_PATTERN.match(item[field]):
+                                urls.append(item[field])
+    except (json.JSONDecodeError, Exception):
+        # If JSON parsing fails, fall back to regex extraction
+        urls = IMAGE_URL_PATTERN.findall(text)
+    
+    return urls
 
 
 def _build_multimodal_content(
