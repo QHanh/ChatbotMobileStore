@@ -296,7 +296,7 @@ def _format_results_for_agent(hits: List[Dict[str, Any]], is_sale_customer: bool
                     price_sale = item.get('sale_price')
                 price_sale_str = (f"{price_sale:,.0f}đ" if price_sale and price_sale > 0 else "Liên hệ")
                 context.append(f"  Giá bán buôn: {price_sale_str}")
-            inventory = item.get('inventory')
+            inventory = item.get('stock')
             if inventory is not None:
                 context.append(f"  Tình trạng: {f'Còn hàng (còn {inventory})' if inventory > 0 else 'Hết hàng'}")
             if show_description and item.get('description'):
@@ -1045,6 +1045,13 @@ async def hybrid_search_accessories(
                     for k, v in _item.items()
                     if not k.endswith("_embedding") and k not in ("specifications", "description", "lifecare_price", "sale_price")
                 }
+                # Log riêng trường stock/inventory để kiểm tra
+                stock_info = {
+                    "stock": _item.get("stock"),
+                    "inventory": _item.get("inventory"),
+                    "ton_kho": _item.get("ton_kho")
+                }
+                print(f"[HYBRID_ACCESSORIES] Hit #{idx} stock info: {json.dumps(stock_info, ensure_ascii=False, default=str)}")
             
                 # print(f"[HYBRID_ACCESSORIES] Hit #{idx}: {json.dumps(_item_log, ensure_ascii=False, default=str)}")
             print("[HYBRID_ACCESSORIES] === END RAW ES HITS ===")
