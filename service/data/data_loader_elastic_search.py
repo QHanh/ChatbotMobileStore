@@ -72,7 +72,7 @@ def get_shared_index_mapping(data_type: str):
             "sale_price": {"type": "double"},
             "trademark": {"type": "text", "fields": {"keyword": {"type": "keyword"}}},
             "guarantee": {"type": "text"},
-            "inventory": {"type": "integer"},
+            "stock": {"type": "integer"},
             "specifications": {"type": "text"},
             "avatar_images": {"type": "keyword"},
             "link_accessory": {"type": "keyword"},
