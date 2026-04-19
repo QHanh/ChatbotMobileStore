@@ -1,0 +1,882 @@
+
+==== graphrag query FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python -X utf8 -m graphrag query --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method global --query các dòng điện thoại
+Return code: 1
+STDOUT:
+
+STDERR:
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages │
+│ /graphrag/cli/main.py:513 in _query_cli                                      │
+│                                                                              │
+│   510 │   │   │   │   verbose=verbose,                                       │
+│   511 │   │   │   )                                                          │
+│   512 │   │   case SearchMethod.GLOBAL:                                      │
+│ ❱ 513 │   │   │   run_global_search(                                         │
+│   514 │   │   │   │   config_filepath=config,                                │
+│   515 │   │   │   │   data_dir=data,                                         │
+│   516 │   │   │   │   root_dir=root,                                         │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │             community_level = 2                                          │ │
+│ │                      config = None                                       │ │
+│ │                        data = None                                       │ │
+│ │ dynamic_community_selection = False                                      │ │
+│ │                      method = <SearchMethod.GLOBAL: 'global'>            │ │
+│ │                       query = 'các dòng điện thoại'                      │ │
+│ │               response_type = 'Multiple Paragraphs'                      │ │
+│ │                        root = PosixPath('/home/hoang-mai/Desktop/Chatbo… │ │
+│ │                   streaming = False                                      │ │
+│ │                     verbose = False                                      │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages │
+│ /graphrag/cli/query.py:45 in run_global_search                               │
+│                                                                              │
+│    42 │   │   cli_overrides["output.base_dir"] = str(data_dir)               │
+│    43 │   config = load_config(root, config_filepath, cli_overrides)         │
+│    44 │                                                                      │
+│ ❱  45 │   dataframe_dict = _resolve_output_files(                            │
+│    46 │   │   config=config,                                                 │
+│    47 │   │   output_list=[                                                  │
+│    48 │   │   │   "entities",                                                │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │               cli_overrides = {}                                         │ │
+│ │             community_level = 2                                          │ │
+│ │                      config = GraphRagConfig(                            │ │
+│ │                               │                                          │ │
+│ │                               root_dir='/home/hoang-mai/Desktop/Chatbot… │ │
+│ │                               │   models={                               │ │
+│ │                               │   │   'default_chat_model':              │ │
+│ │                               LanguageModelConfig(                       │ │
+│ │                               │   │   │                                  │ │
+│ │                               api_key='AIzaSyDBy-HJ0iAZwHyrnmZzk4j8RhMX… │ │
+│ │                               │   │   │   auth_type=<AuthType.APIKey:    │ │
+│ │                               'api_key'>,                                │ │
+│ │                               │   │   │   type='chat',                   │ │
+│ │                               │   │   │   model_provider='gemini',       │ │
+│ │                               │   │   │   model='gemini-2.5-flash-lite', │ │
+│ │                               │   │   │   encoding_model='',             │ │
+│ │                               │   │   │   api_base=None,                 │ │
+│ │                               │   │   │   api_version=None,              │ │
+│ │                               │   │   │   deployment_name=None,          │ │
+│ │                               │   │   │   organization=None,             │ │
+│ │                               │   │   │   proxy=None,                    │ │
+│ │                               │   │   │   audience=None,                 │ │
+│ │                               │   │   │   model_supports_json=True,      │ │
+│ │                               │   │   │   request_timeout=180.0,         │ │
+│ │                               │   │   │   tokens_per_minute=None,        │ │
+│ │                               │   │   │   requests_per_minute=None,      │ │
+│ │                               │   │   │   rate_limit_strategy='static',  │ │
+│ │                               │   │   │                                  │ │
+│ │                               retry_strategy='exponential_backoff',      │ │
+│ │                               │   │   │   max_retries=10,                │ │
+│ │                               │   │   │   max_retry_wait=10.0,           │ │
+│ │                               │   │   │   concurrent_requests=25,        │ │
+│ │                               │   │   │                                  │ │
+│ │                               async_mode=<AsyncType.Threaded:            │ │
+│ │                               'threaded'>,                               │ │
+│ │                               │   │   │   responses=None,                │ │
+│ │                               │   │   │   max_tokens=None,               │ │
+│ │                               │   │   │   temperature=0,                 │ │
+│ │                               │   │   │   max_completion_tokens=None,    │ │
+│ │                               │   │   │   reasoning_effort=None,         │ │
+│ │                               │   │   │   top_p=1,                       │ │
+│ │                               │   │   │   n=1,                           │ │
+│ │                               │   │   │   frequency_penalty=0.0,         │ │
+│ │                               │   │   │   presence_penalty=0.0           │ │
+│ │                               │   │   ),                                 │ │
+│ │                               │   │   'default_embedding_model':         │ │
+│ │                               LanguageModelConfig(                       │ │
+│ │                               │   │   │                                  │ │
+│ │                               api_key='AIzaSyDBy-HJ0iAZwHyrnmZzk4j8RhMX… │ │
+│ │                               │   │   │   auth_type=<AuthType.APIKey:    │ │
+│ │                               'api_key'>,                                │ │
+│ │                               │   │   │   type='embedding',              │ │
+│ │                               │   │   │   model_provider='gemini',       │ │
+│ │                               │   │   │   model='gemini-embedding-001',  │ │
+│ │                               │   │   │   encoding_model='',             │ │
+│ │                               │   │   │   api_base=None,                 │ │
+│ │                               │   │   │   api_version=None,              │ │
+│ │                               │   │   │   deployment_name=None,          │ │
+│ │                               │   │   │   organization=None,             │ │
+│ │                               │   │   │   proxy=None,                    │ │
+│ │                               │   │   │   audience=None,                 │ │
+│ │                               │   │   │   model_supports_json=None,      │ │
+│ │                               │   │   │   request_timeout=180.0,         │ │
+│ │                               │   │   │   tokens_per_minute=None,        │ │
+│ │                               │   │   │   requests_per_minute=None,      │ │
+│ │                               │   │   │   rate_limit_strategy='static',  │ │
+│ │                               │   │   │                                  │ │
+│ │                               retry_strategy='exponential_backoff',      │ │
+│ │                               │   │   │   max_retries=10,                │ │
+│ │                               │   │   │   max_retry_wait=10.0,           │ │
+│ │                               │   │   │   concurrent_requests=25,        │ │
+│ │                               │   │   │                                  │ │
+│ │                               async_mode=<AsyncType.Threaded:            │ │
+│ │                               'threaded'>,                               │ │
+│ │                               │   │   │   responses=None,                │ │
+│ │                               │   │   │   max_tokens=None,               │ │
+│ │                               │   │   │   temperature=0,                 │ │
+│ │                               │   │   │   max_completion_tokens=None,    │ │
+│ │                               │   │   │   reasoning_effort=None,         │ │
+│ │                               │   │   │   top_p=1,                       │ │
+│ │                               │   │   │   n=1,                           │ │
+│ │                               │   │   │   frequency_penalty=0.0,         │ │
+│ │                               │   │   │   presence_penalty=0.0           │ │
+│ │                               │   │   )                                  │ │
+│ │                               │   },                                     │ │
+│ │                               │   input=InputConfig(                     │ │
+│ │                               │   │   storage=StorageConfig(             │ │
+│ │                               │   │   │   type='file',                   │ │
+│ │                               │   │   │                                  │ │
+│ │                               base_dir='/home/hoang-mai/Desktop/Chatbot… │ │
+│ │                               │   │   │   connection_string=None,        │ │
+│ │                               │   │   │   container_name=None,           │ │
+│ │                               │   │   │   storage_account_blob_url=None, │ │
+│ │                               │   │   │   cosmosdb_account_url=None      │ │
+│ │                               │   │   ),                                 │ │
+│ │                               │   │   file_type="json",                  │ │
+│ │                               │   │   encoding='utf-8',                  │ │
+│ │                               │   │   file_pattern='.*\\.json',          │ │
+│ │                               │   │   file_filter=None,                  │ │
+│ │                               │   │   text_column='text',                │ │
+│ │                               │   │   title_column=None,                 │ │
+│ │                               │   │   metadata=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │   chunks=ChunkingConfig(                 │ │
+│ │                               │   │   size=1200,                         │ │
+│ │                               │   │   overlap=100,                       │ │
+│ │                               │   │   group_by_columns=['id'],           │ │
+│ │                               │   │   strategy="tokens",                 │ │
+│ │                               │   │   encoding_model='cl100k_base',      │ │
+│ │                               │   │   prepend_metadata=False,            │ │
+│ │                               │   │   chunk_size_includes_metadata=False │ │
+│ │                               │   ),                                     │ │
+│ │                               │   output=StorageConfig(                  │ │
+│ │                               │   │   type='file',                       │ │
+│ │                               │   │                                      │ │
+│ │                               base_dir='/home/hoang-mai/Desktop/Chatbot… │ │
+│ │                               │   │   connection_string=None,            │ │
+│ │                               │   │   container_name=None,               │ │
+│ │                               │   │   storage_account_blob_url=None,     │ │
+│ │                               │   │   cosmosdb_account_url=None          │ │
+│ │                               │   ),                                     │ │
+│ │                               │   outputs=None,                          │ │
+│ │                               │   update_index_output=StorageConfig(     │ │
+│ │                               │   │   type="file",                       │ │
+│ │                               │   │                                      │ │
+│ │                               base_dir='/home/hoang-mai/Desktop/Chatbot… │ │
+│ │                               │   │   connection_string=None,            │ │
+│ │                               │   │   container_name=None,               │ │
+│ │                               │   │   storage_account_blob_url=None,     │ │
+│ │                               │   │   cosmosdb_account_url=None          │ │
+│ │                               │   ),                                     │ │
+│ │                               │   cache=CacheConfig(                     │ │
+│ │                               │   │   type='file',                       │ │
+│ │                               │   │                                      │ │
+│ │                               base_dir='/home/hoang-mai/.grc/t_110377bc… │ │
+│ │                               │   │   connection_string=None,            │ │
+│ │                               │   │   container_name=None,               │ │
+│ │                               │   │   storage_account_blob_url=None,     │ │
+│ │                               │   │   cosmosdb_account_url=None          │ │
+│ │                               │   ),                                     │ │
+│ │                               │   reporting=ReportingConfig(             │ │
+│ │                               │   │   type='file',                       │ │
+│ │                               │   │                                      │ │
+│ │                               base_dir='/home/hoang-mai/Desktop/Chatbot… │ │
+│ │                               │   │   connection_string=None,            │ │
+│ │                               │   │   container_name=None,               │ │
+│ │                               │   │   storage_account_blob_url=None      │ │
+│ │                               │   ),                                     │ │
+│ │                               │   vector_store={                         │ │
+│ │                               │   │   'default_vector_store':            │ │
+│ │                               VectorStoreConfig(                         │ │
+│ │                               │   │   │   type='lancedb',                │ │
+│ │                               │   │   │                                  │ │
+│ │                               db_uri='/home/hoang-mai/Desktop/ChatbotMo… │ │
+│ │                               │   │   │   url=None,                      │ │
+│ │                               │   │   │   api_key=None,                  │ │
+│ │                               │   │   │   audience=None,                 │ │
+│ │                               │   │   │   container_name='default',      │ │
+│ │                               │   │   │   database_name=None,            │ │
+│ │                               │   │   │   overwrite=True,                │ │
+│ │                               │   │   │   embeddings_schema={}           │ │
+│ │                               │   │   )                                  │ │
+│ │                               │   },                                     │ │
+│ │                               │   workflows=None,                        │ │
+│ │                               │   embed_text=TextEmbeddingConfig(        │ │
+│ │                               │   │                                      │ │
+│ │                               model_id='default_embedding_model',        │ │
+│ │                               │   │                                      │ │
+│ │                               vector_store_id='default_vector_store',    │ │
+│ │                               │   │   batch_size=16,                     │ │
+│ │                               │   │   batch_max_tokens=8191,             │ │
+│ │                               │   │   names=[                            │ │
+│ │                               │   │   │   'entity.description',          │ │
+│ │                               │   │   │   'community.full_content',      │ │
+│ │                               │   │   │   'text_unit.text'               │ │
+│ │                               │   │   ],                                 │ │
+│ │                               │   │   strategy=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │   extract_graph=ExtractGraphConfig(      │ │
+│ │                               │   │   model_id='default_chat_model',     │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/extract_graph.txt',        │ │
+│ │                               │   │   entity_types=[                     │ │
+│ │                               │   │   │   'organization',                │ │
+│ │                               │   │   │   'person',                      │ │
+│ │                               │   │   │   'geo',                         │ │
+│ │                               │   │   │   'event'                        │ │
+│ │                               │   │   ],                                 │ │
+│ │                               │   │   max_gleanings=1,                   │ │
+│ │                               │   │   strategy=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │                                          │ │
+│ │                               summarize_descriptions=SummarizeDescripti… │ │
+│ │                               │   │   model_id='default_chat_model',     │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/summarize_descriptions.tx… │ │
+│ │                               │   │   max_length=500,                    │ │
+│ │                               │   │   max_input_tokens=4000,             │ │
+│ │                               │   │   strategy=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │                                          │ │
+│ │                               extract_graph_nlp=ExtractGraphNLPConfig(   │ │
+│ │                               │   │   normalize_edge_weights=True,       │ │
+│ │                               │   │   text_analyzer=TextAnalyzerConfig(  │ │
+│ │                               │   │   │                                  │ │
+│ │                               extractor_type=<NounPhraseExtractorType.R… │ │
+│ │                               'regex_english'>,                          │ │
+│ │                               │   │   │   model_name='en_core_web_md',   │ │
+│ │                               │   │   │   max_word_length=15,            │ │
+│ │                               │   │   │   word_delimiter=' ',            │ │
+│ │                               │   │   │   include_named_entities=True,   │ │
+│ │                               │   │   │   exclude_nouns=[                │ │
+│ │                               │   │   │   │   'stuff',                   │ │
+│ │                               │   │   │   │   'thing',                   │ │
+│ │                               │   │   │   │   'things',                  │ │
+│ │                               │   │   │   │   'bunch',                   │ │
+│ │                               │   │   │   │   'bit',                     │ │
+│ │                               │   │   │   │   'bits',                    │ │
+│ │                               │   │   │   │   'people',                  │ │
+│ │                               │   │   │   │   'person',                  │ │
+│ │                               │   │   │   │   'okay',                    │ │
+│ │                               │   │   │   │   'hey',                     │ │
+│ │                               │   │   │   │   ... +4                     │ │
+│ │                               │   │   │   ],                             │ │
+│ │                               │   │   │   exclude_entity_tags=['DATE'],  │ │
+│ │                               │   │   │   exclude_pos_tags=[             │ │
+│ │                               │   │   │   │   'DET',                     │ │
+│ │                               │   │   │   │   'PRON',                    │ │
+│ │                               │   │   │   │   'INTJ',                    │ │
+│ │                               │   │   │   │   'X'                        │ │
+│ │                               │   │   │   ],                             │ │
+│ │                               │   │   │   noun_phrase_tags=[             │ │
+│ │                               │   │   │   │   'PROPN',                   │ │
+│ │                               │   │   │   │   'NOUNS'                    │ │
+│ │                               │   │   │   ],                             │ │
+│ │                               │   │   │   noun_phrase_grammars={         │ │
+│ │                               │   │   │   │   'PROPN,PROPN': 'PROPN',    │ │
+│ │                               │   │   │   │   'NOUN,NOUN': 'NOUNS',      │ │
+│ │                               │   │   │   │   'NOUNS,NOUN': 'NOUNS',     │ │
+│ │                               │   │   │   │   'ADJ,ADJ': 'ADJ',          │ │
+│ │                               │   │   │   │   'ADJ,NOUN': 'NOUNS'        │ │
+│ │                               │   │   │   }                              │ │
+│ │                               │   │   ),                                 │ │
+│ │                               │   │   concurrent_requests=25,            │ │
+│ │                               │   │   async_mode=<AsyncType.Threaded:    │ │
+│ │                               'threaded'>                                │ │
+│ │                               │   ),                                     │ │
+│ │                               │   prune_graph=PruneGraphConfig(          │ │
+│ │                               │   │   min_node_freq=2,                   │ │
+│ │                               │   │   max_node_freq_std=None,            │ │
+│ │                               │   │   min_node_degree=1,                 │ │
+│ │                               │   │   max_node_degree_std=None,          │ │
+│ │                               │   │   min_edge_weight_pct=40.0,          │ │
+│ │                               │   │   remove_ego_nodes=True,             │ │
+│ │                               │   │   lcc_only=False                     │ │
+│ │                               │   ),                                     │ │
+│ │                               │   cluster_graph=ClusterGraphConfig(      │ │
+│ │                               │   │   max_cluster_size=10,               │ │
+│ │                               │   │   use_lcc=True,                      │ │
+│ │                               │   │   seed=3735928559                    │ │
+│ │                               │   ),                                     │ │
+│ │                               │   extract_claims=ClaimExtractionConfig(  │ │
+│ │                               │   │   enabled=False,                     │ │
+│ │                               │   │   model_id='default_chat_model',     │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/extract_claims.txt',       │ │
+│ │                               │   │   description='Any claims or facts   │ │
+│ │                               that could be relevant to information      │ │
+│ │                               discovery.',                               │ │
+│ │                               │   │   max_gleanings=1,                   │ │
+│ │                               │   │   strategy=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │                                          │ │
+│ │                               community_reports=CommunityReportsConfig(  │ │
+│ │                               │   │   model_id='default_chat_model',     │ │
+│ │                               │   │                                      │ │
+│ │                               graph_prompt='prompts/community_report_gr… │ │
+│ │                               │   │                                      │ │
+│ │                               text_prompt='prompts/community_report_tex… │ │
+│ │                               │   │   max_length=2000,                   │ │
+│ │                               │   │   max_input_length=8000,             │ │
+│ │                               │   │   strategy=None                      │ │
+│ │                               │   ),                                     │ │
+│ │                               │   embed_graph=EmbedGraphConfig(          │ │
+│ │                               │   │   enabled=False,                     │ │
+│ │                               │   │   dimensions=1536,                   │ │
+│ │                               │   │   num_walks=10,                      │ │
+│ │                               │   │   walk_length=40,                    │ │
+│ │                               │   │   window_size=2,                     │ │
+│ │                               │   │   iterations=3,                      │ │
+│ │                               │   │   random_seed=597832,                │ │
+│ │                               │   │   use_lcc=True                       │ │
+│ │                               │   ),                                     │ │
+│ │                               │   umap=UmapConfig(enabled=False),        │ │
+│ │                               │   snapshots=SnapshotsConfig(             │ │
+│ │                               │   │   embeddings=False,                  │ │
+│ │                               │   │   graphml=False,                     │ │
+│ │                               │   │   raw_graph=False                    │ │
+│ │                               │   ),                                     │ │
+│ │                               │   local_search=LocalSearchConfig(        │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/local_search_system_promp… │ │
+│ │                               │   │                                      │ │
+│ │                               chat_model_id='default_chat_model',        │ │
+│ │                               │   │                                      │ │
+│ │                               embedding_model_id='default_embedding_mod… │ │
+│ │                               │   │   text_unit_prop=0.5,                │ │
+│ │                               │   │   community_prop=0.15,               │ │
+│ │                               │   │   conversation_history_max_turns=5,  │ │
+│ │                               │   │   top_k_entities=10,                 │ │
+│ │                               │   │   top_k_relationships=10,            │ │
+│ │                               │   │   max_context_tokens=12000           │ │
+│ │                               │   ),                                     │ │
+│ │                               │   global_search=GlobalSearchConfig(      │ │
+│ │                               │   │                                      │ │
+│ │                               map_prompt='prompts/global_search_map_sys… │ │
+│ │                               │   │                                      │ │
+│ │                               reduce_prompt='prompts/global_search_redu… │ │
+│ │                               │   │                                      │ │
+│ │                               chat_model_id='default_chat_model',        │ │
+│ │                               │   │                                      │ │
+│ │                               knowledge_prompt='prompts/global_search_k… │ │
+│ │                               │   │   max_context_tokens=12000,          │ │
+│ │                               │   │   data_max_tokens=12000,             │ │
+│ │                               │   │   map_max_length=1000,               │ │
+│ │                               │   │   reduce_max_length=2000,            │ │
+│ │                               │   │   dynamic_search_threshold=1,        │ │
+│ │                               │   │   dynamic_search_keep_parent=False,  │ │
+│ │                               │   │   dynamic_search_num_repeats=1,      │ │
+│ │                               │   │   dynamic_search_use_summary=False,  │ │
+│ │                               │   │   dynamic_search_max_level=2         │ │
+│ │                               │   ),                                     │ │
+│ │                               │   drift_search=DRIFTSearchConfig(        │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/drift_search_system_promp… │ │
+│ │                               │   │                                      │ │
+│ │                               reduce_prompt='prompts/drift_search_reduc… │ │
+│ │                               │   │                                      │ │
+│ │                               chat_model_id='default_chat_model',        │ │
+│ │                               │   │                                      │ │
+│ │                               embedding_model_id='default_embedding_mod… │ │
+│ │                               │   │   data_max_tokens=12000,             │ │
+│ │                               │   │   reduce_max_tokens=None,            │ │
+│ │                               │   │   reduce_temperature=0,              │ │
+│ │                               │   │   reduce_max_completion_tokens=None, │ │
+│ │                               │   │   concurrency=32,                    │ │
+│ │                               │   │   drift_k_followups=20,              │ │
+│ │                               │   │   primer_folds=5,                    │ │
+│ │                               │   │   primer_llm_max_tokens=12000,       │ │
+│ │                               │   │   n_depth=3,                         │ │
+│ │                               │   │   local_search_text_unit_prop=0.9,   │ │
+│ │                               │   │   local_search_community_prop=0.1,   │ │
+│ │                               │   │                                      │ │
+│ │                               local_search_top_k_mapped_entities=10,     │ │
+│ │                               │   │                                      │ │
+│ │                               local_search_top_k_relationships=10,       │ │
+│ │                               │   │                                      │ │
+│ │                               local_search_max_data_tokens=12000,        │ │
+│ │                               │   │   local_search_temperature=0,        │ │
+│ │                               │   │   local_search_top_p=1,              │ │
+│ │                               │   │   local_search_n=1,                  │ │
+│ │                               │   │                                      │ │
+│ │                               local_search_llm_max_gen_tokens=None,      │ │
+│ │                               │   │                                      │ │
+│ │                               local_search_llm_max_gen_completion_token… │ │
+│ │                               │   ),                                     │ │
+│ │                               │   basic_search=BasicSearchConfig(        │ │
+│ │                               │   │                                      │ │
+│ │                               prompt='prompts/basic_search_system_promp… │ │
+│ │                               │   │                                      │ │
+│ │                               chat_model_id='default_chat_model',        │ │
+│ │                               │   │                                      │ │
+│ │                               embedding_model_id='default_embedding_mod… │ │
+│ │                               │   │   k=10,                              │ │
+│ │                               │   │   max_context_tokens=12000           │ │
+│ │                               │   )                                      │ │
+│ │                               )                                          │ │
+│ │             config_filepath = None                                       │ │
+│ │                    data_dir = None                                       │ │
+│ │ dynamic_community_selection = False                                      │ │
+│ │                       query = 'các dòng điện thoại'                      │ │
+│ │               response_type = 'Multiple Paragraphs'                      │ │
+│ │                        root = PosixPath('/home/hoang-mai/Desktop/Chatbo… │ │
+│ │                    root_dir = PosixPath('/home/hoang-mai/Desktop/Chatbo… │ │
+│ │                   streaming = False                                      │ │
+│ │                     verbose = False                                      │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages │
+│ /graphrag/cli/query.py:520 in _resolve_output_files                          │
+│                                                                              │
+│   517 │   dataframe_dict["multi-index"] = False                              │
+│   518 │   storage_obj = create_storage_from_config(config.output)            │
+│   519 │   for name in output_list:                                           │
+│ ❱ 520 │   │   df_value = asyncio.run(load_table_from_storage(name=name, stor │
+│   521 │   │   dataframe_dict[name] = df_value                                │
+│   522 │                                                                      │
+│   523 │   # for optional output files, set the dict entry to None instead of │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │         config = GraphRagConfig(                                         │ │
+│ │                  │                                                       │ │
+│ │                  root_dir='/home/hoang-mai/Desktop/ChatbotMobileStore/d… │ │
+│ │                  │   models={                                            │ │
+│ │                  │   │   'default_chat_model': LanguageModelConfig(      │ │
+│ │                  │   │   │                                               │ │
+│ │                  api_key='AIzaSyDBy-HJ0iAZwHyrnmZzk4j8RhMXNbAuFoc',      │ │
+│ │                  │   │   │   auth_type=<AuthType.APIKey: 'api_key'>,     │ │
+│ │                  │   │   │   type='chat',                                │ │
+│ │                  │   │   │   model_provider='gemini',                    │ │
+│ │                  │   │   │   model='gemini-2.5-flash-lite',              │ │
+│ │                  │   │   │   encoding_model='',                          │ │
+│ │                  │   │   │   api_base=None,                              │ │
+│ │                  │   │   │   api_version=None,                           │ │
+│ │                  │   │   │   deployment_name=None,                       │ │
+│ │                  │   │   │   organization=None,                          │ │
+│ │                  │   │   │   proxy=None,                                 │ │
+│ │                  │   │   │   audience=None,                              │ │
+│ │                  │   │   │   model_supports_json=True,                   │ │
+│ │                  │   │   │   request_timeout=180.0,                      │ │
+│ │                  │   │   │   tokens_per_minute=None,                     │ │
+│ │                  │   │   │   requests_per_minute=None,                   │ │
+│ │                  │   │   │   rate_limit_strategy='static',               │ │
+│ │                  │   │   │   retry_strategy='exponential_backoff',       │ │
+│ │                  │   │   │   max_retries=10,                             │ │
+│ │                  │   │   │   max_retry_wait=10.0,                        │ │
+│ │                  │   │   │   concurrent_requests=25,                     │ │
+│ │                  │   │   │   async_mode=<AsyncType.Threaded:             │ │
+│ │                  'threaded'>,                                            │ │
+│ │                  │   │   │   responses=None,                             │ │
+│ │                  │   │   │   max_tokens=None,                            │ │
+│ │                  │   │   │   temperature=0,                              │ │
+│ │                  │   │   │   max_completion_tokens=None,                 │ │
+│ │                  │   │   │   reasoning_effort=None,                      │ │
+│ │                  │   │   │   top_p=1,                                    │ │
+│ │                  │   │   │   n=1,                                        │ │
+│ │                  │   │   │   frequency_penalty=0.0,                      │ │
+│ │                  │   │   │   presence_penalty=0.0                        │ │
+│ │                  │   │   ),                                              │ │
+│ │                  │   │   'default_embedding_model': LanguageModelConfig( │ │
+│ │                  │   │   │                                               │ │
+│ │                  api_key='AIzaSyDBy-HJ0iAZwHyrnmZzk4j8RhMXNbAuFoc',      │ │
+│ │                  │   │   │   auth_type=<AuthType.APIKey: 'api_key'>,     │ │
+│ │                  │   │   │   type='embedding',                           │ │
+│ │                  │   │   │   model_provider='gemini',                    │ │
+│ │                  │   │   │   model='gemini-embedding-001',               │ │
+│ │                  │   │   │   encoding_model='',                          │ │
+│ │                  │   │   │   api_base=None,                              │ │
+│ │                  │   │   │   api_version=None,                           │ │
+│ │                  │   │   │   deployment_name=None,                       │ │
+│ │                  │   │   │   organization=None,                          │ │
+│ │                  │   │   │   proxy=None,                                 │ │
+│ │                  │   │   │   audience=None,                              │ │
+│ │                  │   │   │   model_supports_json=None,                   │ │
+│ │                  │   │   │   request_timeout=180.0,                      │ │
+│ │                  │   │   │   tokens_per_minute=None,                     │ │
+│ │                  │   │   │   requests_per_minute=None,                   │ │
+│ │                  │   │   │   rate_limit_strategy='static',               │ │
+│ │                  │   │   │   retry_strategy='exponential_backoff',       │ │
+│ │                  │   │   │   max_retries=10,                             │ │
+│ │                  │   │   │   max_retry_wait=10.0,                        │ │
+│ │                  │   │   │   concurrent_requests=25,                     │ │
+│ │                  │   │   │   async_mode=<AsyncType.Threaded:             │ │
+│ │                  'threaded'>,                                            │ │
+│ │                  │   │   │   responses=None,                             │ │
+│ │                  │   │   │   max_tokens=None,                            │ │
+│ │                  │   │   │   temperature=0,                              │ │
+│ │                  │   │   │   max_completion_tokens=None,                 │ │
+│ │                  │   │   │   reasoning_effort=None,                      │ │
+│ │                  │   │   │   top_p=1,                                    │ │
+│ │                  │   │   │   n=1,                                        │ │
+│ │                  │   │   │   frequency_penalty=0.0,                      │ │
+│ │                  │   │   │   presence_penalty=0.0                        │ │
+│ │                  │   │   )                                               │ │
+│ │                  │   },                                                  │ │
+│ │                  │   input=InputConfig(                                  │ │
+│ │                  │   │   storage=StorageConfig(                          │ │
+│ │                  │   │   │   type='file',                                │ │
+│ │                  │   │   │                                               │ │
+│ │                  base_dir='/home/hoang-mai/Desktop/ChatbotMobileStore/d… │ │
+│ │                  │   │   │   connection_string=None,                     │ │
+│ │                  │   │   │   container_name=None,                        │ │
+│ │                  │   │   │   storage_account_blob_url=None,              │ │
+│ │                  │   │   │   cosmosdb_account_url=None                   │ │
+│ │                  │   │   ),                                              │ │
+│ │                  │   │   file_type="json",                               │ │
+│ │                  │   │   encoding='utf-8',                               │ │
+│ │                  │   │   file_pattern='.*\\.json',                       │ │
+│ │                  │   │   file_filter=None,                               │ │
+│ │                  │   │   text_column='text',                             │ │
+│ │                  │   │   title_column=None,                              │ │
+│ │                  │   │   metadata=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   chunks=ChunkingConfig(                              │ │
+│ │                  │   │   size=1200,                                      │ │
+│ │                  │   │   overlap=100,                                    │ │
+│ │                  │   │   group_by_columns=['id'],                        │ │
+│ │                  │   │   strategy="tokens",                              │ │
+│ │                  │   │   encoding_model='cl100k_base',                   │ │
+│ │                  │   │   prepend_metadata=False,                         │ │
+│ │                  │   │   chunk_size_includes_metadata=False              │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   output=StorageConfig(                               │ │
+│ │                  │   │   type='file',                                    │ │
+│ │                  │   │                                                   │ │
+│ │                  base_dir='/home/hoang-mai/Desktop/ChatbotMobileStore/d… │ │
+│ │                  │   │   connection_string=None,                         │ │
+│ │                  │   │   container_name=None,                            │ │
+│ │                  │   │   storage_account_blob_url=None,                  │ │
+│ │                  │   │   cosmosdb_account_url=None                       │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   outputs=None,                                       │ │
+│ │                  │   update_index_output=StorageConfig(                  │ │
+│ │                  │   │   type="file",                                    │ │
+│ │                  │   │                                                   │ │
+│ │                  base_dir='/home/hoang-mai/Desktop/ChatbotMobileStore/d… │ │
+│ │                  │   │   connection_string=None,                         │ │
+│ │                  │   │   container_name=None,                            │ │
+│ │                  │   │   storage_account_blob_url=None,                  │ │
+│ │                  │   │   cosmosdb_account_url=None                       │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   cache=CacheConfig(                                  │ │
+│ │                  │   │   type='file',                                    │ │
+│ │                  │   │                                                   │ │
+│ │                  base_dir='/home/hoang-mai/.grc/t_110377bc_2b96_4016_83… │ │
+│ │                  │   │   connection_string=None,                         │ │
+│ │                  │   │   container_name=None,                            │ │
+│ │                  │   │   storage_account_blob_url=None,                  │ │
+│ │                  │   │   cosmosdb_account_url=None                       │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   reporting=ReportingConfig(                          │ │
+│ │                  │   │   type='file',                                    │ │
+│ │                  │   │                                                   │ │
+│ │                  base_dir='/home/hoang-mai/Desktop/ChatbotMobileStore/d… │ │
+│ │                  │   │   connection_string=None,                         │ │
+│ │                  │   │   container_name=None,                            │ │
+│ │                  │   │   storage_account_blob_url=None                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   vector_store={                                      │ │
+│ │                  │   │   'default_vector_store': VectorStoreConfig(      │ │
+│ │                  │   │   │   type='lancedb',                             │ │
+│ │                  │   │   │                                               │ │
+│ │                  db_uri='/home/hoang-mai/Desktop/ChatbotMobileStore/dat… │ │
+│ │                  │   │   │   url=None,                                   │ │
+│ │                  │   │   │   api_key=None,                               │ │
+│ │                  │   │   │   audience=None,                              │ │
+│ │                  │   │   │   container_name='default',                   │ │
+│ │                  │   │   │   database_name=None,                         │ │
+│ │                  │   │   │   overwrite=True,                             │ │
+│ │                  │   │   │   embeddings_schema={}                        │ │
+│ │                  │   │   )                                               │ │
+│ │                  │   },                                                  │ │
+│ │                  │   workflows=None,                                     │ │
+│ │                  │   embed_text=TextEmbeddingConfig(                     │ │
+│ │                  │   │   model_id='default_embedding_model',             │ │
+│ │                  │   │   vector_store_id='default_vector_store',         │ │
+│ │                  │   │   batch_size=16,                                  │ │
+│ │                  │   │   batch_max_tokens=8191,                          │ │
+│ │                  │   │   names=[                                         │ │
+│ │                  │   │   │   'entity.description',                       │ │
+│ │                  │   │   │   'community.full_content',                   │ │
+│ │                  │   │   │   'text_unit.text'                            │ │
+│ │                  │   │   ],                                              │ │
+│ │                  │   │   strategy=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   extract_graph=ExtractGraphConfig(                   │ │
+│ │                  │   │   model_id='default_chat_model',                  │ │
+│ │                  │   │   prompt='prompts/extract_graph.txt',             │ │
+│ │                  │   │   entity_types=[                                  │ │
+│ │                  │   │   │   'organization',                             │ │
+│ │                  │   │   │   'person',                                   │ │
+│ │                  │   │   │   'geo',                                      │ │
+│ │                  │   │   │   'event'                                     │ │
+│ │                  │   │   ],                                              │ │
+│ │                  │   │   max_gleanings=1,                                │ │
+│ │                  │   │   strategy=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   summarize_descriptions=SummarizeDescriptionsConfig( │ │
+│ │                  │   │   model_id='default_chat_model',                  │ │
+│ │                  │   │   prompt='prompts/summarize_descriptions.txt',    │ │
+│ │                  │   │   max_length=500,                                 │ │
+│ │                  │   │   max_input_tokens=4000,                          │ │
+│ │                  │   │   strategy=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   extract_graph_nlp=ExtractGraphNLPConfig(            │ │
+│ │                  │   │   normalize_edge_weights=True,                    │ │
+│ │                  │   │   text_analyzer=TextAnalyzerConfig(               │ │
+│ │                  │   │   │                                               │ │
+│ │                  extractor_type=<NounPhraseExtractorType.RegexEnglish:   │ │
+│ │                  'regex_english'>,                                       │ │
+│ │                  │   │   │   model_name='en_core_web_md',                │ │
+│ │                  │   │   │   max_word_length=15,                         │ │
+│ │                  │   │   │   word_delimiter=' ',                         │ │
+│ │                  │   │   │   include_named_entities=True,                │ │
+│ │                  │   │   │   exclude_nouns=[                             │ │
+│ │                  │   │   │   │   'stuff',                                │ │
+│ │                  │   │   │   │   'thing',                                │ │
+│ │                  │   │   │   │   'things',                               │ │
+│ │                  │   │   │   │   'bunch',                                │ │
+│ │                  │   │   │   │   'bit',                                  │ │
+│ │                  │   │   │   │   'bits',                                 │ │
+│ │                  │   │   │   │   'people',                               │ │
+│ │                  │   │   │   │   'person',                               │ │
+│ │                  │   │   │   │   'okay',                                 │ │
+│ │                  │   │   │   │   'hey',                                  │ │
+│ │                  │   │   │   │   ... +4                                  │ │
+│ │                  │   │   │   ],                                          │ │
+│ │                  │   │   │   exclude_entity_tags=['DATE'],               │ │
+│ │                  │   │   │   exclude_pos_tags=[                          │ │
+│ │                  │   │   │   │   'DET',                                  │ │
+│ │                  │   │   │   │   'PRON',                                 │ │
+│ │                  │   │   │   │   'INTJ',                                 │ │
+│ │                  │   │   │   │   'X'                                     │ │
+│ │                  │   │   │   ],                                          │ │
+│ │                  │   │   │   noun_phrase_tags=['PROPN', 'NOUNS'],        │ │
+│ │                  │   │   │   noun_phrase_grammars={                      │ │
+│ │                  │   │   │   │   'PROPN,PROPN': 'PROPN',                 │ │
+│ │                  │   │   │   │   'NOUN,NOUN': 'NOUNS',                   │ │
+│ │                  │   │   │   │   'NOUNS,NOUN': 'NOUNS',                  │ │
+│ │                  │   │   │   │   'ADJ,ADJ': 'ADJ',                       │ │
+│ │                  │   │   │   │   'ADJ,NOUN': 'NOUNS'                     │ │
+│ │                  │   │   │   }                                           │ │
+│ │                  │   │   ),                                              │ │
+│ │                  │   │   concurrent_requests=25,                         │ │
+│ │                  │   │   async_mode=<AsyncType.Threaded: 'threaded'>     │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   prune_graph=PruneGraphConfig(                       │ │
+│ │                  │   │   min_node_freq=2,                                │ │
+│ │                  │   │   max_node_freq_std=None,                         │ │
+│ │                  │   │   min_node_degree=1,                              │ │
+│ │                  │   │   max_node_degree_std=None,                       │ │
+│ │                  │   │   min_edge_weight_pct=40.0,                       │ │
+│ │                  │   │   remove_ego_nodes=True,                          │ │
+│ │                  │   │   lcc_only=False                                  │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   cluster_graph=ClusterGraphConfig(                   │ │
+│ │                  │   │   max_cluster_size=10,                            │ │
+│ │                  │   │   use_lcc=True,                                   │ │
+│ │                  │   │   seed=3735928559                                 │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   extract_claims=ClaimExtractionConfig(               │ │
+│ │                  │   │   enabled=False,                                  │ │
+│ │                  │   │   model_id='default_chat_model',                  │ │
+│ │                  │   │   prompt='prompts/extract_claims.txt',            │ │
+│ │                  │   │   description='Any claims or facts that could be  │ │
+│ │                  relevant to information discovery.',                    │ │
+│ │                  │   │   max_gleanings=1,                                │ │
+│ │                  │   │   strategy=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   community_reports=CommunityReportsConfig(           │ │
+│ │                  │   │   model_id='default_chat_model',                  │ │
+│ │                  │   │                                                   │ │
+│ │                  graph_prompt='prompts/community_report_graph.txt',      │ │
+│ │                  │   │                                                   │ │
+│ │                  text_prompt='prompts/community_report_text.txt',        │ │
+│ │                  │   │   max_length=2000,                                │ │
+│ │                  │   │   max_input_length=8000,                          │ │
+│ │                  │   │   strategy=None                                   │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   embed_graph=EmbedGraphConfig(                       │ │
+│ │                  │   │   enabled=False,                                  │ │
+│ │                  │   │   dimensions=1536,                                │ │
+│ │                  │   │   num_walks=10,                                   │ │
+│ │                  │   │   walk_length=40,                                 │ │
+│ │                  │   │   window_size=2,                                  │ │
+│ │                  │   │   iterations=3,                                   │ │
+│ │                  │   │   random_seed=597832,                             │ │
+│ │                  │   │   use_lcc=True                                    │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   umap=UmapConfig(enabled=False),                     │ │
+│ │                  │   snapshots=SnapshotsConfig(                          │ │
+│ │                  │   │   embeddings=False,                               │ │
+│ │                  │   │   graphml=False,                                  │ │
+│ │                  │   │   raw_graph=False                                 │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   local_search=LocalSearchConfig(                     │ │
+│ │                  │   │                                                   │ │
+│ │                  prompt='prompts/local_search_system_prompt.txt',        │ │
+│ │                  │   │   chat_model_id='default_chat_model',             │ │
+│ │                  │   │   embedding_model_id='default_embedding_model',   │ │
+│ │                  │   │   text_unit_prop=0.5,                             │ │
+│ │                  │   │   community_prop=0.15,                            │ │
+│ │                  │   │   conversation_history_max_turns=5,               │ │
+│ │                  │   │   top_k_entities=10,                              │ │
+│ │                  │   │   top_k_relationships=10,                         │ │
+│ │                  │   │   max_context_tokens=12000                        │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   global_search=GlobalSearchConfig(                   │ │
+│ │                  │   │                                                   │ │
+│ │                  map_prompt='prompts/global_search_map_system_prompt.tx… │ │
+│ │                  │   │                                                   │ │
+│ │                  reduce_prompt='prompts/global_search_reduce_system_pro… │ │
+│ │                  │   │   chat_model_id='default_chat_model',             │ │
+│ │                  │   │                                                   │ │
+│ │                  knowledge_prompt='prompts/global_search_knowledge_syst… │ │
+│ │                  │   │   max_context_tokens=12000,                       │ │
+│ │                  │   │   data_max_tokens=12000,                          │ │
+│ │                  │   │   map_max_length=1000,                            │ │
+│ │                  │   │   reduce_max_length=2000,                         │ │
+│ │                  │   │   dynamic_search_threshold=1,                     │ │
+│ │                  │   │   dynamic_search_keep_parent=False,               │ │
+│ │                  │   │   dynamic_search_num_repeats=1,                   │ │
+│ │                  │   │   dynamic_search_use_summary=False,               │ │
+│ │                  │   │   dynamic_search_max_level=2                      │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   drift_search=DRIFTSearchConfig(                     │ │
+│ │                  │   │                                                   │ │
+│ │                  prompt='prompts/drift_search_system_prompt.txt',        │ │
+│ │                  │   │                                                   │ │
+│ │                  reduce_prompt='prompts/drift_search_reduce_prompt.txt', │ │
+│ │                  │   │   chat_model_id='default_chat_model',             │ │
+│ │                  │   │   embedding_model_id='default_embedding_model',   │ │
+│ │                  │   │   data_max_tokens=12000,                          │ │
+│ │                  │   │   reduce_max_tokens=None,                         │ │
+│ │                  │   │   reduce_temperature=0,                           │ │
+│ │                  │   │   reduce_max_completion_tokens=None,              │ │
+│ │                  │   │   concurrency=32,                                 │ │
+│ │                  │   │   drift_k_followups=20,                           │ │
+│ │                  │   │   primer_folds=5,                                 │ │
+│ │                  │   │   primer_llm_max_tokens=12000,                    │ │
+│ │                  │   │   n_depth=3,                                      │ │
+│ │                  │   │   local_search_text_unit_prop=0.9,                │ │
+│ │                  │   │   local_search_community_prop=0.1,                │ │
+│ │                  │   │   local_search_top_k_mapped_entities=10,          │ │
+│ │                  │   │   local_search_top_k_relationships=10,            │ │
+│ │                  │   │   local_search_max_data_tokens=12000,             │ │
+│ │                  │   │   local_search_temperature=0,                     │ │
+│ │                  │   │   local_search_top_p=1,                           │ │
+│ │                  │   │   local_search_n=1,                               │ │
+│ │                  │   │   local_search_llm_max_gen_tokens=None,           │ │
+│ │                  │   │   local_search_llm_max_gen_completion_tokens=None │ │
+│ │                  │   ),                                                  │ │
+│ │                  │   basic_search=BasicSearchConfig(                     │ │
+│ │                  │   │                                                   │ │
+│ │                  prompt='prompts/basic_search_system_prompt.txt',        │ │
+│ │                  │   │   chat_model_id='default_chat_model',             │ │
+│ │                  │   │   embedding_model_id='default_embedding_model',   │ │
+│ │                  │   │   k=10,                                           │ │
+│ │                  │   │   max_context_tokens=12000                        │ │
+│ │                  │   )                                                   │ │
+│ │                  )                                                       │ │
+│ │ dataframe_dict = {'multi-index': False}                                  │ │
+│ │           name = 'entities'                                              │ │
+│ │  optional_list = []                                                      │ │
+│ │    output_list = ['entities', 'communities', 'community_reports']        │ │
+│ │    storage_obj = <graphrag.storage.file_pipeline_storage.FilePipelineSt… │ │
+│ │                  object at 0x7db9bc94e510>                               │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /usr/lib/python3.12/asyncio/runners.py:194 in run                            │
+│                                                                              │
+│   191 │   │   │   "asyncio.run() cannot be called from a running event loop" │
+│   192 │                                                                      │
+│   193 │   with Runner(debug=debug, loop_factory=loop_factory) as runner:     │
+│ ❱ 194 │   │   return runner.run(main)                                        │
+│   195                                                                        │
+│   196                                                                        │
+│   197 def _cancel_all_tasks(loop):                                           │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │        debug = None                                                      │ │
+│ │ loop_factory = None                                                      │ │
+│ │         main = <coroutine object load_table_from_storage at              │ │
+│ │                0x7db9b8b82040>                                           │ │
+│ │       runner = <asyncio.runners.Runner object at 0x7db9b8cb9e50>         │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /usr/lib/python3.12/asyncio/runners.py:118 in run                            │
+│                                                                              │
+│   115 │   │                                                                  │
+│   116 │   │   self._interrupt_count = 0                                      │
+│   117 │   │   try:                                                           │
+│ ❱ 118 │   │   │   return self._loop.run_until_complete(task)                 │
+│   119 │   │   except exceptions.CancelledError:                              │
+│   120 │   │   │   if self._interrupt_count > 0:                              │
+│   121 │   │   │   │   uncancel = getattr(task, "uncancel", None)             │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │        context = <_contextvars.Context object at 0x7db9b9032900>         │ │
+│ │           coro = <coroutine object load_table_from_storage at            │ │
+│ │                  0x7db9b8b82040>                                         │ │
+│ │           self = <asyncio.runners.Runner object at 0x7db9b8cb9e50>       │ │
+│ │ sigint_handler = functools.partial(<bound method Runner._on_sigint of    │ │
+│ │                  <asyncio.runners.Runner object at 0x7db9b8cb9e50>>,     │ │
+│ │                  main_task=<Task finished name='Task-1'                  │ │
+│ │                  coro=<load_table_from_storage() done, defined at        │ │
+│ │                  /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/py… │ │
+│ │                  exception=ValueError('Could not find entities.parquet   │ │
+│ │                  in storage!')>)                                         │ │
+│ │           task = <Task finished name='Task-1'                            │ │
+│ │                  coro=<load_table_from_storage() done, defined at        │ │
+│ │                  /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/py… │ │
+│ │                  exception=ValueError('Could not find entities.parquet   │ │
+│ │                  in storage!')>                                          │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /usr/lib/python3.12/asyncio/base_events.py:687 in run_until_complete         │
+│                                                                              │
+│    684 │   │   if not future.done():                                         │
+│    685 │   │   │   raise RuntimeError('Event loop stopped before Future comp │
+│    686 │   │                                                                 │
+│ ❱  687 │   │   return future.result()                                        │
+│    688 │                                                                     │
+│    689 │   def stop(self):                                                   │
+│    690 │   │   """Stop running the event loop.                               │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │   future = <Task finished name='Task-1' coro=<load_table_from_storage()  │ │
+│ │            done, defined at                                              │ │
+│ │            /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.… │ │
+│ │            exception=ValueError('Could not find entities.parquet in      │ │
+│ │            storage!')>                                                   │ │
+│ │ new_task = False                                                         │ │
+│ │     self = <_UnixSelectorEventLoop running=False closed=True             │ │
+│ │            debug=False>                                                  │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+│                                                                              │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages │
+│ /graphrag/utils/storage.py:21 in load_table_from_storage                     │
+│                                                                              │
+│   18 │   filename = f"{name}.parquet"                                        │
+│   19 │   if not await storage.has(filename):                                 │
+│   20 │   │   msg = f"Could not find {filename} in storage!"                  │
+│ ❱ 21 │   │   raise ValueError(msg)                                           │
+│   22 │   try:                                                                │
+│   23 │   │   logger.info("reading table from storage: %s", filename)         │
+│   24 │   │   return pd.read_parquet(BytesIO(await storage.get(filename, as_b │
+│                                                                              │
+│ ╭───────────────────────────────── locals ─────────────────────────────────╮ │
+│ │ filename = 'entities.parquet'                                            │ │
+│ │      msg = 'Could not find entities.parquet in storage!'                 │ │
+│ │     name = 'entities'                                                    │ │
+│ │  storage = <graphrag.storage.file_pipeline_storage.FilePipelineStorage   │ │
+│ │            object at 0x7db9bc94e510>                                     │ │
+│ ╰──────────────────────────────────────────────────────────────────────────╯ │
+╰──────────────────────────────────────────────────────────────────────────────╯
+ValueError: Could not find entities.parquet in storage!
+

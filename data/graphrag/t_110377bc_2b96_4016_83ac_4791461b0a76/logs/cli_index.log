@@ -1,0 +1,614 @@
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python3 -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+
+STDERR:
+╭────────────────────────────────────── Traceback (most recent call last) ───────────────────────────────────────╮
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/main.py:193 in       │
+│ _index_cli                                                                                                     │
+│                                                                                                                │
+│   190 │   """Build a knowledge graph index."""                                                                 │
+│   191 │   from graphrag.cli.index import index_cli                                                             │
+│   192 │                                                                                                        │
+│ ❱ 193 │   index_cli(                                                                                           │
+│   194 │   │   root_dir=root,                                                                                   │
+│   195 │   │   verbose=verbose,                                                                                 │
+│   196 │   │   memprofile=memprofile,                                                                           │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │          config = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │          output = None                                                                                     │ │
+│ │            root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/index.py:59 in       │
+│ index_cli                                                                                                      │
+│                                                                                                                │
+│    56 │   │   cli_overrides["output.base_dir"] = str(output_dir)                                               │
+│    57 │   │   cli_overrides["reporting.base_dir"] = str(output_dir)                                            │
+│    58 │   │   cli_overrides["update_index_output.base_dir"] = str(output_dir)                                  │
+│ ❱  59 │   config = load_config(root_dir, config_filepath, cli_overrides)                                       │
+│    60 │   _run_index(                                                                                          │
+│    61 │   │   config=config,                                                                                   │
+│    62 │   │   method=method,                                                                                   │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │   cli_overrides = {}                                                                                       │ │
+│ │ config_filepath = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │      output_dir = None                                                                                     │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:18 │
+│ 7 in load_config                                                                                               │
+│                                                                                                                │
+│   184 │   _load_dotenv(config_path)                                                                            │
+│   185 │   config_extension = config_path.suffix                                                                │
+│   186 │   config_text = config_path.read_text(encoding="utf-8")                                                │
+│ ❱ 187 │   config_text = _parse_env_variables(config_text)                                                      │
+│   188 │   config_data = _parse(config_extension, config_text)                                                  │
+│   189 │   if cli_overrides:                                                                                    │
+│   190 │   │   _apply_overrides(config_data, cli_overrides)                                                     │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │    cli_overrides = {}                                                                                      │ │
+│ │ config_extension = '.yaml'                                                                                 │ │
+│ │  config_filepath = None                                                                                    │ │
+│ │      config_path = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │      config_text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n               │ │
+│ │                    api_key:'+2465                                                                          │ │
+│ │             root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │         root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:67 │
+│ in _parse_env_variables                                                                                        │
+│                                                                                                                │
+│    64 │   KeyError                                                                                             │
+│    65 │   │   If an environment variable is not found.                                                         │
+│    66 │   """                                                                                                  │
+│ ❱  67 │   return Template(text).substitute(os.environ)                                                         │
+│    68                                                                                                          │
+│    69                                                                                                          │
+│    70 def _load_dotenv(config_path: Path | str) -> None:                                                       │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────── locals ──────────────────────────────────────────────╮         │
+│ │ text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n    api_key:'+2465 │         │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────╯         │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:121 in substitute                                                                │
+│                                                                                                                │
+│   118 │   │   │   │   self._invalid(mo)                                                                        │
+│   119 │   │   │   raise ValueError('Unrecognized named group in pattern',                                      │
+│   120 │   │   │   │   │   │   │    self.pattern)                                                               │
+│ ❱ 121 │   │   return self.pattern.sub(convert, self.template)                                                  │
+│   122 │                                                                                                        │
+│   123 │   def safe_substitute(self, mapping=_sentinel_dict, /, **kws):                                         │
+│   124 │   │   if mapping is _sentinel_dict:                                                                    │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │     kws = {}                                                                                               │ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │    self = <string.Template object at 0x74798f3ce240>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:114 in convert                                                                   │
+│                                                                                                                │
+│   111 │   │   │   # Check the most common path first.                                                          │
+│   112 │   │   │   named = mo.group('named') or mo.group('braced')                                              │
+│   113 │   │   │   if named is not None:                                                                        │
+│ ❱ 114 │   │   │   │   return str(mapping[named])                                                               │
+│   115 │   │   │   if mo.group('escaped') is not None:                                                          │
+│   116 │   │   │   │   return self.delimiter                                                                    │
+│   117 │   │   │   if mo.group('invalid') is not None:                                                          │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │      mo = <re.Match object; span=(81, 98), match='${GEMINI_API_KEY}'>                                      │ │
+│ │   named = 'GEMINI_API_KEY'                                                                                 │ │
+│ │    self = <string.Template object at 0x74798f3ce240>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│ in __getitem__:685                                                                                             │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │  key = 'GEMINI_API_KEY'                                                                                    │ │
+│ │ self = environ({                                                                                           │ │
+│ │        │   'SHELL': '/bin/bash',                                                                           │ │
+│ │        │   'SESSION_MANAGER':                                                                              │ │
+│ │        'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,              │ │
+│ │        │   'QT_ACCESSIBILITY': '1',                                                                        │ │
+│ │        │   'COLORTERM': 'truecolor',                                                                       │ │
+│ │        │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                         │ │
+│ │        │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                             │ │
+│ │        '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,              │ │
+│ │        │   'XDG_MENU_PREFIX': 'gnome-',                                                                    │ │
+│ │        │   'TERM_PROGRAM_VERSION': '1.5.9',                                                                │ │
+│ │        │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                               │ │
+│ │        │   'LANGUAGE': 'vi:en',                                                                            │ │
+│ │        │   ... +87                                                                                         │ │
+│ │        })                                                                                                  │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+KeyError: 'GEMINI_API_KEY'
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python3 -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+
+STDERR:
+╭────────────────────────────────────── Traceback (most recent call last) ───────────────────────────────────────╮
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/main.py:193 in       │
+│ _index_cli                                                                                                     │
+│                                                                                                                │
+│   190 │   """Build a knowledge graph index."""                                                                 │
+│   191 │   from graphrag.cli.index import index_cli                                                             │
+│   192 │                                                                                                        │
+│ ❱ 193 │   index_cli(                                                                                           │
+│   194 │   │   root_dir=root,                                                                                   │
+│   195 │   │   verbose=verbose,                                                                                 │
+│   196 │   │   memprofile=memprofile,                                                                           │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │          config = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │          output = None                                                                                     │ │
+│ │            root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/index.py:59 in       │
+│ index_cli                                                                                                      │
+│                                                                                                                │
+│    56 │   │   cli_overrides["output.base_dir"] = str(output_dir)                                               │
+│    57 │   │   cli_overrides["reporting.base_dir"] = str(output_dir)                                            │
+│    58 │   │   cli_overrides["update_index_output.base_dir"] = str(output_dir)                                  │
+│ ❱  59 │   config = load_config(root_dir, config_filepath, cli_overrides)                                       │
+│    60 │   _run_index(                                                                                          │
+│    61 │   │   config=config,                                                                                   │
+│    62 │   │   method=method,                                                                                   │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │   cli_overrides = {}                                                                                       │ │
+│ │ config_filepath = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │      output_dir = None                                                                                     │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:18 │
+│ 7 in load_config                                                                                               │
+│                                                                                                                │
+│   184 │   _load_dotenv(config_path)                                                                            │
+│   185 │   config_extension = config_path.suffix                                                                │
+│   186 │   config_text = config_path.read_text(encoding="utf-8")                                                │
+│ ❱ 187 │   config_text = _parse_env_variables(config_text)                                                      │
+│   188 │   config_data = _parse(config_extension, config_text)                                                  │
+│   189 │   if cli_overrides:                                                                                    │
+│   190 │   │   _apply_overrides(config_data, cli_overrides)                                                     │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │    cli_overrides = {}                                                                                      │ │
+│ │ config_extension = '.yaml'                                                                                 │ │
+│ │  config_filepath = None                                                                                    │ │
+│ │      config_path = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │      config_text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n               │ │
+│ │                    api_key:'+2465                                                                          │ │
+│ │             root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │         root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:67 │
+│ in _parse_env_variables                                                                                        │
+│                                                                                                                │
+│    64 │   KeyError                                                                                             │
+│    65 │   │   If an environment variable is not found.                                                         │
+│    66 │   """                                                                                                  │
+│ ❱  67 │   return Template(text).substitute(os.environ)                                                         │
+│    68                                                                                                          │
+│    69                                                                                                          │
+│    70 def _load_dotenv(config_path: Path | str) -> None:                                                       │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────── locals ──────────────────────────────────────────────╮         │
+│ │ text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n    api_key:'+2465 │         │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────╯         │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:121 in substitute                                                                │
+│                                                                                                                │
+│   118 │   │   │   │   self._invalid(mo)                                                                        │
+│   119 │   │   │   raise ValueError('Unrecognized named group in pattern',                                      │
+│   120 │   │   │   │   │   │   │    self.pattern)                                                               │
+│ ❱ 121 │   │   return self.pattern.sub(convert, self.template)                                                  │
+│   122 │                                                                                                        │
+│   123 │   def safe_substitute(self, mapping=_sentinel_dict, /, **kws):                                         │
+│   124 │   │   if mapping is _sentinel_dict:                                                                    │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │     kws = {}                                                                                               │ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │    self = <string.Template object at 0x7f11e4bdc680>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:114 in convert                                                                   │
+│                                                                                                                │
+│   111 │   │   │   # Check the most common path first.                                                          │
+│   112 │   │   │   named = mo.group('named') or mo.group('braced')                                              │
+│   113 │   │   │   if named is not None:                                                                        │
+│ ❱ 114 │   │   │   │   return str(mapping[named])                                                               │
+│   115 │   │   │   if mo.group('escaped') is not None:                                                          │
+│   116 │   │   │   │   return self.delimiter                                                                    │
+│   117 │   │   │   if mo.group('invalid') is not None:                                                          │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │      mo = <re.Match object; span=(81, 98), match='${GEMINI_API_KEY}'>                                      │ │
+│ │   named = 'GEMINI_API_KEY'                                                                                 │ │
+│ │    self = <string.Template object at 0x7f11e4bdc680>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│ in __getitem__:685                                                                                             │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │  key = 'GEMINI_API_KEY'                                                                                    │ │
+│ │ self = environ({                                                                                           │ │
+│ │        │   'SHELL': '/bin/bash',                                                                           │ │
+│ │        │   'SESSION_MANAGER':                                                                              │ │
+│ │        'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,              │ │
+│ │        │   'QT_ACCESSIBILITY': '1',                                                                        │ │
+│ │        │   'COLORTERM': 'truecolor',                                                                       │ │
+│ │        │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                         │ │
+│ │        │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                             │ │
+│ │        '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,              │ │
+│ │        │   'XDG_MENU_PREFIX': 'gnome-',                                                                    │ │
+│ │        │   'TERM_PROGRAM_VERSION': '1.5.9',                                                                │ │
+│ │        │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                               │ │
+│ │        │   'LANGUAGE': 'vi:en',                                                                            │ │
+│ │        │   ... +87                                                                                         │ │
+│ │        })                                                                                                  │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+KeyError: 'GEMINI_API_KEY'
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python3 -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+
+STDERR:
+╭────────────────────────────────────── Traceback (most recent call last) ───────────────────────────────────────╮
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/main.py:193 in       │
+│ _index_cli                                                                                                     │
+│                                                                                                                │
+│   190 │   """Build a knowledge graph index."""                                                                 │
+│   191 │   from graphrag.cli.index import index_cli                                                             │
+│   192 │                                                                                                        │
+│ ❱ 193 │   index_cli(                                                                                           │
+│   194 │   │   root_dir=root,                                                                                   │
+│   195 │   │   verbose=verbose,                                                                                 │
+│   196 │   │   memprofile=memprofile,                                                                           │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │          config = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │          output = None                                                                                     │ │
+│ │            root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/index.py:59 in       │
+│ index_cli                                                                                                      │
+│                                                                                                                │
+│    56 │   │   cli_overrides["output.base_dir"] = str(output_dir)                                               │
+│    57 │   │   cli_overrides["reporting.base_dir"] = str(output_dir)                                            │
+│    58 │   │   cli_overrides["update_index_output.base_dir"] = str(output_dir)                                  │
+│ ❱  59 │   config = load_config(root_dir, config_filepath, cli_overrides)                                       │
+│    60 │   _run_index(                                                                                          │
+│    61 │   │   config=config,                                                                                   │
+│    62 │   │   method=method,                                                                                   │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │           cache = True                                                                                     │ │
+│ │   cli_overrides = {}                                                                                       │ │
+│ │ config_filepath = None                                                                                     │ │
+│ │         dry_run = False                                                                                    │ │
+│ │      memprofile = False                                                                                    │ │
+│ │          method = <IndexingMethod.Fast: 'fast'>                                                            │ │
+│ │      output_dir = None                                                                                     │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_401… │ │
+│ │ skip_validation = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:18 │
+│ 7 in load_config                                                                                               │
+│                                                                                                                │
+│   184 │   _load_dotenv(config_path)                                                                            │
+│   185 │   config_extension = config_path.suffix                                                                │
+│   186 │   config_text = config_path.read_text(encoding="utf-8")                                                │
+│ ❱ 187 │   config_text = _parse_env_variables(config_text)                                                      │
+│   188 │   config_data = _parse(config_extension, config_text)                                                  │
+│   189 │   if cli_overrides:                                                                                    │
+│   190 │   │   _apply_overrides(config_data, cli_overrides)                                                     │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │    cli_overrides = {}                                                                                      │ │
+│ │ config_extension = '.yaml'                                                                                 │ │
+│ │  config_filepath = None                                                                                    │ │
+│ │      config_path = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │      config_text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n               │ │
+│ │                    api_key:'+2465                                                                          │ │
+│ │             root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ │         root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_110377bc_2b96_40… │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:67 │
+│ in _parse_env_variables                                                                                        │
+│                                                                                                                │
+│    64 │   KeyError                                                                                             │
+│    65 │   │   If an environment variable is not found.                                                         │
+│    66 │   """                                                                                                  │
+│ ❱  67 │   return Template(text).substitute(os.environ)                                                         │
+│    68                                                                                                          │
+│    69                                                                                                          │
+│    70 def _load_dotenv(config_path: Path | str) -> None:                                                       │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────── locals ──────────────────────────────────────────────╮         │
+│ │ text = 'models:\n  default_chat_model:\n    type: chat\n    auth_type: api_key\n    api_key:'+2465 │         │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────╯         │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:121 in substitute                                                                │
+│                                                                                                                │
+│   118 │   │   │   │   self._invalid(mo)                                                                        │
+│   119 │   │   │   raise ValueError('Unrecognized named group in pattern',                                      │
+│   120 │   │   │   │   │   │   │    self.pattern)                                                               │
+│ ❱ 121 │   │   return self.pattern.sub(convert, self.template)                                                  │
+│   122 │                                                                                                        │
+│   123 │   def safe_substitute(self, mapping=_sentinel_dict, /, **kws):                                         │
+│   124 │   │   if mapping is _sentinel_dict:                                                                    │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │     kws = {}                                                                                               │ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │    self = <string.Template object at 0x7daa920d80b0>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /usr/lib/python3.12/string.py:114 in convert                                                                   │
+│                                                                                                                │
+│   111 │   │   │   # Check the most common path first.                                                          │
+│   112 │   │   │   named = mo.group('named') or mo.group('braced')                                              │
+│   113 │   │   │   if named is not None:                                                                        │
+│ ❱ 114 │   │   │   │   return str(mapping[named])                                                               │
+│   115 │   │   │   if mo.group('escaped') is not None:                                                          │
+│   116 │   │   │   │   return self.delimiter                                                                    │
+│   117 │   │   │   if mo.group('invalid') is not None:                                                          │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │ mapping = environ({                                                                                        │ │
+│ │           │   'SHELL': '/bin/bash',                                                                        │ │
+│ │           │   'SESSION_MANAGER':                                                                           │ │
+│ │           'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,           │ │
+│ │           │   'QT_ACCESSIBILITY': '1',                                                                     │ │
+│ │           │   'COLORTERM': 'truecolor',                                                                    │ │
+│ │           │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                      │ │
+│ │           │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                          │ │
+│ │           '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,           │ │
+│ │           │   'XDG_MENU_PREFIX': 'gnome-',                                                                 │ │
+│ │           │   'TERM_PROGRAM_VERSION': '1.5.9',                                                             │ │
+│ │           │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                            │ │
+│ │           │   'LANGUAGE': 'vi:en',                                                                         │ │
+│ │           │   ... +87                                                                                      │ │
+│ │           })                                                                                               │ │
+│ │      mo = <re.Match object; span=(81, 98), match='${GEMINI_API_KEY}'>                                      │ │
+│ │   named = 'GEMINI_API_KEY'                                                                                 │ │
+│ │    self = <string.Template object at 0x7daa920d80b0>                                                       │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│ in __getitem__:685                                                                                             │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │  key = 'GEMINI_API_KEY'                                                                                    │ │
+│ │ self = environ({                                                                                           │ │
+│ │        │   'SHELL': '/bin/bash',                                                                           │ │
+│ │        │   'SESSION_MANAGER':                                                                              │ │
+│ │        'local/hoang-mai-Inspiron-3470:@/tmp/.ICE-unix/1761,unix/hoang-mai-Inspiron-3470:'+19,              │ │
+│ │        │   'QT_ACCESSIBILITY': '1',                                                                        │ │
+│ │        │   'COLORTERM': 'truecolor',                                                                       │ │
+│ │        │   'XDG_CONFIG_DIRS': '/etc/xdg/xdg-ubuntu-xorg:/etc/xdg',                                         │ │
+│ │        │   'VSCODE_DEBUGPY_ADAPTER_ENDPOINTS':                                                             │ │
+│ │        '/home/hoang-mai/.cursor/extensions/ms-python.debugpy-2025.14.1-linux-x64/.noConf'+53,              │ │
+│ │        │   'XDG_MENU_PREFIX': 'gnome-',                                                                    │ │
+│ │        │   'TERM_PROGRAM_VERSION': '1.5.9',                                                                │ │
+│ │        │   'GNOME_DESKTOP_SESSION_ID': 'this-is-deprecated',                                               │ │
+│ │        │   'LANGUAGE': 'vi:en',                                                                            │ │
+│ │        │   ... +87                                                                                         │ │
+│ │        })                                                                                                  │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+KeyError: 'GEMINI_API_KEY'
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+Starting pipeline with workflows: load_input_documents, create_base_text_units, create_final_documents, extract_graph_nlp, prune_graph, finalize_graph, create_communities, create_final_text_units, create_community_reports_text, generate_text_embeddings
+Starting workflow: load_input_documents
+
+Workflow complete: load_input_documents
+Starting workflow: create_base_text_units
+  1 / 1 ............................................................................................
+Workflow complete: create_base_text_units
+Starting workflow: create_final_documents
+
+Workflow complete: create_final_documents
+Starting workflow: extract_graph_nlp
+Pipeline complete
+
+STDERR:
+/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/async_client_cleanup.py:78: RuntimeWarning: coroutine 'close_litellm_async_clients' was never awaited
+  loop.close()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+Starting pipeline with workflows: load_input_documents, create_base_text_units, create_final_documents, extract_graph_nlp, prune_graph, finalize_graph, create_communities, create_final_text_units, create_community_reports_text, generate_text_embeddings
+Starting workflow: load_input_documents
+
+Workflow complete: load_input_documents
+Starting workflow: create_base_text_units
+  1 / 1 ............................................................................................
+Workflow complete: create_base_text_units
+Starting workflow: create_final_documents
+
+Workflow complete: create_final_documents
+Starting workflow: extract_graph_nlp
+Pipeline complete
+
+STDERR:
+/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/async_client_cleanup.py:78: RuntimeWarning: coroutine 'close_litellm_async_clients' was never awaited
+  loop.close()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+Starting pipeline with workflows: load_input_documents, create_base_text_units, create_final_documents, extract_graph_nlp, prune_graph, finalize_graph, create_communities, create_final_text_units, create_community_reports_text, generate_text_embeddings
+Starting workflow: load_input_documents
+
+Workflow complete: load_input_documents
+Starting workflow: create_base_text_units
+  1 / 1 ............................................................................................
+Workflow complete: create_base_text_units
+Starting workflow: create_final_documents
+
+Workflow complete: create_final_documents
+Starting workflow: extract_graph_nlp
+Pipeline complete
+
+STDERR:
+/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/async_client_cleanup.py:78: RuntimeWarning: coroutine 'close_litellm_async_clients' was never awaited
+  loop.close()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+
+
+==== graphrag index FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python -X utf8 -m graphrag index --root data/graphrag/t_110377bc_2b96_4016_83ac_4791461b0a76 --method fast
+Return code: 1
+STDOUT:
+Starting pipeline with workflows: load_input_documents, create_base_text_units, create_final_documents, extract_graph_nlp, prune_graph, finalize_graph, create_communities, create_final_text_units, create_community_reports_text, generate_text_embeddings
+Starting workflow: load_input_documents
+
+Workflow complete: load_input_documents
+Starting workflow: create_base_text_units
+  1 / 1 ............................................................................................
+Workflow complete: create_base_text_units
+Starting workflow: create_final_documents
+
+Workflow complete: create_final_documents
+Starting workflow: extract_graph_nlp
+Pipeline complete
+
+STDERR:
+/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/async_client_cleanup.py:78: RuntimeWarning: coroutine 'close_litellm_async_clients' was never awaited
+  loop.close()
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+

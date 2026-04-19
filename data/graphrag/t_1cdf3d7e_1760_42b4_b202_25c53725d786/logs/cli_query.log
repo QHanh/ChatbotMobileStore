@@ -1,0 +1,1440 @@
+
+==== graphrag query STDOUT ====
+Mã QR của VNPAY có hiệu lực trong vòng 15 phút [Data: Sources (29)]. Tương tự, các giao dịch thanh toán qua thẻ nội địa và tài khoản ngân hàng cũng sẽ hết hạn sau 15 phút [Data: Sources (30)].
+
+Để đảm bảo quá trình thanh toán thành công, khách hàng nên tham khảo trước các điều kiện và thao tác quét mã trên điện thoại để sẵn sàng, tránh sự cố hết thời gian ảnh hưởng đến thanh toán và mã khuyến mại [Data: Sources (29, 30)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7649c0102030>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7649bcd4f350>, 4684990.154792453)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7649c0101d30>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có chính sách cụ thể nào về thuế VAT khi mua số lượng lớn được đề cập trực tiếp.
+
+Tuy nhiên, chính sách vận chuyển có nhắc đến việc giao hàng cho "khách tỉnh, khách sỉ, đơn hàng số lượng lớn" thông qua nhà xe hoặc công ty vận chuyển theo thỏa thuận và báo phí cụ thể [Data: Sources (1)]. Ngoài ra, các đơn hàng có thể đi kèm "phiếu xuất kho hoặc hóa đơn tài chính (nếu có)" [Data: Sources (1, 6)], điều này ngụ ý rằng hóa đơn tài chính có thể được cung cấp, thường bao gồm thông tin về VAT.
+
+Nếu bạn cần thông tin chi tiết về chính sách VAT cho các đơn hàng số lượng lớn, bạn nên liên hệ trực tiếp với Hoàng Mai Mobile.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x76c052b18ef0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x76c04f3767b0>, 4687246.271943858)])']
+connector: <aiohttp.connector.TCPConnector object at 0x76c052b18f20>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có dữ liệu cụ thể nào hướng dẫn cách cải thiện nhiệt độ máy hàn. Các bảng dữ liệu chủ yếu liệt kê "Máy Hàn & PK" (Máy Hàn & Phụ kiện) như một danh mục sản phẩm hoặc dịch vụ mà HOÀNG MAI MOBILE cung cấp [Data: Sources (31, 35, 27, 9, 17, +more)].
+
+Thông tin có sẵn tập trung vào các loại thiết bị, linh kiện điện thoại, dụng cụ sửa chữa, và các chính sách của công ty như bảo hành, bán hàng, thanh toán, giao hàng, đổi trả, cũng như thông tin liên hệ và địa chỉ [Data: Sources (34, 21, 32, 17, 9, +more)]. Tuy nhiên, không có hướng dẫn kỹ thuật hoặc mẹo về cách tối ưu hóa hiệu suất nhiệt độ của máy hàn.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7638f4ae00b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7638f171ec30>, 4701663.354929638)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7638f4ae0a40>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile prioritizes product quality and customer rights, offering a comprehensive warranty policy to ensure customer confidence. This policy outlines the conditions for warranty, cases not covered, warranty durations for various product types, and details regarding warranty reception [Data: Sources (10, 18)].
+
+**Conditions for Warranty Application**
+Products are eligible for warranty if they meet specific criteria: the issue must be a technical fault originating from the manufacturer, the product must retain its original structure without alteration, it must be within the warranty period specified by Hoàng Mai Mobile, and the warranty stamp or seal must be intact, not torn, peeled, or replaced [Data: Sources (10, 18)].
+
+**Cases Not Covered by Warranty**
+Hoàng Mai Mobile will not accept warranty claims for products under certain circumstances. These include damage caused by incorrect usage, wrong voltage, incorrect technical specifications, or physical damage like drops or impacts. Products that have been tampered with or repaired by entities other than Hoàng Mai Mobile are also excluded. Additionally, products with missing, torn, faded, or counterfeit warranty stamps, those affected by water, short circuits, oxidation, or similar factors, and products that are deformed or do not retain their original shape and structure are not covered. Warranty claims are also rejected if the product is past the announced warranty period on the order or website [Data: Sources (10, 18)].
+
+**Warranty Duration by Product Type**
+The warranty period varies depending on the product category:
+*   **Screens and Touchscreens**: All types of screens have a 6-month touch warranty (provided they still display, are not scratched or cracked, and have straight cables). Roger screens have a 6-month storage warranty, covering issues like detached bezels, air bubbles, unresponsive touch, flickering, image retention, and lines. Roger touchscreens have a 6-month warranty, but this does not apply if the cable is torn/broken, the glass is scratched, or if there is physical damage from drops [Data: Sources (11, 19)].
+*   **Batteries**: iPhone batteries come with a 12-month warranty, while batteries for Samsung, Oppo, Vivo, Xiaomi, Nokia, Huawei, Vsmart, and iPad have a 6-month warranty. However, batteries are not covered if they swell after one month of use, have torn cables, are deformed, or have missing warranty stamps [Data: Sources (11, 19)].
+*   **Components**: Charging cables, charging boards, power cables, and volume cables are warranted for 3 months if the seal is intact. Once the seal is removed, they are not covered [Data: Sources (11, 19)].
+*   **Repair Equipment**:
+    *   Hot air guns and soldering stations: 6 months for the main unit (soldering short circuit: 3 months) [Data: Sources (11, 19)].
+    *   Microscopes and cameras: 6 months [Data: Sources (11, 19)].
+    *   Boxes for screen/battery/FaceID repair, hard drive replacement: 6 months [Data: Sources (11, 19)].
+    *   Mainboard separation heating plates: 6 months for the control unit [Data: Sources (11, 19)].
+    *   Power supplies and multimeters: 6 months [Data: Sources (11, 19)].
+    *   Power supply cables, battery activators: 1 month for the converter [Data: Sources (11, 19)].
+    *   Laminating machines, autoclaves: 1 year [Data: Sources (11, 19)].
+    *   Glass cutting machines, vacuum machines, OCA laminating machines, mini autoclaves: 6 months [Data: Sources (11, 19)].
+    *   Glue removal machines, grinding machines, electric screwdrivers: 1 month [Data: Sources (11, 19)].
+    *   Bezel removal machines, camera separation machines, cable separation machines: 3 months [Data: Sources (11, 19)].
+    *   USB chargers < 10 ports: 3 months [Data: Sources (11, 19)].
+    *   Multi-port chargers (≥ 20 ports): 1 month [Data: Sources (11, 19)].
+    *   Technical lights, microscope lights: 1 month [Data: Sources (11, 19)].
+    For other products, customers should refer to the product description on the website or consult staff [Data: Sources (11, 19)].
+
+**Warranty Reception Time and Location**
+Warranty claims are accepted daily from 10:00 AM to 6:00 PM, excluding holidays and Tet. The main warranty location is at Số 08, ngõ 117 Thái Hà, phường Trung Liệt, quận Đống Đa, Hà Nội. Customers can contact the hotline at 0982.15.3333 or 0911.160.388 for warranty support, or email hoangmaimobile.vn@gmail.com [Data: Sources (11, 19)].
+
+**Important Notes**
+The warranty policy may be subject to change. Customers are advised to check the latest announcements on the website www.hoangmaimobile.vn or contact Hoàng Mai Mobile directly for accurate support [Data: Sources (11, 19)]. Hoàng Mai Mobile is committed to providing the best service quality, competitive prices, excellent warranty, and a diverse range of quality products, specializing in wholesale and retail phone components, repair tools, and glass pressing materials [Data: Sources (11, 19)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x71a7a4d86fc0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x71a7a130ecf0>, 4742492.950121379)])']
+connector: <aiohttp.connector.TCPConnector object at 0x71a7a4d873e0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile offers comprehensive and efficient shipping and delivery services across Vietnam, designed to provide convenience and reliability for its customers.
+
+Customers have the flexibility to purchase products directly at Hoàng Mai Mobile's Hanoi store, located at Số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội. Alternatively, for those unable to visit in person, the company provides nationwide delivery through reputable third-party carriers [Data: Reports (3); Sources (1, 6)].
+
+Orders are processed swiftly, typically within 2 hours of confirmation. The estimated delivery time ranges from 2 to 4 days, depending on the specific geographical location of the recipient. To ensure product integrity and customer confidence, all packages are securely sealed and include essential information such as recipient details and a waybill [Data: Reports (3); Sources (1)]. For larger orders, including provincial or wholesale quantities, special delivery arrangements can be made via bus companies or other specialized transport services, with specific fees agreed upon during the order confirmation process [Data: Reports (3); Sources (1)].
+
+In terms of payment, Hoàng Mai Mobile supports a Cash on Delivery (COD) option, allowing customers to pay in cash upon receiving and inspecting their goods. This method is particularly suitable for customers who prefer to verify their products before making a payment. Customers are required to provide complete shipping information, including their full name, phone number, email, and detailed address, to facilitate smooth delivery [Data: Reports (3); Sources (6)]. The company is committed to confirming orders quickly, delivering items as scheduled, ensuring products are new and match descriptions, and maintaining absolute confidentiality of customer information throughout all transactions [Data: Sources (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7bf77d096cc0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7bf779c2fbf0>, 4751715.386295318)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7bf77d096a20>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile determines shipping fees based on the nature of the order and the chosen delivery method.
+
+For standard orders, shipping fees are calculated by third-party carriers and are communicated to the customer upon order confirmation [Data: Reports (7, 10)].
+
+For provincial, wholesale, or large quantity orders, Hoàng Mai Mobile can arrange delivery through bus companies or specialized transport services. In these instances, specific fees are agreed upon with the customer during the order confirmation process [Data: Reports (3)].
+
+Hoàng Mai Mobile offers efficient nationwide shipping and delivery services, utilizing reputable third-party carriers. Customers also have the option to purchase directly at their Hanoi store. Orders are typically processed within 2 hours of confirmation, with an estimated delivery time of 2-4 days, depending on the geographical location [Data: Reports (3)]. All packages are securely sealed with essential information [Data: Reports (3)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7e36282f3e00>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7e3624c65250>, 4753628.780210616)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7e36282f0c20>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile indicates that orders may include a delivery note ("phiếu xuất kho") or a financial invoice ("hóa đơn tài chính") [Data: Sources (2, 6, 26)]. These documents serve as a basis for confirming the value of the order and for handling any complaints that may arise [Data: Sources (2, 6)].
+
+However, the provided data does not specify a direct method for customers to retrieve an invoice number ("số hóa đơn") if it is not included with their shipment. It only mentions the possibility of these documents being part of the order package.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a9a6a490350>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a9a6704acf0>, 4765748.703133783)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a9a6a4934a0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp trong các bảng dữ liệu, không có thông tin nào đề cập đến việc bất kỳ loại sản phẩm nào có tính năng tự ngắt [Data: Sources (1, 6, 10, 14, 16, +more)]. Các dữ liệu chủ yếu liệt kê các loại thiết bị, linh kiện, dụng cụ sửa chữa điện thoại và các chính sách bán hàng, bảo hành, vận chuyển, thanh toán, và bảo mật thông tin.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b2137aad550>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b2134486c30>, 4844746.1168905)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b2137aad280>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information available regarding the specific model "Máy hàn MAANT 2025 C210/C245" or whether it has an automatic power-on feature when the soldering iron is picked up. The data lists "Máy Hàn & PK" (Soldering Machine & Accessories) as a product category offered by HOÀNG MAI MOBILE, but it does not provide detailed specifications or functionalities for individual soldering iron models [Data: Sources (27, 31, 9, 17, 16, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7973fd191ca0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7973f9896c30>, 4844768.060328725)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7973fd190770>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile operates from 8:00 AM to 6:00 PM daily [Data: Sources (31, 27, 26, 12, 20, +more)]. This schedule applies to their store located at Số 8 ngõ 117 Thái Hà, Phường Đống Đa, Hà Nội, which also serves as their warranty center [Data: Sources (31, 27, 26, 12, 20, +more)].
+
+For customer support, the call center is available from 9:00 AM to 6:00 PM [Data: Sources (31, 27, 12, 20, 34, +more)]. Customers can also reach out via Facebook or Zalo [Data: Sources (31, 27, 12, 20, 34, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x722d5bd3e300>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x722d58942c30>, 4863704.585255012)])']
+connector: <aiohttp.connector.TCPConnector object at 0x722d5bd3fb60>
+
+
+==== graphrag query STDOUT ====
+**Chính sách vận chuyển hàng của HOÀNG MAI MOBILE**
+
+HOÀNG MAI MOBILE cung cấp nhiều phương thức vận chuyển linh hoạt để đáp ứng nhu cầu của khách hàng. Khách hàng có thể lựa chọn mua hàng trực tiếp tại cửa hàng vật lý của công ty, tọa lạc tại 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội. Ngoài ra, công ty còn cung cấp dịch vụ giao hàng toàn quốc thông qua các đối tác vận chuyển uy tín [Data: Reports (1, 3, 7, 10)]. Đối với các đơn hàng đi tỉnh, đơn hàng sỉ hoặc số lượng lớn, HOÀNG MAI MOBILE có thể sắp xếp giao hàng qua các chành xe hoặc công ty vận tải chuyên biệt, với mức phí cụ thể sẽ được thỏa thuận khi xác nhận đơn hàng [Data: Reports (3, 7)].
+
+Về quy trình xử lý và thời gian giao hàng, các đơn hàng thường được xử lý nhanh chóng, trong vòng 2 giờ kể từ khi nhận được thông tin hoặc xác nhận đơn hàng. Thời gian giao hàng ước tính là từ 2-4 ngày, tuy nhiên, thời gian này có thể thay đổi tùy thuộc vào vị trí địa lý hoặc các thỏa thuận cụ thể [Data: Reports (3, 7, 10)]. Phí vận chuyển sẽ do các đơn vị vận chuyển bên thứ ba tính toán và sẽ được thông báo rõ ràng cho khách hàng khi xác nhận đơn hàng [Data: Reports (7, 10)].
+
+HOÀNG MAI MOBILE cũng lưu ý về các yếu tố có thể gây chậm trễ trong quá trình giao hàng. Các nguyên nhân tiềm ẩn bao gồm khách hàng không có mặt để nhận hàng, địa chỉ không chính xác, khối lượng đơn hàng tăng cao, quá tải của đơn vị vận chuyển hoặc các vấn đề vận hành phát sinh từ đối tác giao hàng [Data: Reports (7, 10)].
+
+Để đảm bảo an toàn cho sản phẩm, tất cả các đơn hàng đều được đóng gói và niêm phong cẩn thận. Mỗi gói hàng sẽ bao gồm thông tin người nhận, mã vận đơn hoặc mã theo dõi. Ngoài ra, các gói hàng có thể đi kèm với hóa đơn hoặc phiếu xuất kho để khách hàng tiện kiểm tra và giải quyết khiếu nại nếu có [Data: Reports (3, 7, 10)].
+
+Đối với các đơn hàng trực tuyến đặt qua website, fanpage, Zalo hoặc Shopee, khách hàng có tùy chọn thanh toán khi nhận hàng (COD). Điều này cho phép khách hàng kiểm tra sản phẩm trước khi thực hiện thanh toán [Data: Reports (11)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7e4f1bc82720>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7e4f18843830>, 4868882.460053731)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7e4f1bc80050>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information available regarding "Vòng đệm RF4 màu đen" or its specific placement in phone repair. The data lists various phone components and repair tools, such as "Ron iphone", "Siu dán, ron chống nước", and "Vòng xi", but does not mention "Vòng đệm RF4 màu đen" [Data: Sources (8, 16, 24, 33, 31, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x721283a87800>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x721280536c30>, 4934613.329709135)])']
+connector: <aiohttp.connector.TCPConnector object at 0x721283a87830>
+
+
+==== graphrag query STDOUT ====
+The provided data does not contain information about the specific product "Đèn UV tích hợp quạt làm mát LUOWEI LW-CF01" [Data: Sources (9, 17, 22, 10, 18, +more)]. Therefore, it is not possible to confirm if this particular item is faulty due to shipping based on the given information.
+
+However, Hoàng Mai Mobile has a clear policy regarding products damaged during transportation. If a product is damaged due to the shipping process, Hoàng Mai Mobile is responsible for resolving the issue directly with the customer. Customers have the right to refuse the damaged goods and request an exchange or return according to the "return for refund" policy. Any issues that arise will be handled by Hoàng Mai Mobile with the shipping unit for compensation [Data: Sources (2)].
+
+When receiving an order, customers are allowed to open the package to inspect the product before payment to ensure it matches the model, quantity, and condition specified in the order. If the product meets expectations, the customer proceeds with payment. If not satisfied, the customer can refuse to accept the product and will be responsible for a return fee equivalent to the initial shipping cost [Data: Sources (2)]. Delivery personnel are required to wait for the customer to inspect the goods. If the delivery person refuses to wait, customers should contact Hotline 0982.15.3333 for support [Data: Sources (2, 9, 17, 21, 0)].
+
+For issues like missing items or products damaged during shipping, customers must report within 48 hours of receiving the goods. The product must then be returned within a maximum of 5 days from the date of receipt. Customers can choose to exchange/return directly at a Hoàng Mai Mobile store or send the product back via post to the provided address after confirming the return [Data: Sources (22)]. It is mandatory for customers to record a video of the entire unboxing and product testing process, including all angles and the product's condition. If the product is broken, has torn cables, or broken sockets, Hoàng Mai Mobile must be notified within 24 hours of receipt. After 24 hours, without feedback, Hoàng Mai Mobile will not be responsible for resolving related complaints. All products sent out are thoroughly checked under internal surveillance cameras, so customers need to provide video evidence for Hoàng Mai Mobile to assist with processing claims for shipping errors [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7faa70d4b920>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7faa5defeb70>, 4936132.135945601)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7faa70d4a390>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile implements a rigorous product inspection process before dispatching items to customers. This procedure ensures that every product undergoes a thorough inspection, thereby guaranteeing quality and professionalism prior to delivery [Data: Reports (3, 11)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x726f46dbbdd0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x726f434d0650>, 4937602.522995605)])']
+connector: <aiohttp.connector.TCPConnector object at 0x726f46db92b0>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information available regarding the specific accessories that come with the Camera nhiệt RF4 RF-C39. The data lists various categories of equipment, tools, and components for phone repair, such as power supplies, testing boxes, screen pressing machines, glue winding machines, heating plates, multi-port chargers, measuring tools, soldering materials, cleaning solutions, knives, screwdrivers, phone disassembly tools, grinding/cutting machines, lights, mainboard clamps, rubber, adhesives, tweezers, molds, IC reballing stencils, pliers, screws, copper wire, SIM cards, spare parts, backlights, films, power cables, frames, back covers, home buttons, volume cables, batteries, power switches, camera glass, iPhone seals, waterproof seals, cameras, speakers, microphones, SIM trays, screens, glass, touchscreens, charging ports, and phone cases [Data: Sources (1, 6, 10, 16, 18, +more)]. However, it does not detail the contents or accessories included with specific products like the RF4 RF-C39 thermal camera.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x72268231f260>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x72267ed62c30>, 4945973.22334676)])']
+connector: <aiohttp.connector.TCPConnector object at 0x72268231f110>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information regarding a specific fee for issuing an invoice for "Lọ đựng dung dịch thủy tinh AMAOE M73" or any other product. The data indicates that orders may include a delivery note or a financial invoice ("phiếu xuất kho hoặc hóa đơn tài chính") which serves as a basis for confirming value and handling complaints [Data: Sources (1)]. However, it does not mention any associated cost for these documents.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x792a8ac716d0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x792a8733ecf0>, 4946560.68957583)])']
+connector: <aiohttp.connector.TCPConnector object at 0x792a8ac72660>
+
+
+==== graphrag query STDOUT ====
+The provided data does not explicitly mention "bo mạch chủ điện thoại" (phone motherboard) as a specific product or service.
+
+However, Hoàng Mai Mobile specializes in providing "Linh kiện điện thoại" (phone components), "dụng cụ sửa chữa điện thoại" (phone repair tools), and "vật tư ép kính điện thoại" (phone screen pressing materials) [Data: Sources (26, 20, 12, 3, +more)]. Among the listed components and tools, there are items related to internal phone repair and component handling, such as "Kẹp main" (mainboard clamp) [Data: Sources (35, 26, 20, 12, 33, +more)] and "Khuôn, Đế làm chân IC" (Mold, IC reballing base) [Data: Sources (35, 26, 20, 12, 33, +more)]. These tools are typically used when working with a phone's mainboard or integrated circuits.
+
+Other general "Linh kiện" (components) are also listed, including Cáp nguồn (power cable), Pin (battery), Camera, Loa (speaker), Mic, Màn hình (screen), Kính (glass), Cảm ứng (touchscreen), and Cụm bo sạc (charging port assembly) [Data: Sources (35, 26, 20, 12, 33, +more)]. While the specific term "bo mạch chủ" is not present, the range of components and specialized tools suggests that services or parts related to the phone's internal electronics, which would include the motherboard, might be covered under their broader offerings.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x787fec7bb020>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x787fe93d2c30>, 2797.02907174)])']
+connector: <aiohttp.connector.TCPConnector object at 0x787fec7b9820>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile provides a clear and flexible payment policy to ensure transparency and maximize customer benefits during the shopping process [Data: Sources (6)]. The company supports various payment methods, including cash payments both in-store and upon delivery, as well as online payments through VNPAY [Data: Sources (6, 29, 30)].
+
+**Cash Payments**
+Customers have two primary options for cash payments:
+*   **Payment at the store:** Customers can visit the physical store located at Số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, thành phố Hà Nội, to select and pay for products in cash. Staff are available to assist with the payment process [Data: Sources (6, 4)]. The hotline for sales inquiries is 0982.15.3333, and technical support/warranty is available at 0911.160.388 [Data: Sources (6, 4)].
+*   **Payment upon receipt (COD):** For customers ordering online via the website, fanpage, Zalo, or Shopee, Hoàng Mai Mobile offers cash on delivery. To use this method, customers must provide complete delivery information, including full name, phone number, email, province/city, district, ward/commune, street name, and specific address. The delivery personnel will bring the product to the specified address, and customers are required to pay in cash directly to the staff after inspecting the goods. This method is particularly suitable for those who wish to check the product before making payment [Data: Sources (6)].
+
+**VNPAY Payments**
+Hoàng Mai Mobile also facilitates online payments through the VNPAY gateway, a solution developed by Vietnam Payment Solution Joint Stock Company (VNPAY) [Data: Sources (29)]. VNPAY supports various payment options:
+*   **VNPAY-QR via Mobile Banking apps and e-wallets:** Customers can use the QR Pay/VNPAY-QR feature integrated into over 35 Mobile Banking applications and more than 15 linked e-wallets. After selecting products and choosing VNPAY as the payment method, a QR code will be displayed with the amount due. Customers then use their banking app to scan the QR code. The QR code is valid for 15 minutes [Data: Sources (29, 30)].
+*   **Domestic cards and bank accounts:** Customers can pay using over 40 domestic ATM/bank accounts. The process involves selecting "Thẻ nội địa và tài khoản ngân hàng" (Domestic cards and bank accounts) on the VNPAY gateway, entering card/account details, and then inputting an OTP sent to the registered phone number to complete the transaction. This transaction also has a 15-minute expiry [Data: Sources (29, 30)].
+*   **International payment cards:** Payments can be made using 4 international payment cards (Visa, MasterCard, JCB, UnionPay), following a process similar to domestic card payments [Data: Sources (29, 30)].
+*   **VNPAY e-wallet:** This method is similar to paying via VNPAY-QR [Data: Sources (30)].
+
+Hoàng Mai Mobile commits to quick order confirmation, on-time delivery, providing 100% new and accurate products, and supporting exchanges/returns for technical faults according to company policy. Customer information is kept absolutely confidential in all transactions [Data: Sources (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x78cabef46930>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x78cabbb9ec90>, 8478.612732461)])']
+connector: <aiohttp.connector.TCPConnector object at 0x78cabef466c0>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, Hoàng Mai Mobile mentions that orders may include a "phiếu xuất kho hoặc hóa đơn tài chính (nếu có)" (delivery note or financial invoice, if any), which serves as a basis for confirming value and handling complaints [Data: Sources (2)]. Additionally, for returns or exchanges, customers are required to provide a "hóa đơn, phiếu mua hàng" (invoice, purchase receipt) along with other relevant documents [Data: Sources (22)].
+
+However, the provided information does not explicitly detail a "VAT invoice" or provide specific policies or procedures related to obtaining or using a VAT invoice. The term "hóa đơn tài chính" is mentioned, which could encompass a VAT invoice, but no further specifics are given.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b7c3294f8f0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b7c2f58e7b0>, 8538.827956008)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b7c3294e7e0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile prioritizes product quality and customer rights, offering a comprehensive warranty policy to ensure customer confidence. This policy outlines the conditions for warranty, cases not covered, warranty durations for various product types, and details regarding warranty reception [Data: Sources (10, 18)].
+
+**Conditions for Warranty Application**
+Products are eligible for warranty if they meet specific criteria: the issue must be a technical fault originating from the manufacturer, the product must retain its original structure without alteration, it must be within the warranty period specified by Hoàng Mai Mobile, and the warranty stamp or seal must be intact, not torn, peeled, or replaced [Data: Sources (10, 18)].
+
+**Cases Not Covered by Warranty**
+Hoàng Mai Mobile will not accept warranty claims for products under certain circumstances. These include damage caused by incorrect usage, wrong voltage, incorrect technical specifications, or physical damage like drops or impacts. Products that have been tampered with or repaired by entities other than Hoàng Mai Mobile are also excluded. Additionally, products with missing, torn, faded, or counterfeit warranty stamps, those affected by water, short circuits, oxidation, or similar factors, and products that are deformed or do not retain their original shape and structure are not covered. Warranty claims are also rejected if the product is past the announced warranty period on the order or website [Data: Sources (10, 18)].
+
+**Warranty Duration by Product Type**
+The warranty period varies depending on the product category:
+*   **Screens and Touchscreens**: All types of screens have a 6-month touch warranty (provided they still display, are not scratched or cracked, and have straight cables). Roger screens have a 6-month storage warranty, covering issues like detached bezels, air bubbles, unresponsive touch, flickering, image retention, and lines. Roger touchscreens have a 6-month warranty, but this does not apply if the cable is torn/broken, the glass is scratched, or if there is physical damage from drops [Data: Sources (11, 19)].
+*   **Batteries**: iPhone batteries come with a 12-month warranty, while batteries for Samsung, Oppo, Vivo, Xiaomi, Nokia, Huawei, Vsmart, and iPad have a 6-month warranty. However, batteries are not covered if they swell after one month of use, have torn cables, are deformed, or have missing warranty stamps [Data: Sources (11, 19)].
+*   **Components**: Charging cables, charging boards, power cables, and volume cables are warranted for 3 months if the seal is intact. Once the seal is removed, they are not covered [Data: Sources (11, 19)].
+*   **Repair Equipment**:
+    *   Hot air guns and soldering stations: 6 months for the main unit (soldering short circuit: 3 months) [Data: Sources (11, 19)].
+    *   Microscopes and cameras: 6 months [Data: Sources (11, 19)].
+    *   Boxes for screen/battery/FaceID repair, hard drive replacement: 6 months [Data: Sources (11, 19)].
+    *   Mainboard separation heating plates: 6 months for the control unit [Data: Sources (11, 19)].
+    *   Power supplies and multimeters: 6 months [Data: Sources (11, 19)].
+    *   Power supply cables, battery activators: 1 month for the converter [Data: Sources (11, 19)].
+    *   Laminating machines, autoclaves: 1 year [Data: Sources (11, 19)].
+    *   Glass cutting machines, vacuum machines, OCA laminating machines, mini autoclaves: 6 months [Data: Sources (11, 19)].
+    *   Glue removal machines, grinding machines, electric screwdrivers: 1 month [Data: Sources (11, 19)].
+    *   Bezel removal machines, camera separation machines, cable separation machines: 3 months [Data: Sources (11, 19)].
+    *   USB chargers < 10 ports: 3 months [Data: Sources (11, 19)].
+    *   Multi-port chargers (≥ 20 ports): 1 month [Data: Sources (11, 19)].
+    *   Technical lights, microscope lights: 1 month [Data: Sources (11, 19)].
+    For other products, customers should refer to the product description on the website or consult staff [Data: Sources (11, 19)].
+
+**Warranty Reception Time and Location**
+Warranty claims are accepted daily from 10:00 AM to 6:00 PM, excluding holidays and Tet. The main warranty location is at Số 08, ngõ 117 Thái Hà, phường Trung Liệt, quận Đống Đa, Hà Nội. Customers can contact the hotline at 0982.15.3333 or 0911.160.388 for warranty support, or email hoangmaimobile.vn@gmail.com [Data: Sources (11, 19)].
+
+**Important Notes**
+The warranty policy may be subject to change. Customers are advised to check the latest announcements on the website www.hoangmaimobile.vn or contact Hoàng Mai Mobile directly for accurate support [Data: Sources (11, 19)]. Hoàng Mai Mobile is committed to providing the best service quality, competitive prices, excellent warranty, and a diverse range of quality products, specializing in wholesale and retail phone components, repair tools, and glass pressing materials [Data: Sources (11, 19)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7571ea6f11f0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7571e718ed50>, 13053.600732338)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7571ea6f0fe0>
+
+
+==== graphrag query STDOUT ====
+HOÀNG MAI MOBILE cung cấp một chính sách vận chuyển rõ ràng và toàn diện, đảm bảo khách hàng có nhiều lựa chọn và thông tin minh bạch về quá trình giao hàng.
+
+**Phương Thức Giao Hàng**
+Khách hàng có thể lựa chọn một trong hai phương thức chính để nhận sản phẩm. Thứ nhất, mua hàng trực tiếp tại cửa hàng vật lý của HOÀNG MAI MOBILE, tọa lạc tại Số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội [Data: Reports (7, 10)]. Thứ hai, sử dụng dịch vụ giao hàng toàn quốc thông qua các đối tác vận chuyển bên thứ ba uy tín [Data: Reports (3, 7, 10)]. Đối với các đơn hàng đi tỉnh, đơn hàng sỉ hoặc số lượng lớn, HOÀNG MAI MOBILE cũng có thể sắp xếp giao hàng qua các công ty xe khách hoặc dịch vụ vận tải chuyên biệt khác [Data: Reports (3, 7)].
+
+**Thời Gian Xử Lý và Giao Hàng**
+Các đơn hàng thường được xử lý và xác nhận trong vòng hai giờ kể từ khi nhận được thông tin [Data: Reports (3, 7, 10)]. Thời gian giao hàng ước tính là từ 2-4 ngày, tuy nhiên, khung thời gian này có thể thay đổi tùy thuộc vào vị trí địa lý hoặc các thỏa thuận cụ thể giữa các bên [Data: Reports (3, 7, 10)].
+
+**Phí Vận Chuyển**
+Phí vận chuyển sẽ được tính toán bởi các đối tác vận chuyển bên thứ ba và sẽ được thông báo rõ ràng cho khách hàng khi xác nhận đơn hàng [Data: Reports (3, 7, 10)]. Đối với các đơn hàng đi tỉnh, đơn hàng sỉ hoặc số lượng lớn, phí vận chuyển cụ thể sẽ được thỏa thuận trong quá trình xác nhận đơn hàng [Data: Reports (3)].
+
+**Đóng Gói và Thông Tin Đơn Hàng**
+Tất cả các gói hàng đều được đóng gói và niêm phong cẩn thận, đảm bảo an toàn cho sản phẩm [Data: Reports (3, 7, 10)]. Mỗi gói hàng sẽ bao gồm thông tin người nhận và mã vận đơn để theo dõi [Data: Reports (3, 7, 10)]. Ngoài ra, các lô hàng có thể đi kèm với phiếu xuất kho hoặc hóa đơn tài chính để khách hàng tiện kiểm tra và giải quyết khiếu nại nếu có [Data: Reports (7, 10)].
+
+**Kiểm Tra Hàng Hóa và Các Yếu Tố Gây Chậm Trễ**
+HOÀNG MAI MOBILE cho phép khách hàng kiểm tra hàng hóa khi nhận trước khi thực hiện thanh toán, nhằm tăng cường sự tin tưởng và đảm bảo sự hài lòng về sản phẩm [Data: Reports (11)]. Tuy nhiên, có thể xảy ra chậm trễ trong quá trình giao hàng do một số yếu tố như khách hàng không có mặt để nhận hàng, địa chỉ không chính xác, khối lượng đơn hàng lớn, quá tải của nhà vận chuyển hoặc các vấn đề vận hành từ phía đối tác vận chuyển [Data: Reports (7, 10)].
+
+Chính sách giao hàng này là một phần trong khuôn khổ dịch vụ khách hàng toàn diện của HOÀNG MAI MOBILE, bao gồm cả các chính sách về bảo hành, quyền riêng tư, bán hàng, thanh toán và đổi trả [Data: Reports (1, 6, 8, 12, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7782608d96d0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x77825d506e70>, 20298.178683326)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7782608d9280>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có dữ liệu nào cho thấy "Hoàng Mai Mobile" hoặc người đại diện của họ sử dụng chữ ký số [Data: Sources (26, 25, 32, 6, 14, +more)].
+
+Các thông tin có sẵn chủ yếu liên quan đến đăng ký kinh doanh, địa chỉ, thông tin liên hệ, các chính sách bán hàng, bảo hành, vận chuyển, thanh toán, và bảo mật thông tin khách hàng. Các phương thức thanh toán được đề cập bao gồm tiền mặt tại cửa hàng, thanh toán khi nhận hàng (COD), và thanh toán qua cổng VNPAY, nhưng không có chi tiết nào về việc ký kết tài liệu bằng chữ ký số [Data: Sources (26, 6, 29)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x747da9daa480>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x747da687ed50>, 23994.63359128)])']
+connector: <aiohttp.connector.TCPConnector object at 0x747da9daa810>
+
+
+==== graphrag query STDOUT ====
+Based on the provided information, the specific tools "Giá đỡ Phay IC LUOWEI LW-305" and "Máy Mài LUOWEI T1" are not explicitly mentioned, nor is their capability to process camera bezels ("viền cam") detailed. Therefore, it is not possible to definitively confirm if these particular tools can perform the requested task using only the given data.
+
+However, Hoàng Mai Mobile, a prominent Vietnamese supplier, specializes in a wide array of products for mobile phone repair, including professional repair tools and genuine phone components [Data: Reports (3); Sources (6, 4, 33, 30, 29, 1)]. Their inventory includes general categories such as "Máy mài, Cắt & PK" (Grinding machine, Cutting & PK) and various phone components like "Kính camera, Vòng xi" (Camera glass, Xi ring) and "Camera" itself [Data: Sources (6, 14, 29)]. This indicates that Hoàng Mai Mobile deals with both grinding/cutting equipment and camera-related parts. While the data confirms the availability of general grinding machines and camera components, it does not provide specific functional details for the named LUOWEI products regarding camera bezel processing.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x797369122270>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x79733d12c350>, 111681.530373412)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7973691221b0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile maintains a comprehensive return and exchange policy designed to ensure customer satisfaction and protect consumer rights. This policy is a key component of their robust after-sales support, which also includes a privacy policy for customer information and product-specific warranties [Data: Reports (3)].
+
+**Conditions for Return and Exchange**
+Customers may return or exchange products under several specific conditions. These include receiving incorrect product types or models, experiencing missing quantities or accessories, or encountering physical damage during transit, such as torn packaging, scratches, or cracks. Returns are also accepted for products with manufacturer defects or those that significantly deviate from descriptions provided on the website or during sales consultations [Data: Reports (7, 6, 8, 10)].
+
+**Return Process and Timelines**
+For returns related to missing items or damage incurred during transit, customers shall notify Hoàng Mai Mobile within 48 hours of receiving the product. The actual product return must then be completed within 5 days of receipt. Required documentation for returns includes invoices, purchase receipts, actual product images, and any other relevant documents [Data: Reports (7)]. Products can be returned either directly at Hoàng Mai Mobile's physical stores or by mail [Data: Reports (7)].
+
+**Refund Procedures and Timelines**
+If an ordered product is out of stock, customers will be offered the option to exchange it for an equivalent item. Should a customer decline the exchange or no longer require the product, a refund will be processed [Data: Reports (7)]. The timeline for refunds varies based on the original payment method:
+*   **Bank Transfers:** Refunds will typically be processed within 3 working days [Data: Reports (6)].
+*   **Credit/International Debit Cards:** Refunds may take up to 30 days, depending on the processing cycle of the customer's bank [Data: Reports (6)].
+*   **E-wallets (e.g., ShopeePay, Momo, ZaloPay):** Refunds are generally completed within 1-2 working days [Data: Reports (6)].
+
+**Exclusions from the Policy**
+Certain conditions will render a product ineligible for return or exchange. These exclusions include items that have already been used, products damaged by the user, or those missing their original packaging or accessories [Data: Reports (6)].
+
+Hoàng Mai Mobile is committed to processing all return requests quickly, transparently, and professionally, with a strong emphasis on prioritizing customer rights and overall experience [Data: Reports (6)]. For any inquiries regarding returns, customers may contact their hotline at 0911.160.388 or send an email to hoangmaimobile.vn@gmail.com [Data: Reports (7, 6, 10)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x77487e6d46b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x774878208230>, 180530.825714)])']
+connector: <aiohttp.connector.TCPConnector object at 0x77487e6d6240>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile has an official presence on Shopee. You can find their store at the following link:
+
+*   **Shopee:** https://shopee.vn/hoangmaimobile.vn [Data: Sources (34)].
+
+This platform is one of the channels through which Hoàng Mai Mobile supports cash on delivery (COD) for customers who order online [Data: Sources (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7cccc27b5dc0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7cccbf31b530>, 183247.374111813)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7cccc27b7170>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile provides a clear return and refund policy for its products. However, the provided data does not contain specific return policies for the "máy hàn OSSTEAM T245." Therefore, the general return and refund policy would apply.
+
+**Conditions for Return**
+Customers can request a product exchange or return under several conditions: if the product does not match the type or model ordered or described on the website, if there are missing quantities, accessories, or incorrect products delivered, if the product has physical damage from shipping (e.g., torn packaging, peeling, scratches, cracks), if there are technical faults from the manufacturer, or if the product does not function as committed or differs significantly from the website description or sales consultation [Data: Sources (22)]. To facilitate a quick return or exchange, customers must provide a full invoice, purchase receipt, actual images, and other relevant documents [Data: Sources (22)].
+
+**Timeframe and Location for Returns**
+Customers must notify Hoàng Mai Mobile within 48 hours of receiving the goods for issues such as missing items or damage due to shipping. The product must then be returned within a maximum of 5 days from the date of receipt [Data: Sources (22)]. Returns can be made directly at Hoàng Mai Mobile stores or by mail to the address provided upon return confirmation [Data: Sources (22)]. For any questions or complaints regarding product quality, customers can contact the hotline at 0911.160.388 or email hoangmaimobile.vn@gmail.com [Data: Sources (22, 23)].
+
+**Return and Refund Methods**
+If an incorrect product or quantity was delivered, or a technical fault is found, the product will be exchanged for the correct type. If the ordered product is out of stock, customers may exchange it for an equivalent product in terms of features and value, if agreed upon. If the customer does not agree to an exchange or no longer needs the product, Hoàng Mai Mobile will issue a refund via an agreed-upon method within 7 working days of confirming the request [Data: Sources (22, 23)]. Refund methods include bank transfer (within 3 working days), credit/international payment cards (processed in the next statement cycle, potentially up to 30 days depending on the bank), or e-wallets like ShopeePay, Momo, ZaloPay (within 1-2 working days) [Data: Sources (23)].
+
+**Cases Not Applicable for Return**
+The return policy does not apply to products that have been used, are no longer in their original packaging, lack original labels or accessories, or are damaged due to user error (e.g., drops, water damage, incorrect installation). Products listed in a non-returnable category (which will be announced at the time of purchase) are also excluded. Additionally, return requests made beyond the specified timeframe or missing accompanying gifts or original accessories will not be accepted [Data: Sources (23)].
+
+Since there is no specific information regarding the "máy hàn OSSTEAM T245" in the provided data, it is recommended to contact Hoàng Mai Mobile directly for any product-specific return inquiries.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x722f79c00650>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x722f75e0f530>, 185174.110421533)])']
+connector: <aiohttp.connector.TCPConnector object at 0x722f79c03560>
+
+
+==== graphrag query FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python3 -X utf8 -m graphrag query --root data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786 --method basic --query Màn hình nhập thông tin thuế cá nhân. Đây là giao diện nhập thông tin người nộp thuế thu nhập cá nhân, bao gồm mã số thuế và mã xác nhận.
+Return code: 130
+STDOUT:
+
+STDERR:
+
+
+==== graphrag query STDOUT ====
+Có, Hoàng Mai Mobile có hỗ trợ giao hàng tận nơi (ship hàng) trên toàn quốc [Data: Sources (1)].
+
+**Phương thức và Thời gian Giao hàng:**
+Hoàng Mai Mobile cung cấp hai hình thức giao hàng: mua trực tiếp tại cửa hàng ở số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội, hoặc giao hàng tận nơi áp dụng toàn quốc thông qua các đơn vị vận chuyển uy tín [Data: Sources (1)]. Đơn hàng sẽ được xác nhận và xử lý trong vòng 2 giờ kể từ khi nhận thông tin. Thời gian giao hàng dự kiến là từ 2 đến 4 ngày, tùy thuộc vào vị trí địa lý hoặc theo thỏa thuận cụ thể khi đặt hàng [Data: Sources (1)].
+
+**Phạm vi và Phí Vận chuyển:**
+Hoàng Mai Mobile giao hàng trên toàn quốc. Đối với khách hàng ở tỉnh, khách sỉ, hoặc đơn hàng số lượng lớn, công ty có thể giao qua nhà xe hoặc công ty vận chuyển theo thỏa thuận và báo phí cụ thể [Data: Sources (1)]. Phí vận chuyển sẽ được tính theo biểu phí của đơn vị vận chuyển thứ ba và sẽ được thông báo chi tiết khi xác nhận đơn hàng [Data: Sources (1)].
+
+**Trách nhiệm và Quy định khi nhận hàng:**
+Tất cả đơn hàng đều được đóng gói và niêm phong nguyên kiện trước khi vận chuyển, với đầy đủ thông tin người nhận và mã vận đơn trên mỗi kiện hàng [Data: Sources (1, 2)]. Khách hàng có quyền mở gói hàng để kiểm tra sản phẩm trước khi thanh toán, đảm bảo đúng mẫu mã, số lượng và tình trạng sản phẩm theo đơn hàng [Data: Sources (2)]. Nếu sản phẩm không đúng cam kết, khách hàng có thể từ chối nhận và thanh toán phí hoàn hàng tương đương phí ship ban đầu [Data: Sources (2)].
+
+Hoàng Mai Mobile chịu trách nhiệm giải quyết trực tiếp với khách hàng nếu sản phẩm bị hư hỏng do quá trình vận chuyển, kể cả từ bên thứ ba. Khách hàng có quyền từ chối nhận hàng và yêu cầu đổi trả theo chính sách “đổi trả hoàn phí” [Data: Sources (2)]. Trong trường hợp giao hàng chậm trễ, công ty sẽ chủ động liên hệ và khách hàng có thể lựa chọn tiếp tục chờ hoặc hủy đơn [Data: Sources (2)]. Để đảm bảo quyền lợi, quý khách cần quay video toàn bộ quá trình mở gói hàng và kiểm tra sản phẩm. Nếu phát hiện lỗi như vỡ, rách cáp, gãy chân socket, cần báo lại cho Hoàng Mai Mobile trong vòng 24 giờ kể từ khi nhận hàng, kèm theo video làm bằng chứng [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x74f79c4d18e0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x74f79902b6b0>, 207493.07929226)])']
+connector: <aiohttp.connector.TCPConnector object at 0x74f79c4d15e0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có dữ liệu nào đề cập đến đèn LED kính hiển vi MAANT MY-035, kính hiển vi RF4, hoặc khả năng tương thích giữa chúng.
+
+HOÀNG MAI MOBILE là một doanh nghiệp chuyên cung cấp linh kiện điện thoại, dụng cụ sửa chữa điện thoại và vật tư ép kính, bao gồm cả kính hiển vi và các phụ kiện liên quan như đèn [Data: Reports (1); Sources (3, 12, 16, 20, 27, +more)]. Tuy nhiên, các tài liệu hiện có không cung cấp chi tiết về các thương hiệu cụ thể như MAANT hay RF4, cũng như thông tin về khả năng tương thích của các phụ kiện kính hiển vi.
+
+Do đó, tôi không thể trả lời câu hỏi của bạn về việc đèn LED kính hiển vi MAANT MY-035 có lắp được cho kính hiển vi RF4 hay không dựa trên dữ liệu đã cho.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x77cf76aee4e0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x77cf1b378650>, 266356.763226428)])']
+connector: <aiohttp.connector.TCPConnector object at 0x77cf76aee450>
+
+
+==== graphrag query STDOUT ====
+HOÀNG MAI MOBILE's return and exchange policy does not explicitly detail a specific return policy for 'cáp Dot Array' [Data: Reports (0, 5, 3, 4, 9)].
+
+However, HOÀNG MAI MOBILE does maintain a general return and exchange policy for products under specific conditions. These conditions include receiving incorrect product types or models, missing quantities or accessories, physical damage incurred during transit (e.g., torn packaging, scratches, cracks), manufacturer defects, or significant discrepancies from website descriptions or sales consultations [Data: Reports (7, 6, 8)].
+
+To initiate a return, customers are required to provide invoices, purchase receipts, actual product images, and relevant documents. For returns due to missing items or transit damage, notification must be made within 48 hours of receipt, and the products must be returned within 5 days. Returns can be processed directly at HOÀNG MAI MOBILE stores or by mail [Data: Reports (7)]. Products that have been used, damaged by the user, or are missing original packaging or accessories are explicitly excluded from the return policy [Data: Reports (6, 7)].
+
+While a specific return policy for 'cáp Dot Array' is not outlined, general phone internal components such as charging cables, charging boards, power cables, and volume cables are covered by a 3-month warranty, provided their original seals remain intact [Data: Reports (0, 5)]. It is not specified whether 'cáp Dot Array' falls under this general warranty category for internal components.
+
+Should a refund be issued, the processing timelines vary based on the payment method: 3 working days for bank transfers, up to 30 days for credit/international debit cards (depending on the bank's processing cycle), and 1-2 working days for e-wallets like ShopeePay, Momo, and ZaloPay [Data: Reports (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x757186f60e30>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x757183b49850>, 272039.681145172)])']
+connector: <aiohttp.connector.TCPConnector object at 0x757186f612b0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile lists "Camera" among its products and components [Data: Sources (8, 10, 18, 35, 27, +more)]. For newly purchased items, the company has a warranty policy in place.
+
+To be eligible for warranty, a product must meet several conditions: it must have a technical fault originating from the manufacturer, remain in its original state without structural changes, be within the specified warranty period, and have intact warranty stamps from Hoàng Mai Mobile [Data: Sources (10, 18)].
+
+However, there are specific situations where a product will not be covered under warranty. These include damage caused by incorrect usage, wrong voltage, or incorrect technical specifications, as well as damage from drops or impacts. Products that have been tampered with or repaired by entities other than Hoàng Mai Mobile are also excluded. Furthermore, items with missing, torn, faded, or counterfeit warranty stamps, or those affected by water, short circuits, oxidation, or deformation, will not be accepted for warranty claims. Products that have exceeded their stated warranty period are also ineligible [Data: Sources (10, 18)].
+
+While the data lists "Camera" as a product, specific warranty durations for cameras are not detailed. The most specific warranty information provided is for "Màn hình – Cảm ứng" (Screen – Touchscreen), which offers a 6-month warranty for touch functionality (provided it still displays, has no scratches or cracks, and a straight cable). Roger screens also have a 6-month storage warranty covering issues like detached seals, air bubbles, unresponsive touch, flickering, image retention, or lines [Data: Sources (10, 18)]. For precise warranty details regarding a newly purchased camera, it would be advisable to consult the specific purchase documentation or contact Hoàng Mai Mobile directly.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x787c451f16a0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x787c41d43d70>, 292118.167954871)])']
+connector: <aiohttp.connector.TCPConnector object at 0x787c451f1490>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information indicating that the shop sells through TikTok. The available payment and ordering methods mentioned include online orders via website, fanpage, Zalo, or Shopee, as well as direct payment at the store or Cash on Delivery (COD) [Data: Sources (6)]. Additionally, VNPAY is supported for online payments, allowing customers to use mobile banking apps or e-wallets to scan QR codes or use ATM/international cards [Data: Sources (29)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x78d60f767920>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x78d60f777650>, 349225.858238715)])']
+connector: <aiohttp.connector.TCPConnector object at 0x78d60f7676b0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile có chính sách vận chuyển và giao nhận hàng hóa rõ ràng để đảm bảo quyền lợi khách hàng [Data: Sources (1)].
+
+**Thời gian xử lý và giao hàng**
+Đơn hàng sẽ được xác nhận và xử lý trong vòng 2 giờ kể từ khi nhận thông tin [Data: Sources (1)]. Thời gian giao hàng dự kiến là từ 2 đến 4 ngày, tùy thuộc vào vị trí địa lý hoặc theo thỏa thuận cụ thể khi đặt hàng [Data: Sources (1)].
+
+**Các trường hợp có thể gây chậm trễ**
+Một số yếu tố có thể dẫn đến việc giao hàng chậm trễ bao gồm: không liên hệ được với khách hàng, địa chỉ cung cấp không chính xác hoặc khó tìm, số lượng đơn hàng tăng đột biến hoặc đơn vị vận chuyển quá tải, hoặc đối tác cung cấp hàng/vận chuyển gặp sự cố [Data: Sources (1)]. Nếu giao hàng bị chậm trễ, Hoàng Mai Mobile sẽ chủ động liên hệ với khách hàng, và khách hàng có quyền lựa chọn tiếp tục chờ hàng hoặc hủy đơn [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7f71ad777860>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7f71ad7db7d0>, 350347.068099568)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7f71ad7776e0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên các thông tin được cung cấp, không có dữ liệu nào giải thích cụ thể lý do tại sao giá sản phẩm của Hoàng Mai Mobile trên Shopee có thể cao hơn so với các kênh bán hàng khác của họ.
+
+Báo cáo về Hoàng Mai Mobile chỉ ra rằng công ty cam kết cung cấp sản phẩm chính hãng với giá cả cạnh tranh trên thị trường, thông qua phân phối trực tiếp mà không qua trung gian. Tất cả các sản phẩm đều có giá niêm yết công khai và được hỗ trợ bởi dịch vụ hậu mãi chuyên nghiệp. Trang web chính thức của công ty, https://hoangmaimobile.vn, được xác định là nền tảng giao dịch chính [Data: Reports (3); Sources (4)].
+
+Hoàng Mai Mobile cũng đã áp dụng công nghệ 4.0 và tận dụng các nền tảng thương mại điện tử lớn như Shopee, Tiki, và Lazada để mở rộng phạm vi tiếp cận khách hàng và tăng doanh số bán hàng [Data: Reports (3); Sources (33)]. Tuy nhiên, báo cáo không đi sâu vào chi tiết về chính sách giá cụ thể trên từng nền tảng hay so sánh giá giữa Shopee và các kênh bán hàng khác.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x79f72450aab0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x79f724497fb0>, 350777.687063822)])']
+connector: <aiohttp.connector.TCPConnector object at 0x79f72450a930>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile cam kết xử lý đơn hàng nhanh chóng và có thời gian giao hàng dự kiến cụ thể. Đơn hàng sẽ được xác nhận và xử lý trong vòng 2 giờ kể từ khi nhận thông tin [Data: Sources (1)].
+
+Thời gian giao hàng dự kiến là từ 2 đến 4 ngày, tùy thuộc vào vị trí địa lý hoặc thỏa thuận cụ thể khi đặt hàng [Data: Sources (1)]. Tuy nhiên, có một số trường hợp có thể gây chậm trễ trong quá trình giao hàng, bao gồm việc không liên hệ được với khách hàng, địa chỉ cung cấp không chính xác hoặc khó tìm, số lượng đơn hàng tăng đột biến, đơn vị vận chuyển quá tải, hoặc đối tác cung cấp/vận chuyển gặp sự cố [Data: Sources (1)].
+
+Trong trường hợp giao hàng bị chậm trễ, Hoàng Mai Mobile sẽ chủ động liên hệ với khách hàng. Khách hàng có quyền lựa chọn tiếp tục chờ hàng hoặc hủy đơn hàng [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7740cf3986b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7740cba87710>, 351164.427478045)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7740cf398590>
+
+
+==== graphrag query STDOUT ====
+Based on the provided information, there is no data indicating that HOÀNG MAI MOBILE is involved in importing goods from Taobao or 1688, or that it offers services related to such imports.
+
+HOÀNG MAI MOBILE operates as an e-commerce platform specializing in mobile repair tools and accessories within Vietnam. The company offers a comprehensive range of products, including soldering machines, microscopes, power supply units, and various specialized tools and consumables for mobile repair professionals [Data: Reports (2); Sources (6, 33, 34)]. They serve a wide geographical area across numerous provinces and cities in Vietnam and utilize local e-commerce platforms such as Shopee, Tiki, and Lazada to reach customers and enhance sales [Data: Reports (2); Sources (33, 34)].
+
+The company's operational details, customer loyalty program, policy frameworks (warranty, privacy, payments), and marketing strategies are outlined, but none of these mention any connection to Taobao or 1688 [Data: Reports (2); Sources (6, 15, 33, 34)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x70c392f2ab70>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x70c392fd45f0>, 364761.741359865)])']
+connector: <aiohttp.connector.TCPConnector object at 0x70c392f2aab0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile operates with specific hours for its store, hotline, and warranty services.
+
+The general working hours for the store in Hanoi are from 8:00 AM to 6:00 PM daily [Data: Sources (3, 12, 20, 26, 27, +more)]. For customer support, the hotline is available from 9:00 AM to 6:00 PM [Data: Sources (3, 12, 20, 27, 31, +more)].
+
+Regarding warranty services, the reception hours are from 10:00 AM to 6:00 PM every day, excluding holidays and Tet [Data: Sources (11, 19)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x710f258f0ad0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x710f220bb590>, 447885.450366977)])']
+connector: <aiohttp.connector.TCPConnector object at 0x710f258f0710>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile có thể cung cấp phiếu xuất kho hoặc hóa đơn tài chính cho các đơn hàng, làm căn cứ để xác nhận giá trị và xử lý khiếu nại khi cần thiết [Data: Sources (1, 6)].
+
+Tuy nhiên, thông tin chi tiết về quy trình "xuất hóa đơn trực tiếp" hoặc các điều kiện cụ thể để yêu cầu hóa đơn tài chính không được nêu rõ trong dữ liệu được cung cấp.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7d4644f07aa0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7d463c1b5010>, 784745.212122918)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7d4644f073b0>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile outlines a clear and comprehensive policy for shipping, delivery, and goods inspection to ensure customer satisfaction and transparency.
+
+**Shipping and Delivery Methods**
+Hoàng Mai Mobile offers two primary delivery methods: direct purchase at their store located at 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội, or nationwide delivery (ship hàng) through reputable shipping partners [Data: Sources (1)]. Orders are typically confirmed and processed within 2 hours of receiving information, with an estimated delivery time of 2-4 days, depending on the geographical location or specific agreements made during the order process [Data: Sources (1)]. Potential delays can occur due to inability to contact the customer, inaccurate addresses, sudden increases in order volume, or issues with shipping partners [Data: Sources (1)]. Shipping fees are calculated based on the third-party shipping unit's rates and will be communicated during order confirmation [Data: Sources (1)]. The company delivers nationwide, and for provincial customers, wholesale orders, or large quantities, delivery can be arranged via bus companies or transport companies as agreed upon, with specific fees provided [Data: Sources (1)].
+
+**Order Packaging and Responsibility**
+All orders are packaged and sealed intact before shipment, with complete recipient information and a tracking code on each package [Data: Sources (1, 2)]. Orders may include a warehouse release slip or financial invoice, which serves as proof of value and for handling complaints [Data: Sources (1, 2)]. Hoàng Mai Mobile takes direct responsibility for resolving issues with customers if products are damaged during transit, even if caused by a third-party carrier [Data: Sources (2)]. Customers have the right to refuse damaged goods and request an exchange or return according to the "return for refund" policy [Data: Sources (2)]. In cases of delivery delays, Hoàng Mai Mobile will proactively contact the customer, who can then choose to wait or cancel the order [Data: Sources (2)].
+
+**Goods Inspection Policy**
+Customers are entitled to open and inspect the product package before payment to ensure the correct model, quantity, and condition as per the order [Data: Sources (2)]. However, customers are not permitted to test or use the product during inspection [Data: Sources (2)]. If the product meets expectations, the customer proceeds with payment. If not satisfied, the customer can refuse to accept the goods and will be responsible for a return fee equivalent to the initial shipping cost [Data: Sources (2)]. Delivery personnel are required to wait for the customer to inspect the goods; if they refuse, customers should contact the hotline at 0982.15.3333 for support [Data: Sources (2)]. It is crucial not to use sharp objects to open packages to avoid damaging the product, as damage caused by the recipient will not be eligible for exchange, return, or warranty [Data: Sources (2)].
+
+**Mandatory Notes for Receiving Goods**
+Upon receiving an order, customers must record a video of the entire unboxing and product testing process, capturing all angles and the product's condition [Data: Sources (2)]. If the product is found to be broken, has torn cables, or broken sockets, Hoàng Mai Mobile must be notified within 24 hours of receipt [Data: Sources (2)]. Claims made after 24 hours will not be the responsibility of Hoàng Mai Mobile [Data: Sources (2)]. All outgoing products are thoroughly checked under internal surveillance cameras, so customers must provide video evidence for any shipping-related damage claims [Data: Sources (2)]. Hoàng Mai Mobile commits to timely delivery, secure packaging, safe delivery, and protecting customer rights [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7785fba16c60>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7785f8164f50>, 784810.887265484)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7785fbbe7e30>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile indicates that orders may include a warehouse release slip or a financial invoice, if applicable [Data: Sources (1, 2)]. This suggests that financial invoices can be provided with purchases.
+
+However, the provided data does not offer further details on the specific conditions for issuing a financial invoice, how to request one, or any associated processes.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b50ff3ed700>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b50df7090d0>, 881511.841053029)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b50ff330050>
+
+
+==== graphrag query STDOUT ====
+HOÀNG MAI MOBILE is officially registered as a business household (HỘ KINH DOANH CỬA HÀNG HOÀNG MAI MOBILE) with registration number 01E8036652. This entity was established on April 27, 2022, under the authority of the Department of Finance – Planning, People's Committee of Đống Đa District [Data: Reports (1)].
+
+For transactions and orders, HOÀNG MAI MOBILE may issue an invoice (hóa đơn) or a warehouse slip. These documents are crucial as they serve as proof of value for the goods or services provided. Furthermore, they can be utilized for verification purposes and for the resolution of any potential complaints [Data: Reports (7, 10)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x79642868cd10>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x79642b83a8d0>, 881542.365341623)])']
+connector: <aiohttp.connector.TCPConnector object at 0x79642b91ea20>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no specific "file báo giá" (price quote file) or detailed pricing information available for the products and services offered by Hoàng Mai Mobile.
+
+The data does indicate that Hoàng Mai Mobile specializes in providing a wide range of products, including phone components, phone repair tools, and materials for phone screen pressing [Data: Sources (26, 33)]. Their product categories include various devices like multi-port chargers, meters, soldering equipment, cleaning solutions, knives, screwdrivers, phone disassembly tools, grinding/cutting machines, lamps, mainboard clamps, rubber, adhesives, tweezers, glass molds, IC molds, pliers, screws, copper wire, and repair kits [Data: Sources (5, 6, 10, 18, 24, +more)]. They also offer phone parts such as reflectors, films, power cables, frames, back covers, home buttons, volume cables, batteries, power switches, camera glass, iPhone seals, waterproof seals, cameras, speakers, microphones, SIM trays, screens, glass, touchscreens, charging boards, and phone casings [Data: Sources (5, 6, 10, 18, 24, +more)]. Additionally, they provide specialized equipment like hot air guns, soldering machines, microscopes, power supply units, test boxes, screen pressing machines, glue rolling machines, and heating plates [Data: Sources (5, 24, 27, +more)].
+
+While Hoàng Mai Mobile states a commitment to offering "GIÁ TỐT NHẤT" (best prices) and "Mức giá cạnh tranh nhất" (most competitive prices) [Data: Sources (26)], the actual prices or a downloadable price list are not present in the provided information.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7fd35a9802c0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7fd348fe0ef0>, 884776.789065059)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7fd35b349a30>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile is committed to offering genuine products at competitive and transparent prices. These prices are publicly listed across all product categories, including phone components, screen pressing machines, and various repair materials [Data: Reports (10, 11)]. The company aims to provide the "Best Price" by distributing products directly from reputable sources, thereby bypassing intermediaries [Data: Reports (8, 10, 11, +more)].
+
+Regarding invoices, orders from Hoàng Mai Mobile may include an invoice. This invoice can be either a warehouse slip or a financial invoice. Its purpose is to serve as proof of value for the transaction and can be used for handling any potential complaints or for verification purposes [Data: Reports (7, 10)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7fe114155c70>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7fe114103050>, 884804.823973242)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7fe114155b80>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, Hoàng Mai Mobile có thể cung cấp phiếu xuất kho hoặc hóa đơn tài chính (nếu có) kèm theo đơn hàng. Những chứng từ này được dùng làm căn cứ để xác nhận giá trị sản phẩm và xử lý khiếu nại khi cần thiết [Data: Sources (1, 2, 6)].
+
+Tuy nhiên, các tài liệu này không nêu rõ liệu Hoàng Mai Mobile có xuất hóa đơn giá trị gia tăng (VAT) hay không, cũng như không cung cấp hướng dẫn cụ thể về quy trình yêu cầu hóa đơn VAT.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b78f0035340>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b78ec17cb30>, 887708.796191782)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b78f001fef0>
+
+
+==== graphrag query STDOUT ====
+Based on the provided information, there is no mention of VAT (Value Added Tax) or any related tax policies for Hoàng Mai Mobile. The available data details their business operations, product offerings, sales and payment policies, shipping procedures, and commitment to customer service, but does not include information regarding taxation [Data: Reports (3); Sources (1, 4, 6, 14, 29, 30)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b8927e16c00>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b8920955f10>, 950633.792165297)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b89209acf80>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile provides detailed instructions for various payment methods, particularly through VNPAY, to ensure a transparent and convenient shopping experience [Data: Sources (29, 30)].
+
+### VNPAY Payment Methods
+
+VNPAY is a payment gateway developed by Vietnam Payment Solution Joint Stock Company (VNPAY) that supports several payment options [Data: Sources (29)]. Customers can use bank cards/accounts, QR Pay/VNPAY-QR features integrated into mobile banking applications, or linked e-wallets [Data: Sources (29)]. The available methods include:
+*   **Payment via "Ứng dụng thanh toán hỗ trợ VNPAY-QR" (Payment application supporting VNPAY-QR)**: This method allows scanning a QR code using over 35 Mobile Banking applications and more than 15 linked e-wallets [Data: Sources (29)].
+*   **Payment via "Thẻ nội địa và tài khoản ngân hàng" (Domestic cards and bank accounts)**: This supports over 40 ATM/domestic cards/bank accounts [Data: Sources (29)].
+*   **Payment via "Thẻ thanh toán quốc tế (Visa, MasterCard, JCB, UnionPay)" (International payment cards)**: This includes 4 types of international payment cards [Data: Sources (29)].
+*   **Payment via "Ví điện tử VNPAY" (VNPAY e-wallet)**: This method is similar to using a VNPAY-QR supporting application [Data: Sources (30)].
+
+### Step-by-Step Guide for VNPAY-QR Payment
+
+For payments using "Ứng dụng thanh toán hỗ trợ VNPAY-QR," customers follow these steps [Data: Sources (29)]:
+1.  **Select Product and Initiate Payment**: Choose the desired product or service and click "Thanh toán ngay" (Pay now) or "Đặt hàng" (Order) [Data: Sources (29)]. On the checkout page, verify the order, fill in recipient information, select VNPAY as the payment method, and click "Đặt hàng ngay" (Order now) [Data: Sources (29)].
+2.  **Choose VNPAY-QR Method**: The screen will transition to the VNPAY payment gateway interface. Select "Ứng dụng thanh toán hỗ trợ VNPAY-QR" [Data: Sources (29)].
+3.  **Scan QR Code**: The system will display a QR code along with the total amount. Customers should verify the amount and then use a banking application (from the listed banks) to select "Quét Mã" (Scan Code) and scan the QR code on the website screen [Data: Sources (29)].
+    *   **Note**: The QR code is valid for 15 minutes. It is advised to prepare for scanning in advance to avoid timeout issues that could affect payment and promotional codes [Data: Sources (29, 30)].
+4.  **Verify Information and Complete Payment**: Review the information, enter any discount codes, and finalize the payment [Data: Sources (29, 30)]. Upon successful completion, a confirmation notification will be received on the website [Data: Sources (30)].
+
+### Other Payment Methods
+
+For "Thẻ nội địa và tài khoản ngân hàng" (Domestic cards and bank accounts), the process involves selecting the bank, entering card/account details, and then inputting an OTP sent to the registered phone number to complete the transaction [Data: Sources (30)]. This transaction also has a 15-minute expiry [Data: Sources (30)]. Payments via "Thẻ thanh toán quốc tế" (International payment cards) follow a similar procedure [Data: Sources (30)].
+
+In addition to VNPAY, Hoàng Mai Mobile also supports cash payments directly at their store located at Số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, thành phố Hà Nội, or through Cash on Delivery (COD) for online orders [Data: Sources (6, 26)]. For COD, customers provide delivery information and pay the delivery staff upon receiving and inspecting the goods [Data: Sources (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7ed10cf63c80>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7ed10c1650d0>, 973299.255390854)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7ed10ce03980>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile states that orders may include a delivery note or a financial invoice ("hóa đơn tài chính"), if available [Data: Sources (2)]. This document serves as a basis for confirming the value of the goods and for resolving any complaints that may arise [Data: Sources (2)].
+
+The provided data does not offer further details specifically about VAT invoices or how to request them, beyond the mention of a "hóa đơn tài chính."
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7c0abd4a5280>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7c0ab41111f0>, 1036386.600526648)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7c0abd4a4e60>
+
+
+==== graphrag query STDOUT ====
+HOÀNG MAI MOBILE specializes in a comprehensive range of products and services catering to mobile phone repair and electronics, operating as both a wholesale and retail supplier [Data: Reports (1, 6, 10, 12, 5, +more)].
+
+The store offers a wide array of essential equipment for mobile repair, including soldering machines and stations, microscopes, power supply units, and various testing devices [Data: Reports (2, 8, 1, 7, 6, +more)]. Specialized machinery such as glass pressing machines, glue winding machines, heating equipment, Hot Air Rework Stations, Screen Laminating Machines, Heating Plates, Heating Tables, Grinding and Cutting Machines, and Lamps are also available [Data: Reports (2, 8, 7, 10, 5, 9, 4, +more)]. For precision work, they provide multi-port chargers, measuring instruments, knives, screwdrivers, phone disassembly tools, probes, and mainboard/phone clamps [Data: Reports (2, 8, 7, 10, 5, 9, 4, +more)].
+
+In terms of spare parts and components, HOÀNG MAI MOBILE supplies a vast selection for various mobile phone brands. This includes screens (such as Roger screens), glass, touchscreens, and batteries compatible with iPhone, Samsung, Oppo, Vivo, Xiaomi, Nokia, Huawei, Vsmart, and iPad devices [Data: Reports (8, 7, 10, 1, 0, +more)]. They also stock cameras, charging ports, charging cables, charging boards, power cables, volume cables, speakers, microphones, SIM trays, phone frames, back covers, home buttons, power switches, camera glass, iPhone seals, waterproof seals, and phone casings [Data: Reports (8, 7, 10, 1, 0, 3, 4, +more)].
+
+Furthermore, the company provides a comprehensive range of consumables and materials vital for mobile repair. This includes soldering materials like solder, paste, and rosin, along with cleaning solutions, various adhesives (glue, UV glue, tape), copper wire, and IC reballing stencils [Data: Reports (2, 8, 7, 10, 1, +more)].
+
+Beyond products, HOÀNG MAI MOBILE offers extensive customer support and services. These include a customer loyalty program (effective from January 1, 2024), transparent policy frameworks for warranty, privacy, payments, delivery, and returns [Data: Reports (2, 8, 1, 7, 6, +more)]. They also engage customers through strategies like discounts and flash sales [Data: Reports (2, 8, 1, 7, 6, +more)]. Customers can utilize lookup services for order tracking and warranty status, and access dedicated customer support via a hotline [Data: Reports (2, 8, 9, 3, 4, +more)]. The store ensures efficient nationwide shipping and offers flexible payment methods, including cash, Cash on Delivery (COD), and online payments via VNPAY [Data: Reports (3)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7be4a413e1b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7be4a62eb230>, 1064027.703023863)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7be4a413e180>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile bán cả sỉ và lẻ các sản phẩm của mình [Data: Sources (3, 26, 34, +more)]. Cửa hàng chuyên cung cấp linh kiện điện thoại, dụng cụ sửa chữa điện thoại và vật tư ép kính điện thoại [Data: Sources (3, 26, 34, +more)].
+
+Khách hàng có thể mua trực tiếp tại cửa hàng ở địa chỉ số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, TP. Hà Nội, hoặc đặt hàng online để được giao hàng tận nơi trên toàn quốc [Data: Sources (1, 6)]. Mọi sản phẩm đều được niêm yết giá công khai và đi kèm chế độ hậu mãi chuyên nghiệp [Data: Sources (4)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7907a6c127b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7907a7e4dc70>, 1200272.038690053)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7907a6b3b1a0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, Hoàng Mai Mobile có đề cập đến việc đơn hàng có thể đi kèm với "phiếu xuất kho hoặc hóa đơn tài chính (nếu có)" [Data: Sources (1, 2, 6)]. Đây là căn cứ để xác nhận giá trị và xử lý khiếu nại khi cần thiết [Data: Sources (1, 2)].
+
+Tuy nhiên, các bảng dữ liệu không cung cấp thông tin chi tiết về việc xuất "hóa đơn VAT" cụ thể hay các điều kiện để yêu cầu hóa đơn VAT.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7d7906bff380>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7d7906290530>, 1211155.813578932)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7d7906bff050>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile's policy on invoices states that orders may include a warehouse release slip or a financial invoice, if applicable [Data: Sources (1, 6)]. However, the provided information does not explicitly mention or detail the process for issuing VAT invoices.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b7f881dacf0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b7f88254530>, 1211927.629636581)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b7f88774440>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile cung cấp nhiều hình thức thanh toán linh hoạt để đảm bảo sự tiện lợi và minh bạch cho khách hàng. Các phương thức thanh toán chính bao gồm thanh toán tiền mặt tại cửa hàng, thanh toán khi nhận hàng (COD), và thanh toán trực tuyến qua cổng VNPAY [Data: Sources (6, 29)].
+
+Đối với hình thức thanh toán tiền mặt, khách hàng có thể đến trực tiếp cửa hàng tại Số 08 ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, thành phố Hà Nội để lựa chọn và thanh toán sản phẩm [Data: Sources (6, 26)]. Ngoài ra, Hoàng Mai Mobile cũng hỗ trợ thanh toán tiền mặt tại nhà khi nhận hàng (COD) cho khách hàng ở xa hoặc đặt hàng online qua website, fanpage, Zalo hoặc Shopee. Khách hàng cần điền đầy đủ thông tin giao hàng và thanh toán trực tiếp cho nhân viên giao hàng sau khi kiểm tra hàng hóa [Data: Sources (6)].
+
+Bên cạnh đó, Hoàng Mai Mobile còn tích hợp cổng thanh toán VNPAY, một giải pháp thanh toán do Công ty Cổ phần Giải pháp Thanh toán Việt Nam (VNPAY) phát triển. Khách hàng có thể sử dụng thẻ/tài khoản ngân hàng, tính năng QR Pay/VNPAY-QR trên ứng dụng Mobile Banking của hơn 35 ngân hàng và 15 ví điện tử liên kết, hoặc sử dụng 40+ thẻ ATM/nội địa và 4 thẻ thanh toán quốc tế. Quy trình thanh toán qua VNPAY bao gồm việc chọn sản phẩm, chọn phương thức VNPAY, quét mã QR hiển thị trên màn hình bằng ứng dụng ngân hàng và hoàn tất thanh toán trong vòng 15 phút [Data: Sources (29)].
+
+Hoàng Mai Mobile cam kết xác nhận đơn hàng nhanh chóng, giao hàng mới 100%, đúng mẫu và đầy đủ phụ kiện. Công ty cũng hỗ trợ đổi trả nếu có lỗi kỹ thuật theo chính sách và bảo mật tuyệt đối thông tin khách hàng trong mọi giao dịch [Data: Sources (6, 7)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x71e9c47b1a30>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x71e9c08c8470>, 1214901.772296203)])']
+connector: <aiohttp.connector.TCPConnector object at 0x71e9c0d01340>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có dữ liệu cụ thể nào về "Thảm nhiệt TBK 568A 16-inch 300W" hoặc khả năng cố định nhiệt độ của nó.
+
+HOÀNG MAI MOBILE là một doanh nghiệp chuyên cung cấp sỉ và lẻ linh kiện điện thoại, dụng cụ sửa chữa điện thoại và vật tư ép kính điện thoại [Data: Reports (1); Sources (30, 4)]. Các sản phẩm được đề cập trong hồ sơ kinh doanh bao gồm các linh kiện như màn hình, cảm ứng, pin, camera, cổng sạc, vỏ điện thoại, cũng như các dụng cụ sửa chữa như mỏ hàn, tua vít, kẹp, và thiết bị chuyên dụng cho ép kính như keo OCA và khuôn [Data: Reports (1); Sources (6, 29, 1)]. Tuy nhiên, không có thông tin chi tiết về các loại thảm nhiệt hoặc khả năng điều khiển nhiệt độ của chúng.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x715b494a80e0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x715b6c5bd370>, 1224916.439708174)])']
+connector: <aiohttp.connector.TCPConnector object at 0x715b494a92b0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp trong các bảng dữ liệu, không có thông tin nào cho biết giá trên website đã bao gồm VAT hay chưa [Data: Sources (5, 6, 9, 10, 17, +more)]. Các tài liệu chủ yếu đề cập đến chính sách thanh toán, chính sách bảo hành, hướng dẫn thanh toán VNPAY và danh mục sản phẩm, nhưng không có chi tiết về việc tính thuế VAT vào giá sản phẩm [Data: Sources (6, 10, 18, 29, 30)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a61b178f4a0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a61b01b83b0>, 1231458.99325583)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a61b0b32a80>
+
+
+==== graphrag query STDOUT ====
+I am sorry but I am unable to answer this question given the provided data.
+
+
+==== graphrag query STDERR ====
+
+
+==== graphrag query STDOUT ====
+I don't know the answer to how to make a T60 soldering station use both C210 and C115 handpieces. The provided data describes HOÀNG MAI MOBILE as a business specializing in mobile phone components and repair tools, including general "soldering irons" [Data: Reports (1); Sources (6, 29)]. However, there is no specific information regarding the T60 soldering station, C210 or C115 handpieces, or their compatibility and operational methods within the given datasets.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7d14e3310e90>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7d14ca799310>, 1321500.604327384)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7d14e373ea80>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp trong các bảng dữ liệu, không có bất kỳ video hướng dẫn nào về cách mở lưng điện thoại. Các dữ liệu chủ yếu liệt kê các linh kiện điện thoại, dụng cụ sửa chữa, thông tin liên hệ và địa chỉ của Hoàng Mai Mobile [Data: Sources (8, 12, 16, 20, 24, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x70f993cfee10>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x70f993d90410>, 1324814.730994711)])']
+connector: <aiohttp.connector.TCPConnector object at 0x70f993cfea50>
+
+
+==== graphrag query STDOUT ====
+Based on the provided information, I do not have specific details regarding the issuance of an invoice for a product named "RELIFE RL-426B solder paste." The available data does not mention this particular product by name, nor does it outline a process for generating formal invoices for individual purchases.
+
+However, HOÀNG MAI MOBILE does offer a wide range of products for the mobile repair and electronics industry, which includes soldering materials such as solder paste ("Mỡ hàn") [Data: Reports (2); Sources (6, 29)]. The platform supports various payment methods, including cash payment at their physical store or cash on delivery (COD) for online orders. Additionally, customers can utilize VNPAY for transactions, which supports QR Pay/VNPAY-QR, domestic and international bank cards, and the VNPAY e-wallet [Data: Reports (2); Sources (6, 29, 30)]. After a successful payment, customers typically receive an order confirmation [Data: Sources (30)]. For specific inquiries about product availability or invoice procedures, it would be best to contact HOÀNG MAI MOBILE directly through their provided contact channels.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7ff5e4b620c0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7ff5e57320f0>, 1387343.150037455)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7ff5e4269310>
+
+
+==== graphrag query STDOUT ====
+I apologize, but the provided data does not contain information regarding "ren lắp đặt 48mm" or specifications that clarify whether 48mm refers to an inner or outer diameter. Therefore, I cannot answer your question based on the given data.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7865624cae40>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x786562227dd0>, 1476483.698242245)])']
+connector: <aiohttp.connector.TCPConnector object at 0x786550198860>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile's policies mention that orders may be accompanied by a delivery note or a financial invoice [Data: Sources (1)]. While a financial invoice typically includes VAT, the provided data does not explicitly state whether VAT invoices are issued, under what conditions, or how to request them.
+
+The information available indicates that customers may need to provide invoices, purchase slips, and other related documents for return or exchange processes [Data: Sources (22)]. However, this refers to documents provided by the customer, not necessarily VAT invoices issued by Hoàng Mai Mobile.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7224d84b2a80>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7224d7b2ee70>, 1478241.073954723)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7224d7cf7740>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information available regarding an "HQ declaration fee of 500k/1 model" [Data: Sources (5, 6, 16, 21, 24, +more)]. The payment policies outlined by Hoàng Mai Mobile only detail options for cash payment at their physical store or cash on delivery (COD) for online orders [Data: Sources (6)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a2c6857f950>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a2c685baf30>, 1487015.055370187)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a2c6857f110>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có dữ liệu nào đề cập đến "Dịch vụ nhập hàng Trung Quốc". Các bảng dữ liệu chủ yếu liệt kê các sản phẩm và công cụ liên quan đến sửa chữa điện thoại di động, cùng với các chính sách bán hàng, bảo hành, vận chuyển và hướng dẫn thanh toán của Hoàng Mai Mobile [Data: Sources (35, 10, 18, 0, 29, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7bfc3f469490>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7bfc3c2f6e70>, 1490888.273662929)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7bfc3f4bb4d0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên các thông tin được cung cấp trong các bảng dữ liệu, không có bất kỳ thông tin nào liên quan đến "biên bản thay thế ký số" [Data: Sources (0, 3, 9, 17, 21, +more)]. Các tài liệu chủ yếu đề cập đến các chính sách của Hoàng Mai Mobile như chính sách đổi trả và hoàn tiền, chính sách bảo hành, chính sách vận chuyển, hướng dẫn thanh toán, và thông tin về sản phẩm cũng như thông tin đăng ký kinh doanh của công ty [Data: Sources (0, 3, 21, 22, 23, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7e9eec761970>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7e9ee47735f0>, 1552878.326173551)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7e9ee89478f0>
+
+
+==== graphrag query STDOUT ====
+Hộ Kinh Doanh Cửa Hàng Hoàng Mai Mobile is represented by Nguyễn Huy Hoàng [Data: Sources (26)]. The business registration certificate, numbered 01E8036652, was issued on April 27, 2022, by the Department of Finance – Planning, People's Committee of Đống Đa District [Data: Sources (26)].
+
+The main office address for Hoàng Mai Mobile is Số 08, ngõ 117 phố Thái Hà, phường Trung Liệt, quận Đống Đa, thành phố Hà Nội [Data: Sources (15, 26, 34)]. This location also serves as their warranty center [Data: Sources (15, 26, 34)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7391eaa6a660>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7391e6812f90>, 1666974.27797855)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7391e6d37c50>
+
+
+==== graphrag query STDOUT ====
+HOÀNG MAI MOBILE is officially registered under the name HỘ KINH DOANH CỬA HÀNG HOÀNG MAI MOBILE [Data: Reports (1)]. The business was registered with registration number 01E8036652 on April 27, 2022, by the Department of Finance – Planning, People's Committee of Đống Đa District [Data: Reports (1)]. Nguyễn Huy Hoàng is listed as the representative for HOÀNG MAI MOBILE [Data: Reports (1)].
+
+The company, also identified as HOÀNG MAI MOBILE or Hoàng Mai Mobile, operates as a prominent supplier in Vietnam, specializing in mobile phone repair products, tools, and materials [Data: Reports (9, 3, 4)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7325d92e94c0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7325d92e1670>, 1667076.90472129)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7325d92e9550>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile operates under the business household name HỘ KINH DOANH CỬA HÀNG HOÀNG MAI MOBILE [Data: Sources (26)].
+
+The business holds registration certificate number 01E8036652, which was first issued on April 27, 2022. The issuing authority for this certificate is the Department of Finance – Planning, People's Committee of Dong Da District [Data: Sources (26)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x751d68a0b740>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x751d6804ef90>, 1667152.633731227)])']
+connector: <aiohttp.connector.TCPConnector object at 0x751d6c232e70>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile là một hộ kinh doanh, được đăng ký dưới tên "HỘ KINH DOANH CỬA HÀNG HOÀNG MAI MOBILE" [Data: Sources (26)]. Cơ quan cấp giấy chứng nhận đăng ký hộ kinh doanh là Phòng Tài chính – Kế hoạch, Ủy ban Nhân dân Quận Đống Đa, với ngày cấp lần đầu là 27 tháng 04 năm 2022 [Data: Sources (26)].
+
+Đối với các giao dịch, Hoàng Mai Mobile có thể cung cấp phiếu xuất kho hoặc hóa đơn tài chính (nếu có), đây là căn cứ để xác nhận giá trị và xử lý khiếu nại khi cần [Data: Sources (2, 6)]. Tuy nhiên, thông tin chi tiết về việc xuất hóa đơn đặc biệt cho các công ty hoặc hóa đơn giá trị gia tăng (VAT) không được nêu rõ trong dữ liệu cung cấp.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7eb191432960>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7eb190077050>, 1820808.89384355)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7eb191431f70>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile provides a comprehensive warranty policy for its accessories and components, designed to ensure product quality while outlining clear conditions for service eligibility. Generally, products are covered if they exhibit technical faults from the manufacturer, remain in their original, unaltered state, and are within the specified warranty period with an intact warranty stamp [Data: Reports (0)]. Conversely, the warranty is voided by improper user handling, incorrect voltage, unauthorized repairs, missing or damaged warranty stamps, environmental damage (like water ingress or oxidation), physical deformation, or if the product has exceeded its warranty period [Data: Reports (0)].
+
+Specific accessory categories have distinct warranty durations. Screens and touchscreens are typically covered for 6 months for touch functionality, provided the display remains fully functional, free from scratches or cracks, and has intact cables. Specialized "Màn hình Roger" (Roger screens) and Roger touchscreens also carry a 6-month warranty, specifically addressing manufacturing defects such as detached seals, air bubbles, unresponsive touch, flickering, image retention, or visible lines. However, this warranty is not applicable if the connecting cable is torn, the glass is scratched, or the unit has suffered physical damage from dropping or impact [Data: Reports (0)]. For batteries, iPhone batteries receive a 12-month warranty, while batteries for Android devices and tablets (including Samsung, Oppo, Vivo, Xiaomi, Nokia, Huawei, Vsmart, and iPad) are covered for 6 months. Battery warranties are voided if the battery swells after one month of use, or if there is physical damage such as a torn cable, deformation, or a missing warranty stamp [Data: Reports (0)].
+
+For other essential internal components, such as charging cables, charging boards, power cables, and volume cables, Hoàng Mai Mobile offers a 3-month warranty. A crucial condition for these components is that the original seal must remain intact; removal or breakage of this seal will invalidate the warranty [Data: Reports (0)].
+
+Customers seeking warranty service can do so daily from 10:00 AM to 6:00 PM, excluding public holidays and Tết. The primary location for warranty claims is at Hoàng Mai Mobile's headquarters: Số 08, ngõ 117 Thái Hà, phường Trung Liệt, quận Đống Đa, Hà Nội. For support, customers can contact the main hotline at 0982.15.3333, the dedicated warranty support line at 0911.160.388, or email hoangmaimobile.vn@gmail.com. It is important to note that the warranty policy may be subject to change, and customers are advised to check the official website or contact staff for the most current information [Data: Reports (0)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x74ae23da4200>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x74ae23d2be30>, 1838627.618326995)])']
+connector: <aiohttp.connector.TCPConnector object at 0x74ae23da40e0>
+
+
+==== graphrag query STDOUT ====
+HỘ KINH DOANH CỬA HÀNG HOÀNG MAI MOBILE was initially licensed on April 27, 2022 [Data: Sources (26)]. The business registration certificate number is 01E8036652, and it was issued by the Department of Finance - Planning, People's Committee of Đống Đa District [Data: Sources (26)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x78ac3094fbf0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x78ac2f9232f0>, 1920810.160414218)])']
+connector: <aiohttp.connector.TCPConnector object at 0x78aca887b620>
+
+
+==== graphrag query STDOUT ====
+I am sorry but I am unable to answer this question given the provided data.
+
+
+==== graphrag query STDERR ====
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp trong các bảng dữ liệu, không có thông tin cụ thể nào trả lời trực tiếp câu hỏi về việc tự dán cường lực có bị bọt khí hay dễ bong keo hay không.
+
+Các tài liệu chủ yếu liệt kê các sản phẩm và chính sách bảo hành của Hoàng Mai Mobile. Trong đó, "bọt khí" được đề cập là một lỗi bảo hành đối với màn hình Roger [Data: Sources (11, 19, 10, 18)], nhưng không chỉ rõ nguyên nhân gây ra bọt khí là do tự dán hay các yếu tố khác. Chính sách bảo hành cũng nêu rõ các trường hợp không áp dụng bảo hành nếu sản phẩm hư hỏng do người sử dụng dùng sai cách hoặc bị can thiệp, sửa chữa bởi đơn vị không phải Hoàng Mai Mobile [Data: Sources (10, 18)]. Tuy nhiên, không có hướng dẫn hay cảnh báo nào liên quan đến việc tự dán cường lực và các vấn đề như bọt khí hay bong keo.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a5d93a1ffe0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a5d9386b410>, 2095452.242844365)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a5d93a1fdd0>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no specific mention of "Máy khò AIFEN F5 Pro" or details regarding its accessories.
+
+However, the general category "Máy Khò & PK" (Máy Khò and Accessories) is listed among the products available [Data: Sources (35, 16, 24, 31, 27, +more)]. This indicates that heat guns, in general, are offered with accessories. Without more specific information about the "AIFEN F5 Pro" model, it is not possible to confirm if it comes with a full set of accessories.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7fa408ff7b90>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7fa40903b410>, 2180592.352485505)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7fa408ff7aa0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên các thông tin được cung cấp, không có chính sách đại lý nào được nêu rõ trong các tài liệu.
+
+Tuy nhiên, Hoàng Mai Mobile có đề cập đến việc hỗ trợ khách hàng tỉnh, khách sỉ, và các đơn hàng số lượng lớn thông qua việc giao hàng qua nhà xe hoặc công ty vận chuyển theo thỏa thuận và báo phí cụ thể [Data: Sources (1)]. Công ty cũng cam kết cung cấp sản phẩm chính hãng với mức giá tốt nhất thị trường, phân phối trực tiếp từ các nguồn uy tín mà không qua trung gian, nhằm đảm bảo giá bán hợp lý và rõ ràng cho từng nhóm sản phẩm [Data: Sources (4)].
+
+Các chính sách khác được đề cập bao gồm chính sách bán hàng, chính sách bảo hành, chính sách vận chuyển, và hướng dẫn thanh toán [Data: Sources (1, 4, 6, 10, 18)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7d6fcdb3c800>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7d6fcdb6ef90>, 2368532.408462363)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7d6fcdb3c740>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có chi tiết cụ thể nào về chương trình affiliate dành cho doanh nghiệp của Hoàng Mai Mobile.
+
+Tuy nhiên, Hoàng Mai Mobile có đề cập đến việc "Hợp tác" trong các mục điều hướng trên trang web của họ [Data: Sources (9, 13, 17, 25, 32, +more)]. Ngoài ra, công ty cũng tự định vị là đối tác đáng tin cậy cho các kỹ thuật viên và cửa hàng sửa chữa điện thoại trên toàn quốc, chuyên cung cấp sỉ và lẻ linh kiện điện thoại, dụng cụ sửa chữa, và vật tư ép kính điện thoại [Data: Sources (26, 33, 34)].
+
+Nếu bạn quan tâm đến việc hợp tác hoặc tìm hiểu thêm về các chương trình dành cho doanh nghiệp, bạn có thể liên hệ trực tiếp với Hoàng Mai Mobile qua các kênh sau:
+*   **Hotline tư vấn bán hàng:** 0982.15.3333 [Data: Sources (4, 15, 26, 34)]
+*   **Hỗ trợ kỹ thuật – bảo hành:** 0911.160.388 [Data: Sources (4, 15, 26)]
+*   **Email:** hoangmaimobile.vn@gmail.com [Data: Sources (4, 15, 26, 34)]
+*   **Website chính thức:** https://hoangmaimobile.vn [Data: Sources (4, 26, 34)]
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7a4ecb4b5fd0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7a4ecb0434d0>, 2447477.735707548)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7a4eccfa7c20>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile offers nationwide delivery services [Data: Sources (1)]. For customers in Cần Thơ, the estimated delivery time is typically between 2 to 4 days [Data: Sources (1)]. This timeframe can vary depending on the specific geographical location within Cần Thơ or any particular agreements made during the order process [Data: Sources (1)].
+
+Cần Thơ is explicitly listed as a selectable province/city for customer registration, confirming that it is within Hoàng Mai Mobile's service area for shipping [Data: Sources (0)]. The company processes and confirms orders within 2 hours of receiving the information [Data: Sources (1)]. Shipping fees are calculated based on the third-party delivery service's rates and will be communicated when the order is confirmed [Data: Sources (1)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x799eadf57bf0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x799eac0f9490>, 2620648.557376336)])']
+connector: <aiohttp.connector.TCPConnector object at 0x799ead457b90>
+
+
+==== graphrag query STDOUT ====
+I am sorry but I am unable to answer this question given the provided data.
+
+
+==== graphrag query STDERR ====
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile indicates that orders may be accompanied by a warehouse release slip or a financial invoice, if available [Data: Sources (1, 2)]. These documents serve as a basis for confirming the value of the goods and for processing complaints when necessary [Data: Sources (1, 2)].
+
+However, the provided information does not detail the specific process for requesting a company invoice or under what conditions a financial invoice is issued. It is mentioned as an optional inclusion ("nếu có" - if any) rather than a standard offering for all transactions. For further details on obtaining a company invoice, it would be advisable to contact Hoàng Mai Mobile directly.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x78604c668d40>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x78604c6b1790>, 3197357.538591982)])']
+connector: <aiohttp.connector.TCPConnector object at 0x78604c899370>
+
+
+==== graphrag query STDOUT ====
+I am sorry, but the provided data tables do not contain any information related to "vẽ phấn cam" (drawing orange chalk). The data primarily focuses on Hoàng Mai Mobile, a business that supplies phone repair components and tools, along with their operational details and policies.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x722fcb14b110>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x722fc80b96d0>, 3214316.96405506)])']
+connector: <aiohttp.connector.TCPConnector object at 0x722fcb14ae40>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile demonstrates a strong and consistent commitment to quality across all facets of its operations, encompassing products, services, and customer experience. The company's overarching goal is to lead in service quality, offer competitive pricing, and provide excellent warranty services to foster customer satisfaction and trust [Data: Reports (1, 8, 0, 5, 10, +more)].
+
+### Product Quality and Authenticity
+
+Hoàng Mai Mobile prioritizes the provision of genuine products at competitive market prices. This is achieved through direct distribution from reputable sources, eliminating intermediaries and ensuring authenticity. All new products are guaranteed to be 100% genuine, accurately match their descriptions, and come with complete accessories. A rigorous inspection process is implemented for every product before it reaches the customer, ensuring high quality [Data: Reports (3, 4, 8, 1, 5, +more)]. The company also maintains a diverse range of high-quality phone components, repair tools, and screen pressing materials, continuously updating its product offerings to meet the evolving demands of the mobile repair sector [Data: Reports (3, 8, 1, 5, 10, +more)].
+
+### Comprehensive Warranty Policy
+
+A robust and transparent warranty policy is central to Hoàng Mai Mobile's commitment to product quality and customer rights. Products are eligible for warranty if they exhibit technical defects from the manufacturer, remain in their original condition, are within the specified warranty period, and have intact warranty stamps or seals [Data: Reports (4, 0, 5, 1, 7, +more)]. Conversely, warranty claims will not be accepted for damages resulting from incorrect user operation, wrong voltage, physical damage (drops, impacts), or if products have been tampered with or repaired by unauthorized entities [Data: Reports (4)].
+
+Warranty durations vary by product category:
+*   All types of screens receive a 6-month warranty specifically for touch functionality [Data: Reports (4, 0, 5, 1, 7, +more)].
+*   iPhone batteries are covered for 12 months [Data: Reports (4, 0, 5, 1, 7, +more)].
+*   Other phone batteries (Samsung, Oppo, Vivo, Xiaomi, Nokia, Huawei, Vsmart, iPad) have a 6-month warranty [Data: Reports (4)].
+*   Repair equipment such as pressing machines and autoclaves carry the longest warranty period of 1 year [Data: Reports (4)].
+*   Hot air guns, soldering machines, microscopes, and power supplies typically come with a 6-month warranty [Data: Reports (4)].
+
+### Customer Support and Engagement
+
+Hoàng Mai Mobile places a strong emphasis on customer satisfaction, striving to provide enthusiastic consultation and support through its dedicated and experienced staff. This includes comprehensive after-sales support, a robust privacy policy, and clear return and refund policies [Data: Reports (3, 4)]. The company offers extensive customer support and engagement through multiple accessible channels, including a dedicated hotline (0982.15.3333), Facebook, Zalo, and email (hoangmaimobile.vn@gmail.com). Customers can also utilize lookup services for order and warranty status, ensuring responsiveness to inquiries [Data: Reports (2, 8, 1, 0, 5, +more)].
+
+### Policy Transparency and Data Security
+
+The company maintains a comprehensive and transparent policy framework, which includes detailed warranty, privacy, sales, payment, delivery, and return policies. These policies are designed to ensure transparency, protect customer rights, and build trust, reflecting a commitment to structured and customer-friendly operations [Data: Reports (2, 8, 1, 7, 6, +more)]. Furthermore, Hoàng Mai Mobile is committed to absolute customer information security, explicitly stating that it will not share, sell, or rent customer data to third parties for commercial purposes. Customer data is used solely for service provision, quality improvement, or when legally required, with access restricted to authorized personnel and partners [Data: Reports (6, 10, 11, 8, 2, +more)].
+
+### Operational Integrity
+
+Hoàng Mai Mobile upholds strict operational integrity, explicitly prohibiting fraudulent orders and the misuse of its product images. Any actions causing damage or negatively impacting the brand's reputation are strictly forbidden, and the company reserves the right to seek compensation or legal action in such instances [Data: Reports (3)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7c8dc03fa1b0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7c8dc04245f0>, 3293096.663800871)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7c8dc03f8050>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có chính sách cụ thể nào về "xuất VAT" được đề cập trong các tài liệu.
+
+Tuy nhiên, chính sách vận chuyển, giao nhận và kiểm hàng có đề cập rằng đơn hàng có thể đi kèm với "phiếu xuất kho hoặc hóa đơn tài chính (nếu có)" [Data: Sources (1)]. "Hóa đơn tài chính" có thể liên quan đến các vấn đề thuế như VAT, nhưng không có thông tin chi tiết về chính sách xuất VAT hay các quy định liên quan đến nó.
+
+Các chính sách khác được cung cấp bao gồm chính sách vận chuyển, giao nhận và kiểm hàng [Data: Sources (0, 1)], chính sách đổi trả và hoàn tiền [Data: Sources (21)], chính sách thanh toán [Data: Sources (5)], và chính sách bảo hành [Data: Sources (9, 10, 17, 18)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x709e5fa8d3a0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x709e5fac1c70>, 3715212.10560678)])']
+connector: <aiohttp.connector.TCPConnector object at 0x709e5fa8d0a0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên các thông tin được cung cấp, không có dữ liệu nào đề cập đến "lịch nhập hàng" hoặc lịch trình bổ sung hàng hóa của Hoàng Mai Mobile. Các tài liệu chủ yếu tập trung vào chính sách vận chuyển, thanh toán, bảo hành, bảo mật thông tin và thông tin đăng ký kinh doanh [Data: Sources (1, 2, 6, 10, 14, 18, 26, 29, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x739b83a25730>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x739b82dddbb0>, 3719830.353191707)])']
+connector: <aiohttp.connector.TCPConnector object at 0x739b83c32b10>
+
+
+==== graphrag query STDOUT ====
+Based on the provided data, there is no information available regarding "RELIFE HW31" or "RL-UVH900B", nor are there any details comparing these two products. Therefore, I cannot describe their differences.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7b94c148c290>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7b94c14c1af0>, 3978777.785892095)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7b953a392990>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile supports customers checking goods before receipt, particularly when opting for Cash on Delivery (COD) payments. This policy allows customers to inspect their ordered items before making payment to the delivery staff [Data: Reports (3); Sources (6)].
+
+This practice is a key component of Hoàng Mai Mobile's commitment to ensuring a transparent and reliable shopping experience. By allowing customers to verify the goods upon delivery, the company reinforces its dedication to product quality and customer satisfaction. It aligns with their broader operational integrity and customer support initiatives, which include thorough product inspections before dispatch and comprehensive after-sales services [Data: Reports (3)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7c1ade86e090>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7c1ade6faf90>, 4925356.169509785)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7c1adec9cad0>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, Hoàng Mai Mobile có thể cung cấp phiếu xuất kho hoặc hóa đơn tài chính (nếu có) kèm theo đơn hàng. Những chứng từ này được dùng làm căn cứ để xác nhận giá trị sản phẩm và xử lý khiếu nại khi cần thiết [Data: Sources (1, 2, 6)].
+
+Tuy nhiên, các tài liệu này không nêu rõ liệu Hoàng Mai Mobile có xuất hóa đơn giá trị gia tăng (VAT) hay không, cũng như không cung cấp hướng dẫn cụ thể về quy trình yêu cầu hóa đơn VAT.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7d61f646ba40>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7d61f63a2bd0>, 5897479.463365869)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7d61fa291730>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile áp dụng chính sách giao hàng toàn quốc [Data: Sources (1)]. Thời gian giao hàng dự kiến là từ 2 đến 4 ngày, tùy thuộc vào vị trí địa lý cụ thể hoặc theo thỏa thuận khi đặt hàng [Data: Sources (1)].
+
+Đơn hàng sẽ được xác nhận và xử lý trong vòng 2 giờ kể từ khi nhận thông tin [Data: Sources (1)]. Tuy nhiên, một số trường hợp có thể gây chậm trễ như không liên hệ được với khách hàng, địa chỉ cung cấp không chính xác, số lượng đơn hàng tăng đột biến, đơn vị vận chuyển quá tải, hoặc đối tác cung cấp/vận chuyển gặp sự cố [Data: Sources (1)]. Nếu giao hàng bị chậm trễ, Hoàng Mai Mobile sẽ chủ động liên hệ và khách hàng có thể lựa chọn tiếp tục chờ hoặc hủy đơn [Data: Sources (2)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7daa10f48290>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7daa10d8e570>, 5899184.446189395)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7daa10f4ae70>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, không có chính sách cụ thể nào về việc giảm giá khi mua nhiều sản phẩm được đề cập chi tiết [Data: Sources (0, 5, 6, 9, 10, +more)].
+
+Các tài liệu chỉ liệt kê "Giảm giá" như một mục menu hoặc tính năng chung của HOÀNG MAI MOBILE, cùng với "Flash Sale" và "Đổi điểm" [Data: Sources (5, 9, 17, 21, 25)]. Tuy nhiên, không có thông tin chi tiết về cách thức áp dụng giảm giá, điều kiện để nhận giảm giá khi mua số lượng lớn, hoặc các chương trình khuyến mãi liên quan đến việc mua nhiều sản phẩm.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7548cea03a40>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7548ceab6630>, 6045365.997341528)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7548cea73b00>
+
+
+==== graphrag query STDOUT ====
+Hoàng Mai Mobile specializes in the retail supply of various products related to mobile phone repair and maintenance. Their retail offerings primarily include phone components, phone repair tools, and materials for phone screen pressing [Data: Sources (26)].
+
+The range of phone components available for retail purchase is extensive, covering items such as SIM cards, backlights (phản quang), films, power cables, phone frames and chassis, back covers, home buttons and other buttons, volume cables, batteries, power switches, camera glass and bezels, iPhone gaskets, adhesive seals, waterproof gaskets, cameras, speakers, microphones and mic cables, SIM trays, screens, glass, touchscreens, charging board assemblies, charging ports, and phone casings [Data: Sources (1, 3, 6, 12, 20, +more)].
+
+For phone repair tools, Hoàng Mai Mobile offers a comprehensive selection. This includes multi-port chargers, multimeters and probes, solder, solder paste, flux, various solutions and cleaning agents, knives and knife handles, screwdrivers and bits, disassembly tools, grinding and cutting machines with accessories, lamps, mainboard and phone clamps, rubber, different types of adhesives (including UV glue) and tape, forceps, tweezers, pliers, seals, clips, screws, copper wire, cutting wire, and reballing stencils [Data: Sources (1, 3, 6, 12, 20, +more)]. Additionally, they provide specialized equipment such as hot air guns and accessories, soldering stations and accessories, microscopes and accessories, power supplies and accessories, test boxes, test fixtures, cables, heating plates, and heating tables [Data: Sources (3, 12, 20, 27, 31)].
+
+Regarding materials and equipment for phone screen pressing, customers can find glass molds, gasket molds, molds and bases for IC reballing, OCA glue, screen pressing machines and their accessories, and glue rolling machines and their accessories [Data: Sources (1, 3, 6, 12, 20, +more)].
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7dbad9f5c200>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7dbad9f86570>, 6332969.518270785)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7dbad9f5c1d0>
+
+
+==== graphrag query STDOUT ====
+I apologize, but I do not have information regarding the "Máy cuốn keo RELIFE Model LG2" in the provided data.
+
+The available information details Hoàng Mai Mobile's product offerings, which include genuine phone components, professional repair tools, and essential materials and equipment for glass pressing, such as machines and related supplies. They also offer specialized equipment like cable pressing machines [Data: Reports (3)]. Their inventory broadly covers items like adhesive glue, UV glue, tape, OCA glue, grinding machines, and cutting machines [Data: Sources (6, 14, 29)]. However, the specific model "Máy cuốn keo RELIFE Model LG2" is not mentioned.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x7e2f943db830>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x7e2f9435f590>, 6400298.729328117)])']
+connector: <aiohttp.connector.TCPConnector object at 0x7e2f943db620>
+
+
+==== graphrag query STDOUT ====
+Dựa trên thông tin được cung cấp, Hoàng Mai Mobile có thể cung cấp phiếu xuất kho hoặc hóa đơn tài chính (nếu có) đi kèm đơn hàng, đây là căn cứ để xác nhận giá trị và xử lý khiếu nại khi cần [Data: Sources (1, 6)].
+
+Tuy nhiên, dữ liệu không cung cấp thông tin cụ thể về sản phẩm "máy hút khói khò hàn 2UUL FE01" hay quy trình yêu cầu xuất hóa đơn cho sản phẩm này. Do đó, tôi không thể xác nhận liệu hóa đơn có thể được xuất cho sản phẩm này hay không, cũng như không có thông tin chi tiết về cách thức yêu cầu hóa đơn.
+
+
+==== graphrag query STDERR ====
+Unclosed client session
+client_session: <aiohttp.client.ClientSession object at 0x72777a0dc7d0>
+Unclosed connector
+connections: ['deque([(<aiohttp.client_proto.ResponseHandler object at 0x72777a10e5d0>, 6740195.611147473)])']
+connector: <aiohttp.connector.TCPConnector object at 0x72777a0dc4d0>
+

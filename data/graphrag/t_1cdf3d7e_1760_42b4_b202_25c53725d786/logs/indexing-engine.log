@@ -1,0 +1,547 @@
+2025-11-05 15:58:08.0402 - INFO - graphrag.index.validate_config - LLM Config Params Validated
+2025-11-05 15:58:08.0941 - INFO - graphrag.index.validate_config - Embedding LLM Config Params Validated
+2025-11-05 15:58:08.0941 - INFO - graphrag.cli.index - Starting pipeline run. False
+2025-11-05 15:58:08.0942 - INFO - graphrag.cli.index - Using default configuration: {
+    "root_dir": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786",
+    "models": {
+        "default_chat_model": {
+            "api_key": "==== REDACTED ====",
+            "auth_type": "api_key",
+            "type": "chat",
+            "model_provider": "gemini",
+            "model": "gemini-2.5-flash",
+            "encoding_model": "",
+            "api_base": null,
+            "api_version": null,
+            "deployment_name": null,
+            "proxy": null,
+            "audience": null,
+            "model_supports_json": true,
+            "request_timeout": 180.0,
+            "tokens_per_minute": null,
+            "requests_per_minute": null,
+            "rate_limit_strategy": "static",
+            "retry_strategy": "exponential_backoff",
+            "max_retries": 10,
+            "max_retry_wait": 10.0,
+            "concurrent_requests": 25,
+            "async_mode": "threaded",
+            "responses": null,
+            "max_tokens": null,
+            "temperature": 0,
+            "max_completion_tokens": null,
+            "reasoning_effort": null,
+            "top_p": 1,
+            "n": 1,
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0
+        },
+        "default_embedding_model": {
+            "api_key": "==== REDACTED ====",
+            "auth_type": "api_key",
+            "type": "embedding",
+            "model_provider": "gemini",
+            "model": "gemini-embedding-001",
+            "encoding_model": "",
+            "api_base": null,
+            "api_version": null,
+            "deployment_name": null,
+            "proxy": null,
+            "audience": null,
+            "model_supports_json": null,
+            "request_timeout": 180.0,
+            "tokens_per_minute": null,
+            "requests_per_minute": null,
+            "rate_limit_strategy": "static",
+            "retry_strategy": "exponential_backoff",
+            "max_retries": 10,
+            "max_retry_wait": 10.0,
+            "concurrent_requests": 25,
+            "async_mode": "threaded",
+            "responses": null,
+            "max_tokens": null,
+            "temperature": 0,
+            "max_completion_tokens": null,
+            "reasoning_effort": null,
+            "top_p": 1,
+            "n": 1,
+            "frequency_penalty": 0.0,
+            "presence_penalty": 0.0
+        }
+    },
+    "input": {
+        "storage": {
+            "type": "file",
+            "base_dir": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/input",
+            "storage_account_blob_url": null,
+            "cosmosdb_account_url": null
+        },
+        "file_type": "json",
+        "encoding": "utf-8",
+        "file_pattern": ".*\\.json",
+        "file_filter": null,
+        "text_column": "text",
+        "title_column": null,
+        "metadata": null
+    },
+    "chunks": {
+        "size": 1200,
+        "overlap": 100,
+        "group_by_columns": [
+            "id"
+        ],
+        "strategy": "tokens",
+        "encoding_model": "cl100k_base",
+        "prepend_metadata": false,
+        "chunk_size_includes_metadata": false
+    },
+    "output": {
+        "type": "file",
+        "base_dir": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/output",
+        "storage_account_blob_url": null,
+        "cosmosdb_account_url": null
+    },
+    "outputs": null,
+    "update_index_output": {
+        "type": "file",
+        "base_dir": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/update_output",
+        "storage_account_blob_url": null,
+        "cosmosdb_account_url": null
+    },
+    "cache": {
+        "type": "file",
+        "base_dir": "/home/hoang-mai/.grc/t_1cdf3d7e_1760_42b4_b202_25c53725d786",
+        "storage_account_blob_url": null,
+        "cosmosdb_account_url": null
+    },
+    "reporting": {
+        "type": "file",
+        "base_dir": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/logs",
+        "storage_account_blob_url": null
+    },
+    "vector_store": {
+        "default_vector_store": {
+            "type": "lancedb",
+            "db_uri": "/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/output/lancedb",
+            "url": null,
+            "audience": null,
+            "container_name": "==== REDACTED ====",
+            "database_name": null,
+            "overwrite": true,
+            "embeddings_schema": {}
+        }
+    },
+    "workflows": null,
+    "embed_text": {
+        "model_id": "default_embedding_model",
+        "vector_store_id": "default_vector_store",
+        "batch_size": 16,
+        "batch_max_tokens": 8191,
+        "names": [
+            "entity.description",
+            "community.full_content",
+            "text_unit.text"
+        ],
+        "strategy": null
+    },
+    "extract_graph": {
+        "model_id": "default_chat_model",
+        "prompt": "prompts/extract_graph.txt",
+        "entity_types": [
+            "organization",
+            "person",
+            "geo",
+            "event"
+        ],
+        "max_gleanings": 1,
+        "strategy": null
+    },
+    "summarize_descriptions": {
+        "model_id": "default_chat_model",
+        "prompt": "prompts/summarize_descriptions.txt",
+        "max_length": 500,
+        "max_input_tokens": 4000,
+        "strategy": null
+    },
+    "extract_graph_nlp": {
+        "normalize_edge_weights": true,
+        "text_analyzer": {
+            "extractor_type": "regex_english",
+            "model_name": "en_core_web_md",
+            "max_word_length": 15,
+            "word_delimiter": " ",
+            "include_named_entities": true,
+            "exclude_nouns": [
+                "stuff",
+                "thing",
+                "things",
+                "bunch",
+                "bit",
+                "bits",
+                "people",
+                "person",
+                "okay",
+                "hey",
+                "hi",
+                "hello",
+                "laughter",
+                "oh"
+            ],
+            "exclude_entity_tags": [
+                "DATE"
+            ],
+            "exclude_pos_tags": [
+                "DET",
+                "PRON",
+                "INTJ",
+                "X"
+            ],
+            "noun_phrase_tags": [
+                "PROPN",
+                "NOUNS"
+            ],
+            "noun_phrase_grammars": {
+                "PROPN,PROPN": "PROPN",
+                "NOUN,NOUN": "NOUNS",
+                "NOUNS,NOUN": "NOUNS",
+                "ADJ,ADJ": "ADJ",
+                "ADJ,NOUN": "NOUNS"
+            }
+        },
+        "concurrent_requests": 25,
+        "async_mode": "threaded"
+    },
+    "prune_graph": {
+        "min_node_freq": 2,
+        "max_node_freq_std": null,
+        "min_node_degree": 1,
+        "max_node_degree_std": null,
+        "min_edge_weight_pct": 40.0,
+        "remove_ego_nodes": true,
+        "lcc_only": false
+    },
+    "cluster_graph": {
+        "max_cluster_size": 10,
+        "use_lcc": true,
+        "seed": 3735928559
+    },
+    "extract_claims": {
+        "enabled": false,
+        "model_id": "default_chat_model",
+        "prompt": "prompts/extract_claims.txt",
+        "description": "Any claims or facts that could be relevant to information discovery.",
+        "max_gleanings": 1,
+        "strategy": null
+    },
+    "community_reports": {
+        "model_id": "default_chat_model",
+        "graph_prompt": "prompts/community_report_graph.txt",
+        "text_prompt": "prompts/community_report_text.txt",
+        "max_length": 2000,
+        "max_input_length": 8000,
+        "strategy": null
+    },
+    "embed_graph": {
+        "enabled": false,
+        "dimensions": 1536,
+        "num_walks": 10,
+        "walk_length": 40,
+        "window_size": 2,
+        "iterations": 3,
+        "random_seed": 597832,
+        "use_lcc": true
+    },
+    "umap": {
+        "enabled": false
+    },
+    "snapshots": {
+        "embeddings": false,
+        "graphml": false,
+        "raw_graph": false
+    },
+    "local_search": {
+        "prompt": "prompts/local_search_system_prompt.txt",
+        "chat_model_id": "default_chat_model",
+        "embedding_model_id": "default_embedding_model",
+        "text_unit_prop": 0.5,
+        "community_prop": 0.15,
+        "conversation_history_max_turns": 5,
+        "top_k_entities": 10,
+        "top_k_relationships": 10,
+        "max_context_tokens": 12000
+    },
+    "global_search": {
+        "map_prompt": "prompts/global_search_map_system_prompt.txt",
+        "reduce_prompt": "prompts/global_search_reduce_system_prompt.txt",
+        "chat_model_id": "default_chat_model",
+        "knowledge_prompt": "prompts/global_search_knowledge_system_prompt.txt",
+        "max_context_tokens": 12000,
+        "data_max_tokens": 12000,
+        "map_max_length": 1000,
+        "reduce_max_length": 2000,
+        "dynamic_search_threshold": 1,
+        "dynamic_search_keep_parent": false,
+        "dynamic_search_num_repeats": 1,
+        "dynamic_search_use_summary": false,
+        "dynamic_search_max_level": 2
+    },
+    "drift_search": {
+        "prompt": "prompts/drift_search_system_prompt.txt",
+        "reduce_prompt": "prompts/drift_search_reduce_prompt.txt",
+        "chat_model_id": "default_chat_model",
+        "embedding_model_id": "default_embedding_model",
+        "data_max_tokens": 12000,
+        "reduce_max_tokens": null,
+        "reduce_temperature": 0,
+        "reduce_max_completion_tokens": null,
+        "concurrency": 32,
+        "drift_k_followups": 20,
+        "primer_folds": 5,
+        "primer_llm_max_tokens": 12000,
+        "n_depth": 3,
+        "local_search_text_unit_prop": 0.9,
+        "local_search_community_prop": 0.1,
+        "local_search_top_k_mapped_entities": 10,
+        "local_search_top_k_relationships": 10,
+        "local_search_max_data_tokens": 12000,
+        "local_search_temperature": 0,
+        "local_search_top_p": 1,
+        "local_search_n": 1,
+        "local_search_llm_max_gen_tokens": null,
+        "local_search_llm_max_gen_completion_tokens": null
+    },
+    "basic_search": {
+        "prompt": "prompts/basic_search_system_prompt.txt",
+        "chat_model_id": "default_chat_model",
+        "embedding_model_id": "default_embedding_model",
+        "k": 10,
+        "max_context_tokens": 12000
+    }
+}
+2025-11-05 15:58:08.0943 - INFO - graphrag.api.index - Initializing indexing pipeline...
+2025-11-05 15:58:08.0943 - INFO - graphrag.index.workflows.factory - Creating pipeline with workflows: ['load_input_documents', 'create_base_text_units', 'create_final_documents', 'extract_graph_nlp', 'prune_graph', 'finalize_graph', 'create_communities', 'create_final_text_units', 'create_community_reports_text', 'generate_text_embeddings']
+2025-11-05 15:58:08.0943 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/input
+2025-11-05 15:58:08.0943 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/output
+2025-11-05 15:58:08.0943 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786
+2025-11-05 15:58:08.0943 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/.grc/t_1cdf3d7e_1760_42b4_b202_25c53725d786
+2025-11-05 15:58:08.0943 - INFO - graphrag.index.run.run_pipeline - Running standard indexing.
+2025-11-05 15:58:08.0943 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at 
+2025-11-05 15:58:08.0944 - INFO - graphrag.index.run.run_pipeline - Executing pipeline...
+2025-11-05 15:58:08.0944 - INFO - graphrag.index.input.factory - loading input from root_dir=/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/input
+2025-11-05 15:58:08.0944 - INFO - graphrag.index.input.factory - Loading Input InputFileType.json
+2025-11-05 15:58:08.0945 - INFO - graphrag.index.input.json - Loading json files from /home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/input
+2025-11-05 15:58:08.0945 - INFO - graphrag.storage.file_pipeline_storage - search /home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_1cdf3d7e_1760_42b4_b202_25c53725d786/input for files matching .*\.json
+2025-11-05 15:58:08.0948 - INFO - graphrag.index.input.util - Found 1 InputFileType.json files, loading 1
+2025-11-05 15:58:08.0948 - INFO - graphrag.index.input.util - Total number of unfiltered InputFileType.json rows: 10
+2025-11-05 15:58:08.0948 - INFO - graphrag.index.workflows.load_input_documents - Final # of rows loaded: 10
+2025-11-05 15:58:08.0952 - INFO - graphrag.api.index - Workflow load_input_documents completed successfully
+2025-11-05 15:58:08.0958 - INFO - graphrag.index.workflows.create_base_text_units - Workflow started: create_base_text_units
+2025-11-05 15:58:08.0959 - INFO - graphrag.utils.storage - reading table from storage: documents.parquet
+2025-11-05 15:58:08.0964 - INFO - graphrag.index.workflows.create_base_text_units - Starting chunking process for 10 documents
+2025-11-05 15:58:08.0969 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  1/10
+2025-11-05 15:58:08.0970 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  2/10
+2025-11-05 15:58:08.0973 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  3/10
+2025-11-05 15:58:08.0976 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  4/10
+2025-11-05 15:58:08.0979 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  5/10
+2025-11-05 15:58:08.0982 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  6/10
+2025-11-05 15:58:08.0985 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  7/10
+2025-11-05 15:58:08.0987 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  8/10
+2025-11-05 15:58:08.0991 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  9/10
+2025-11-05 15:58:08.0994 - INFO - graphrag.index.workflows.create_base_text_units - chunker progress:  10/10
+2025-11-05 15:58:09.0003 - INFO - graphrag.index.workflows.create_base_text_units - Workflow completed: create_base_text_units
+2025-11-05 15:58:09.0003 - INFO - graphrag.api.index - Workflow create_base_text_units completed successfully
+2025-11-05 15:58:09.0009 - INFO - graphrag.index.workflows.create_final_documents - Workflow started: create_final_documents
+2025-11-05 15:58:09.0009 - INFO - graphrag.utils.storage - reading table from storage: documents.parquet
+2025-11-05 15:58:09.0012 - INFO - graphrag.utils.storage - reading table from storage: text_units.parquet
+2025-11-05 15:58:09.0023 - INFO - graphrag.index.workflows.create_final_documents - Workflow completed: create_final_documents
+2025-11-05 15:58:09.0024 - INFO - graphrag.api.index - Workflow create_final_documents completed successfully
+2025-11-05 15:58:09.0030 - INFO - graphrag.index.workflows.extract_graph_nlp - Workflow started: extract_graph_nlp
+2025-11-05 15:58:09.0030 - INFO - graphrag.utils.storage - reading table from storage: text_units.parquet
+2025-11-05 15:58:09.0035 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/.grc/t_1cdf3d7e_1760_42b4_b202_25c53725d786/extract_noun_phrases
+2025-11-05 15:58:09.0047 - INFO - graphrag.logger.progress - extract noun phrases progress: 1/36
+2025-11-05 15:58:09.0047 - INFO - graphrag.logger.progress - extract noun phrases progress: 2/36
+2025-11-05 15:58:09.0047 - INFO - graphrag.logger.progress - extract noun phrases progress: 3/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 4/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 5/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 6/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 7/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 8/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 9/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 10/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 11/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 12/36
+2025-11-05 15:58:09.0048 - INFO - graphrag.logger.progress - extract noun phrases progress: 13/36
+2025-11-05 15:58:09.0049 - INFO - graphrag.logger.progress - extract noun phrases progress: 14/36
+2025-11-05 15:58:09.0049 - INFO - graphrag.logger.progress - extract noun phrases progress: 15/36
+2025-11-05 15:58:09.0050 - INFO - graphrag.logger.progress - extract noun phrases progress: 16/36
+2025-11-05 15:58:09.0050 - INFO - graphrag.logger.progress - extract noun phrases progress: 17/36
+2025-11-05 15:58:09.0050 - INFO - graphrag.logger.progress - extract noun phrases progress: 18/36
+2025-11-05 15:58:09.0050 - INFO - graphrag.logger.progress - extract noun phrases progress: 19/36
+2025-11-05 15:58:09.0050 - INFO - graphrag.logger.progress - extract noun phrases progress: 20/36
+2025-11-05 15:58:09.0051 - INFO - graphrag.logger.progress - extract noun phrases progress: 21/36
+2025-11-05 15:58:09.0051 - INFO - graphrag.logger.progress - extract noun phrases progress: 22/36
+2025-11-05 15:58:09.0051 - INFO - graphrag.logger.progress - extract noun phrases progress: 23/36
+2025-11-05 15:58:09.0051 - INFO - graphrag.logger.progress - extract noun phrases progress: 24/36
+2025-11-05 15:58:09.0051 - INFO - graphrag.logger.progress - extract noun phrases progress: 25/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 26/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 27/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 28/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 29/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 30/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 31/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 32/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 33/36
+2025-11-05 15:58:09.0055 - INFO - graphrag.logger.progress - extract noun phrases progress: 34/36
+2025-11-05 15:58:09.0056 - INFO - graphrag.logger.progress - extract noun phrases progress: 35/36
+2025-11-05 15:58:09.0056 - INFO - graphrag.logger.progress - extract noun phrases progress: 36/36
+2025-11-05 15:58:09.0101 - INFO - graphrag.index.workflows.extract_graph_nlp - Workflow completed: extract_graph_nlp
+2025-11-05 15:58:09.0101 - INFO - graphrag.api.index - Workflow extract_graph_nlp completed successfully
+2025-11-05 15:58:09.0111 - INFO - graphrag.index.workflows.prune_graph - Workflow started: prune_graph
+2025-11-05 15:58:09.0111 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 15:58:09.0114 - INFO - graphrag.utils.storage - reading table from storage: relationships.parquet
+2025-11-05 15:58:09.0133 - INFO - graphrag.index.workflows.prune_graph - Workflow completed: prune_graph
+2025-11-05 15:58:09.0133 - INFO - graphrag.api.index - Workflow prune_graph completed successfully
+2025-11-05 15:58:09.0147 - INFO - graphrag.index.workflows.finalize_graph - Workflow started: finalize_graph
+2025-11-05 15:58:09.0147 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 15:58:09.0149 - INFO - graphrag.utils.storage - reading table from storage: relationships.parquet
+2025-11-05 15:58:09.0169 - INFO - graphrag.index.workflows.finalize_graph - Workflow completed: finalize_graph
+2025-11-05 15:58:09.0169 - INFO - graphrag.api.index - Workflow finalize_graph completed successfully
+2025-11-05 15:58:09.0182 - INFO - graphrag.index.workflows.create_communities - Workflow started: create_communities
+2025-11-05 15:58:09.0182 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 15:58:09.0185 - INFO - graphrag.utils.storage - reading table from storage: relationships.parquet
+2025-11-05 15:58:09.0229 - INFO - graphrag.index.workflows.create_communities - Workflow completed: create_communities
+2025-11-05 15:58:09.0229 - INFO - graphrag.api.index - Workflow create_communities completed successfully
+2025-11-05 15:58:09.0240 - INFO - graphrag.index.workflows.create_final_text_units - Workflow started: create_final_text_units
+2025-11-05 15:58:09.0240 - INFO - graphrag.utils.storage - reading table from storage: text_units.parquet
+2025-11-05 15:58:09.0243 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 15:58:09.0245 - INFO - graphrag.utils.storage - reading table from storage: relationships.parquet
+2025-11-05 15:58:09.0267 - INFO - graphrag.index.workflows.create_final_text_units - Workflow completed: create_final_text_units
+2025-11-05 15:58:09.0267 - INFO - graphrag.api.index - Workflow create_final_text_units completed successfully
+2025-11-05 15:58:09.0285 - INFO - graphrag.index.workflows.create_community_reports_text - Workflow started: create_community_reports_text
+2025-11-05 15:58:09.0285 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 15:58:09.0288 - INFO - graphrag.utils.storage - reading table from storage: communities.parquet
+2025-11-05 15:58:09.0291 - INFO - graphrag.utils.storage - reading table from storage: text_units.parquet
+2025-11-05 15:58:09.0546 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/.grc/t_1cdf3d7e_1760_42b4_b202_25c53725d786/community_reporting
+2025-11-05 15:58:23.0458 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 1/9
+2025-11-05 15:58:27.0350 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 2/9
+2025-11-05 15:58:31.0922 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 3/9
+2025-11-05 15:58:33.0286 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 4/9
+2025-11-05 15:58:35.0743 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 5/9
+2025-11-05 15:58:37.0893 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 6/9
+2025-11-05 15:58:44.0862 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 7/9
+2025-11-05 15:58:49.0363 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 8/9
+2025-11-05 16:01:09.0688 - ERROR - graphrag.language_model.providers.litellm.services.retry.exponential_retry - ExponentialRetry: Request failed, retrying, retries=1, delay=2.0, max_retries=10, exception=litellm.Timeout: Connection timed out. Timeout passed=180.0, time taken=180.083 seconds
+Traceback (most recent call last):
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 59, in map_aiohttp_exceptions
+    yield
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 272, in handle_async_request
+    response = await self._make_aiohttp_request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 239, in _make_aiohttp_request
+    response = await client_session.request(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/aiohttp/client.py", line 1425, in __aenter__
+    self._resp: _RetType = await self._coro
+                           ^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/aiohttp/client.py", line 730, in _request
+    await resp.start(conn)
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/aiohttp/client_reqrep.py", line 1059, in start
+    message, payload = await protocol.read()  # type: ignore[union-attr]
+                       ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/aiohttp/streams.py", line 671, in read
+    await self._waiter
+aiohttp.client_exceptions.SocketTimeoutError: Timeout on reading data from socket
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/http_handler.py", line 358, in post
+    response = await self.client.send(req, stream=stream)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/httpx/_client.py", line 1661, in send
+    response = await self._send_handling_auth(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/httpx/_client.py", line 1689, in _send_handling_auth
+    response = await self._send_handling_redirects(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/httpx/_client.py", line 1726, in _send_handling_redirects
+    response = await self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/httpx/_client.py", line 1763, in _send_single_request
+    response = await transport.handle_async_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 271, in handle_async_request
+    with map_aiohttp_exceptions():
+  File "/usr/lib/python3.12/contextlib.py", line 158, in __exit__
+    self.gen.throw(value)
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/aiohttp_transport.py", line 73, in map_aiohttp_exceptions
+    raise mapped_exc(message) from exc
+httpx.ReadTimeout: Timeout on reading data from socket
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/language_model/providers/litellm/services/retry/exponential_retry.py", line 71, in aretry
+    return await func(**kwargs)
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/language_model/providers/litellm/chat_model.py", line 109, in _base_acompletion
+    return await acompletion(**new_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/utils.py", line 1637, in wrapper_async
+    raise e
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/utils.py", line 1483, in wrapper_async
+    result = await original_function(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/main.py", line 614, in acompletion
+    raise exception_type(
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/main.py", line 595, in acompletion
+    response = await init_response
+               ^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/vertex_ai/gemini/vertex_and_google_ai_studio_gemini.py", line 2028, in async_completion
+    response = await client.post(
+               ^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/litellm_core_utils/logging_utils.py", line 190, in async_wrapper
+    result = await func(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/litellm/llms/custom_httpx/http_handler.py", line 387, in post
+    raise litellm.Timeout(
+litellm.exceptions.Timeout: litellm.Timeout: Connection timed out. Timeout passed=180.0, time taken=180.083 seconds
+2025-11-05 16:01:38.0027 - INFO - graphrag.logger.progress - level 1 summarize communities progress: 9/9
+2025-11-05 16:01:58.0085 - INFO - graphrag.logger.progress - level 0 summarize communities progress: 1/4
+2025-11-05 16:01:58.0608 - INFO - graphrag.logger.progress - level 0 summarize communities progress: 2/4
+2025-11-05 16:01:58.0745 - INFO - graphrag.logger.progress - level 0 summarize communities progress: 3/4
+2025-11-05 16:02:11.0820 - INFO - graphrag.logger.progress - level 0 summarize communities progress: 4/4
+2025-11-05 16:02:11.0826 - INFO - graphrag.index.workflows.create_community_reports_text - Workflow completed: create_community_reports_text
+2025-11-05 16:02:11.0827 - INFO - graphrag.api.index - Workflow create_community_reports_text completed successfully
+2025-11-05 16:02:11.0840 - INFO - graphrag.index.workflows.generate_text_embeddings - Workflow started: generate_text_embeddings
+2025-11-05 16:02:11.0840 - INFO - graphrag.index.workflows.generate_text_embeddings - Embedding the following fields: ['entity.description', 'community.full_content', 'text_unit.text']
+2025-11-05 16:02:11.0841 - INFO - graphrag.utils.storage - reading table from storage: text_units.parquet
+2025-11-05 16:02:11.0845 - INFO - graphrag.utils.storage - reading table from storage: entities.parquet
+2025-11-05 16:02:11.0847 - INFO - graphrag.utils.storage - reading table from storage: community_reports.parquet
+2025-11-05 16:02:11.0852 - INFO - graphrag.index.workflows.generate_text_embeddings - Creating embeddings
+2025-11-05 16:02:11.0852 - INFO - graphrag.index.operations.embed_text.embed_text - using vector store lancedb with container_name default for embedding entity.description: default-entity-description
+2025-11-05 16:02:11.0854 - INFO - graphrag.index.operations.embed_text.embed_text - uploading text embeddings batch 1/1 of size 500 to vector store
+2025-11-05 16:02:11.0854 - INFO - graphrag.storage.file_pipeline_storage - Creating file storage at /home/hoang-mai/.grc/t_1cdf3d7e_1760_42b4_b202_25c53725d786/text_embedding
+2025-11-05 16:02:11.0857 - INFO - graphrag.index.operations.embed_text.strategies.openai - embedding 52 inputs via 52 snippets using 4 batches. max_batch_size=16, batch_max_tokens=8191
+2025-11-05 16:02:12.0888 - INFO - graphrag.logger.progress - generate embeddings progress: 1/4
+2025-11-05 16:02:12.0960 - INFO - graphrag.logger.progress - generate embeddings progress: 2/4
+2025-11-05 16:02:12.0960 - INFO - graphrag.logger.progress - generate embeddings progress: 3/4
+2025-11-05 16:02:13.0088 - INFO - graphrag.logger.progress - generate embeddings progress: 4/4
+2025-11-05 16:02:13.0171 - INFO - graphrag.index.operations.embed_text.embed_text - using vector store lancedb with container_name default for embedding community.full_content: default-community-full_content
+2025-11-05 16:02:13.0172 - INFO - graphrag.index.operations.embed_text.embed_text - uploading text embeddings batch 1/1 of size 500 to vector store
+2025-11-05 16:02:13.0185 - INFO - graphrag.index.operations.embed_text.strategies.openai - embedding 13 inputs via 13 snippets using 2 batches. max_batch_size=16, batch_max_tokens=8191
+2025-11-05 16:02:13.0760 - INFO - graphrag.logger.progress - generate embeddings progress: 1/2
+2025-11-05 16:02:13.0828 - INFO - graphrag.logger.progress - generate embeddings progress: 2/2
+2025-11-05 16:02:13.0841 - INFO - graphrag.index.operations.embed_text.embed_text - using vector store lancedb with container_name default for embedding text_unit.text: default-text_unit-text
+2025-11-05 16:02:13.0842 - INFO - graphrag.index.operations.embed_text.embed_text - uploading text embeddings batch 1/1 of size 500 to vector store
+2025-11-05 16:02:13.0869 - INFO - graphrag.index.operations.embed_text.strategies.openai - embedding 36 inputs via 36 snippets using 6 batches. max_batch_size=16, batch_max_tokens=8191
+2025-11-05 16:02:14.0607 - INFO - graphrag.logger.progress - generate embeddings progress: 1/6
+2025-11-05 16:02:14.0643 - INFO - graphrag.logger.progress - generate embeddings progress: 2/6
+2025-11-05 16:02:14.0651 - INFO - graphrag.logger.progress - generate embeddings progress: 3/6
+2025-11-05 16:02:14.0740 - INFO - graphrag.logger.progress - generate embeddings progress: 4/6
+2025-11-05 16:02:14.0848 - INFO - graphrag.logger.progress - generate embeddings progress: 5/6
+2025-11-05 16:02:14.0877 - INFO - graphrag.logger.progress - generate embeddings progress: 6/6
+2025-11-05 16:02:14.0897 - INFO - graphrag.index.workflows.generate_text_embeddings - Workflow completed: generate_text_embeddings
+2025-11-05 16:02:14.0898 - INFO - graphrag.api.index - Workflow generate_text_embeddings completed successfully
+2025-11-05 16:02:14.0951 - INFO - graphrag.index.run.run_pipeline - Indexing pipeline complete.
+2025-11-05 16:02:14.0953 - INFO - graphrag.cli.index - All workflows completed successfully.

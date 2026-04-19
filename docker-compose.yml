@@ -53,7 +53,7 @@ services:
       - ./logging-stack/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
       - ./logs:/var/log/chatbotmobilestore:ro
       # Mount dangbaitudong logs from host path (adjust if needed)
-      - /home/doiquanai/Desktop/dangbaitudong/dangbaitudong/logs:/var/log/dangbaitudong:ro
+      - /home/hoang-mai/Desktop/ChatbotMobileStore/logs:/var/log/dangbaitudong:ro
       - filebeat_data:/usr/share/filebeat/data
     depends_on:
       elasticsearch:

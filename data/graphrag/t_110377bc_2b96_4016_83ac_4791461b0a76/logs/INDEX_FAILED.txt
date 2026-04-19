@@ -1,0 +1,1 @@
+Indexing failed. See cli_index.log in this folder for details.

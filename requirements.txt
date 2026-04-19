@@ -49,3 +49,4 @@ pgvector
 # Agent-lightning (tùy dự án bạn đang theo)
 # agentlightning
 agentlightning[apo]
+langchain_mcp_adapters

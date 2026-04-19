@@ -1,0 +1,93 @@
+
+==== graphrag query FAILED ====
+Command: /home/hoang-mai/Desktop/ChatbotMobileStore/venv/bin/python3 -X utf8 -m graphrag query --root data/graphrag/t_372376a3_2f7e_4f1d_b75d_8cdf1369e377 --method basic --query chức năng thêm nhân viên cho AI vào nhắn tin hộ
+Return code: 1
+STDOUT:
+
+STDERR:
+╭────────────────────────────────────── Traceback (most recent call last) ───────────────────────────────────────╮
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/main.py:536 in       │
+│ _query_cli                                                                                                     │
+│                                                                                                                │
+│   533 │   │   │   │   verbose=verbose,                                                                         │
+│   534 │   │   │   )                                                                                            │
+│   535 │   │   case SearchMethod.BASIC:                                                                         │
+│ ❱ 536 │   │   │   run_basic_search(                                                                            │
+│   537 │   │   │   │   config_filepath=config,                                                                  │
+│   538 │   │   │   │   data_dir=data,                                                                           │
+│   539 │   │   │   │   root_dir=root,                                                                           │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │             community_level = 2                                                                            │ │
+│ │                      config = None                                                                         │ │
+│ │                        data = None                                                                         │ │
+│ │ dynamic_community_selection = False                                                                        │ │
+│ │                      method = <SearchMethod.BASIC: 'basic'>                                                │ │
+│ │                       query = 'chức năng thêm nhân viên cho AI vào nhắn tin hộ'                            │ │
+│ │               response_type = 'Multiple Paragraphs'                                                        │ │
+│ │                        root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_37237… │ │
+│ │                   streaming = False                                                                        │ │
+│ │                     verbose = False                                                                        │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/cli/query.py:405 in      │
+│ run_basic_search                                                                                               │
+│                                                                                                                │
+│   402 │   cli_overrides = {}                                                                                   │
+│   403 │   if data_dir:                                                                                         │
+│   404 │   │   cli_overrides["output.base_dir"] = str(data_dir)                                                 │
+│ ❱ 405 │   config = load_config(root, config_filepath, cli_overrides)                                           │
+│   406 │                                                                                                        │
+│   407 │   dataframe_dict = _resolve_output_files(                                                              │
+│   408 │   │   config=config,                                                                                   │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │   cli_overrides = {}                                                                                       │ │
+│ │ config_filepath = None                                                                                     │ │
+│ │        data_dir = None                                                                                     │ │
+│ │           query = 'chức năng thêm nhân viên cho AI vào nhắn tin hộ'                                        │ │
+│ │            root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1… │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1… │ │
+│ │       streaming = False                                                                                    │ │
+│ │         verbose = False                                                                                    │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:18 │
+│ 3 in load_config                                                                                               │
+│                                                                                                                │
+│   180 │   │   If there are pydantic validation errors when instantiating the config.                           │
+│   181 │   """                                                                                                  │
+│   182 │   root = root_dir.resolve()                                                                            │
+│ ❱ 183 │   config_path = _get_config_path(root, config_filepath)                                                │
+│   184 │   _load_dotenv(config_path)                                                                            │
+│   185 │   config_extension = config_path.suffix                                                                │
+│   186 │   config_text = config_path.read_text(encoding="utf-8")                                                │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │   cli_overrides = {}                                                                                       │ │
+│ │ config_filepath = None                                                                                     │ │
+│ │            root = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1… │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1… │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+│                                                                                                                │
+│ /home/hoang-mai/Desktop/ChatbotMobileStore/venv/lib/python3.12/site-packages/graphrag/config/load_config.py:11 │
+│ 0 in _get_config_path                                                                                          │
+│                                                                                                                │
+│   107 │                                                                                                        │
+│   108 │   if not config_path:                                                                                  │
+│   109 │   │   msg = f"Config file not found in root directory: {root_dir}"                                     │
+│ ❱ 110 │   │   raise FileNotFoundError(msg)                                                                     │
+│   111 │                                                                                                        │
+│   112 │   return config_path                                                                                   │
+│   113                                                                                                          │
+│                                                                                                                │
+│ ╭────────────────────────────────────────────────── locals ──────────────────────────────────────────────────╮ │
+│ │ config_filepath = None                                                                                     │ │
+│ │     config_path = None                                                                                     │ │
+│ │             msg = 'Config file not found in root directory: /home/hoang-mai/Desktop/ChatbotMobileSt'+56    │ │
+│ │        root_dir = PosixPath('/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1… │ │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────╯ │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+FileNotFoundError: Config file not found in root directory: 
+/home/hoang-mai/Desktop/ChatbotMobileStore/data/graphrag/t_372376a3_2f7e_4f1d_b75d_8cdf1369e377
+
